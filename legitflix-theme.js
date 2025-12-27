@@ -496,6 +496,26 @@ async function injectFeaturedPrefs() {
     // 4. Insert at TOP of content
     contentContainer.insertAdjacentHTML('afterbegin', headerHtml);
 
+    // FETCH & SYNC Remote Banner (Async)
+    window.getUserBanner().then(remoteUrl => {
+        if (remoteUrl && remoteUrl !== localBanner) {
+            console.log('LegitFlix: Remote banner found, updating UI:', remoteUrl);
+            const bannerEl = contentContainer.querySelector('.profile-banner');
+            if (bannerEl) {
+                bannerEl.style.backgroundImage = `url('${remoteUrl}')`;
+                bannerEl.classList.add('has-banner');
+
+                const btnTextEl = contentContainer.querySelector('.banner-add-text');
+                if (btnTextEl) btnTextEl.textContent = 'Change profile banner';
+                const btnIconEl = contentContainer.querySelector('.banner-add-btn .material-icons-outlined');
+                if (btnIconEl) btnIconEl.textContent = 'edit';
+
+                // Update Local Cache
+                localStorage.setItem(`LegitFlix_Banner_${user.Id}`, remoteUrl);
+            }
+        }
+    });
+
     // 5. Cleanup Redundant Titles & Buttons
     const oldTitle = contentContainer.querySelector('.headerUsername');
     if (oldTitle) oldTitle.style.display = 'none';
@@ -622,7 +642,7 @@ window.legitFlixOpenBannerPicker = async function () {
         btnSave.innerHTML = '<span class="material-icons">refresh</span> Saving...';
         btnSave.disabled = true;
 
-        const success = await window.uploadUserBackdrop(window._pendingBannerUrl);
+        const success = await window.saveUserBanner(window._pendingBannerUrl);
         if (success) {
             document.querySelector('.legit-popup-overlay').remove();
             console.log('LegitFlix: Banner updated successfully!');
@@ -823,7 +843,70 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
     }
 };
 
-window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Banner');
+// --- DISPLAY PREFS HELPER (Persistent Banner) ---
+window.saveUserBanner = async function (bannerUrl) {
+    try {
+        const userId = window.ApiClient.getCurrentUserId();
+        // Use a unique ID for our theme settings
+        const prefsId = 'legitflix-theme-config';
+        const client = 'LegitFlix';
+
+        // 1. Get Current
+        const getUrl = window.ApiClient.getUrl(`/DisplayPreferences/${prefsId}?userId=${userId}&client=${client}`);
+        let currentPrefs = {};
+        try {
+            const res = await fetch(getUrl, {
+                headers: {
+                    'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${window.ApiClient.accessToken()}"`
+                }
+            });
+            if (res.ok) currentPrefs = await res.json();
+            else currentPrefs = { Id: prefsId, CustomPrefs: {} }; // Init if new
+        } catch (e) { currentPrefs = { Id: prefsId, CustomPrefs: {} }; }
+
+        // 2. Update
+        if (!currentPrefs.CustomPrefs) currentPrefs.CustomPrefs = {};
+        currentPrefs.CustomPrefs.BannerUrl = bannerUrl;
+
+        // 3. Save
+        const postUrl = window.ApiClient.getUrl(`/DisplayPreferences/${prefsId}?userId=${userId}&client=${client}`);
+        await fetch(postUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${window.ApiClient.accessToken()}"`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(currentPrefs)
+        });
+
+        // 4. Update LocalStorage for instant access on this device
+        localStorage.setItem(`LegitFlix_Banner_${userId}`, bannerUrl);
+
+        console.log('LegitFlix: Banner saved to DisplayPrefs:', bannerUrl);
+        return true;
+    } catch (e) {
+        console.error('LegitFlix: Failed to save banner pref', e);
+        return false;
+    }
+};
+
+window.getUserBanner = async function () {
+    try {
+        const userId = window.ApiClient.getCurrentUserId();
+        const prefsId = 'legitflix-theme-config';
+        const client = 'LegitFlix';
+        const getUrl = window.ApiClient.getUrl(`/DisplayPreferences/${prefsId}?userId=${userId}&client=${client}`);
+
+        const res = await fetch(getUrl, {
+            headers: {
+                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${window.ApiClient.accessToken()}"`
+            }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.CustomPrefs ? data.CustomPrefs.BannerUrl : null;
+    } catch (e) { return null; }
+};
 
 /* --- CUSTOM AVATAR PICKER (Netflix Style) --- */
 window.LegitFlixAvatarPicker = {
