@@ -1261,8 +1261,10 @@ async function pollForUI() {
         }
     }
 
-    // 2. Try Inject Hero (Home Page Only)
-    const isHome = window.location.hash.includes('home') || window.location.hash === '' || window.location.hash.includes('startup');
+    // 2. Try Inject Hero (Home Page Only) - exclude settings pages
+    const hashLower = window.location.hash.toLowerCase();
+    const isHome = (hashLower === '' || hashLower === '#/' || hashLower.includes('/home') || hashLower.includes('startup'))
+        && !hashLower.includes('preferences');
     const sections = document.querySelector('.homeSectionsContainer') || document.querySelector('.mainAnimatedPages');
 
     if (isHome && sections && !_injectedHero) {
