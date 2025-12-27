@@ -1261,8 +1261,8 @@ async function pollForUI() {
 
     // 4. Try Inject Preferences Header (Prefs Page Only)
     // FIX: URL hash is often lowercase, check broadly
-    const hashLower = window.location.hash.toLowerCase();
-    if (hashLower.includes('preferences') || hashLower.includes('quickconnect') || hashLower.includes('userprofile')) {
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('preferences') || hash.includes('quickconnect')) {
         try {
             injectFeaturedPrefs();
 
@@ -1318,9 +1318,8 @@ async function pollForUI() {
 
 // Helper to Inject Password Form (if valid container doesn't have it)
 window.ensurePasswordForm = function () {
-    // Only on preferences/profile pages
-    const hashLower = window.location.hash.toLowerCase();
-    if (!(hashLower.includes('preferences') || hashLower.includes('quickconnect') || hashLower.includes('userprofile'))) return;
+    // Only on preferences page
+    if (!window.location.hash.toLowerCase().includes('preferences')) return;
 
     // Check if we already have it
     if (document.getElementById('customPasswordForm')) return;
