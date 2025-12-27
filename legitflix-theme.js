@@ -236,16 +236,23 @@ async function injectCustomNav() {
     }
 
     logger.log('injectCustomNav: Fetching views...');
-    const views = await fetchUserViews();
+    // We need Auth to get the ServerId
+    const auth = await getAuth();
+    if (!auth) return;
 
-    // Map views to HTML links
+    const views = await fetchUserViews();
+    if (!views || views.length === 0) {
+        logger.warn('injectCustomNav: No views found.');
+        return;
+    }
+
+    // Map views to HTML links with CORRECT standard Jellyfin URL
+    // USER CONFIRMED: #/list?parentId=...&serverId=... works.
     const linksHtml = views.map(v => {
-        // Special case for "Home" or "Dashboard"? 
-        // Usually views are just the libraries. We can add a manual 'Dashboard' link first.
-        return `<a href="#!/list?parentId=${v.Id}&id=${v.Id}" class="nav-link">${v.Name}</a>`;
+        return `<a href="#!/list?parentId=${v.Id}&serverId=${auth.ServerId}" class="nav-link">${v.Name}</a>`;
     }).join('');
 
-    const dashLink = `<a href="#!/home" class="nav-link active">Dashboard</a>`;
+    const dashLink = `<a href="#!/home" class="nav-link">Dashboard</a>`;
 
     const finalHtml = `
         <div class="legit-nav-links">
@@ -255,7 +262,18 @@ async function injectCustomNav() {
     `;
 
     logger.log('injectCustomNav: Injecting HTML');
-    headerLeft.insertAdjacentHTML('beforeend', finalHtml);
+    if (!document.querySelector('.legit-nav-links')) {
+        headerLeft.insertAdjacentHTML('beforeend', finalHtml);
+
+        // Mark active link
+        const currentHash = window.location.hash;
+        document.querySelectorAll('.legit-nav-links .nav-link').forEach(link => {
+            // Simple active check
+            if (currentHash.includes(link.getAttribute('href'))) {
+                link.classList.add('active');
+            }
+        });
+    }
 }
 
 // --- INJECTION & INIT ---
