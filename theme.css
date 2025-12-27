@@ -1,0 +1,127 @@
+/* LegitFlix Theme CSS
+   Updated Path: /themes/legitflix/
+*/
+
+:root {
+    --theme-primary: #e50914;
+    --theme-background: #141414;
+    --theme-card-bg: #1f1f1f;
+    --theme-text: #ffffff;
+    --theme-text-muted: #bcbcbc;
+
+    --selection-background: var(--theme-primary);
+    --skin-header-background: rgba(20, 20, 20, 0.95);
+    --skin-bg: var(--theme-background);
+    --button-primary-background: var(--theme-primary);
+    --button-primary-hover-background: #b20710;
+}
+
+/* --- LOGO REPLACEMENTS --- */
+/* Updated paths to point to /themes/legitflix/ */
+
+.pageTitleWithLogo {
+    background-image: url('/themes/legitflix/logo.png') !important;
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: contain;
+    text-indent: -9999px;
+    width: 150px;
+}
+
+.adminDrawerLogo img {
+    content: url('/themes/legitflix/logo.png') !important;
+}
+
+.authLogo img {
+    content: url('/themes/legitflix/logo-large.png') !important;
+}
+
+
+/* --- MEDIA BAR STYLES --- */
+
+.legit-media-bar-container {
+    padding: 20px 0 40px 0;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 10;
+}
+
+.legit-media-header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    padding-left: 2%;
+}
+
+.legit-header-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--theme-text);
+}
+
+.legit-header-subtitle {
+    font-size: 0.9rem;
+    color: var(--theme-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.legit-media-scroller {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 2%;
+    scrollbar-width: none;
+}
+
+.legit-media-scroller::-webkit-scrollbar {
+    display: none;
+}
+
+.legit-media-card {
+    flex: 0 0 auto;
+    width: 200px;
+    height: 300px;
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.legit-media-card:hover {
+    transform: scale(1.1);
+    z-index: 20;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.legit-card-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.legit-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+    padding: 40px 10px 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.legit-media-card:hover .legit-card-overlay {
+    opacity: 1;
+}
+
+.legit-card-title {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    display: block;
+}
