@@ -1,63 +1,85 @@
-/* LegitFlix Theme JS v3.4
-   - UI: Added Custom Navigation (Dashboard, Movies, Series, Kids).
-   - Core: Improved Init/Auth retry logic to ensure Media Bar loads.
+/* LegitFlix Theme JS v4.0 (Debug & Dynamic Nav)
+   - Core: Added console.log debugs to all functions.
+   - Nav: Fetches real User Views (Libraries) from API instead of hardcoded links.
+   - Fix: Carousel "rapid switch" fixed (Single interval enforcement + Debounce).
+   - Fix: Header alignment and loading logic.
 */
 
-console.log('%c LegitFlix: Theme v3.4 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
-// --- GLOBAL NAVIGATION HELPER ---
-// --- GLOBAL NAVIGATION HELPER ---
-window.legitFlixShowItem = function (id) {
-    console.log('LegitFlix: Navigating to', id);
-    // V2.4 CHANGE: Use direct URL navigation (mirrors working-mediabar.js)
-    // This avoids all 'appRouter' issues entirely.
-    window.top.location.href = `#!/details?id=${id}`;
+// --- CONFIG ---
+const CONFIG = {
+    // Only fetch these types for the Hero Carousel
+    heroMediaTypes: 'Movie,Series',
+    heroLimit: 20
 };
 
-// --- SAFETY SHIM REMOVED ---
-// We no longer rely on appRouter, so no shim is needed.
+// --- LOGGING ---
+const logger = {
+    log: (msg, ...args) => console.log(`[LegitFlix] ${msg}`, ...args),
+    error: (msg, ...args) => console.error(`[LegitFlix] ${msg}`, ...args),
+    warn: (msg, ...args) => console.warn(`[LegitFlix] ${msg}`, ...args)
+};
 
-const CONFIG = {
-    rootUrl: '',
-    mediaBar: {
-        enabled: true,
-        limit: 20,
-        // V2.5 CHANGE: Fetch both Movies and Series
-        type: 'Movie,Series',
-        sortBy: 'Random',
-        enableBackdrops: true
-    }
+// --- GLOBAL NAVIGATION HELPER ---
+window.legitFlixShowItem = function (id) {
+    logger.log('Navigating to item:', id);
+    window.top.location.href = `#!/details?id=${id}`;
 };
 
 // --- AUTH HELPER ---
 async function getAuth() {
+    logger.log('getAuth: Checking for ApiClient...');
     let attempts = 0;
-    while (!window.ApiClient && attempts < 20) {
+    while (!window.ApiClient && attempts < 30) {
         await new Promise(r => setTimeout(r, 200));
         attempts++;
     }
     if (window.ApiClient) {
+        logger.log('getAuth: ApiClient found!');
         return {
             UserId: window.ApiClient.getCurrentUserId(),
-            AccessToken: window.ApiClient.accessToken()
+            AccessToken: window.ApiClient.accessToken(),
+            ServerId: window.ApiClient.serverId()
         };
     }
+    logger.error('getAuth: ApiClient timed out.');
     return null;
 }
 
 // --- UTILS ---
 function shuffleArray(array) {
+    logger.log('shuffleArray: Shuffling items', array.length);
     return array.sort(() => Math.random() - 0.5);
 }
 
-// --- DATA FETCHING ---
-async function fetchMediaBarItems() {
+// --- DATA FETCHING (Dynamic) ---
+async function fetchUserViews() {
+    logger.log('fetchUserViews: Fetching user libraries...');
     const auth = await getAuth();
     if (!auth) return [];
 
-    // Fields: Needed for the rich hero UI (ProductionYear, OfficialRating, CommunityRating, RunTimeTicks)
+    try {
+        const url = `/Users/${auth.UserId}/Views`;
+        const response = await fetch(url, {
+            headers: { 'X-Emby-Token': auth.AccessToken }
+        });
+        const data = await response.json();
+        logger.log('fetchUserViews: Success', data.Items);
+        return data.Items || [];
+    } catch (error) {
+        logger.error('fetchUserViews: Error', error);
+        return [];
+    }
+}
+
+async function fetchMediaBarItems() {
+    logger.log('fetchMediaBarItems: Fetching hero content...');
+    const auth = await getAuth();
+    if (!auth) return [];
+
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.mediaBar.type}&Recursive=true&SortBy=${CONFIG.mediaBar.sortBy}&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary`;
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary`;
 
     try {
         const response = await fetch(url, {
@@ -65,42 +87,29 @@ async function fetchMediaBarItems() {
         });
         const data = await response.json();
         const allItems = data.Items || [];
-
-        // V2.6 LOGIC: Strict Randomization (No Patterns)
-        // We simply shuffle the entire mixed pool.
+        logger.log('fetchMediaBarItems: Downloaded items', allItems.length);
         return shuffleArray(allItems);
-
     } catch (error) {
-        console.error('LegitFlix: API Error', error);
+        logger.error('fetchMediaBarItems: API Error', error);
         return [];
     }
 }
 
 // --- UI GENERATION (HERO CAROUSEL) ---
 function createMediaBarHTML(items) {
+    logger.log('createMediaBarHTML: Generating HTML for slides');
     if (!items || items.length === 0) return '';
 
     const slides = items.map((item, index) => {
-        // High quality backdrop for hero
         const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=80`;
         const activeClass = index === 0 ? 'active' : '';
 
-        // --- METADATA LOGIC ---
-        const year = item.ProductionYear || '';
-
-        // IMDb Rating (CommunityRating)
-        let ratingHtml = '';
-        if (item.CommunityRating) {
-            ratingHtml = `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>`;
-        } else {
-            ratingHtml = `<span class="star-rating">N/A</span>`;
-        }
+        // IMDb Rating
+        let ratingHtml = item.CommunityRating ? `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
 
         // Ends At Calculation
         let endsAtHtml = '';
         if (item.RunTimeTicks && item.Type !== 'Series') {
-            // 1 tick = 10,000 ms ?? No, 1 tick = 100ns. 1ms = 10,000 ticks.
-            // Jellyfin uses 10,000 ticks per ms.
             const ms = item.RunTimeTicks / 10000;
             const endTime = new Date(Date.now() + ms);
             const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -109,10 +118,8 @@ function createMediaBarHTML(items) {
             endsAtHtml = `<span class="ends-at">${item.ChildCount ? item.ChildCount + ' Seasons' : 'Series'}</span>`;
         }
 
-        const desc = item.Overview || '';
         const title = item.Name;
-
-        // Button actions
+        const desc = item.Overview || '';
         const playOnClick = `window.legitFlixPlay('${item.Id}')`;
         const infoOnClick = `window.legitFlixShowItem('${item.Id}')`;
 
@@ -124,7 +131,7 @@ function createMediaBarHTML(items) {
                     <h1 class="hero-title">${title}</h1>
                     <div class="hero-meta">
                         ${ratingHtml}
-                        <span class="year">${year}</span>
+                        <span class="year">${item.ProductionYear || ''}</span>
                         ${endsAtHtml}
                     </div>
                     <p class="hero-desc">${desc}</p>
@@ -141,37 +148,48 @@ function createMediaBarHTML(items) {
         `;
     }).join('');
 
-    return `
-        <div id="legit-hero-carousel" class="hero-carousel-container">
-            ${slides}
-        </div>
-    `;
+    return `<div id="legit-hero-carousel" class="hero-carousel-container">${slides}</div>`;
 }
 
-// --- CAROUSEL LOGIC ---
-let carouselInterval;
+// --- CAROUSEL LOGIC (Fixed) ---
+let carouselInterval = null;
+
 function startCarousel() {
-    if (carouselInterval) clearInterval(carouselInterval);
+    logger.log('startCarousel: Attempting to start...');
+
+    // Stop any existing interval properly
+    if (carouselInterval) {
+        logger.log('startCarousel: Clearing old interval');
+        clearInterval(carouselInterval);
+        carouselInterval = null;
+    }
 
     const slides = document.querySelectorAll('.hero-slide');
-    if (slides.length === 0) return;
+    if (slides.length === 0) {
+        logger.warn('startCarousel: No slides found!');
+        return;
+    }
+
+    logger.log(`startCarousel: Starting new interval with ${slides.length} slides.`);
 
     let currentIndex = 0;
+    const rotate = () => {
+        // Double check existence in case DOM changed
+        if (slides.length === 0) return;
 
-    const showSlide = (index) => {
         slides.forEach(s => s.classList.remove('active'));
-        slides[index].classList.add('active');
+
+        currentIndex = (currentIndex + 1) % slides.length;
+        slides[currentIndex].classList.add('active');
     };
 
-    carouselInterval = setInterval(() => {
-        currentIndex = (currentIndex + 1) % slides.length;
-        showSlide(currentIndex);
-    }, 8000); // 8 seconds per slide
+    carouselInterval = setInterval(rotate, 8000); // 8 seconds per slide
 }
 
-// --- PLAYBACK HELPER (Robust Logic with Retry) ---
+// --- PLAYBACK HELPER (Retry Logic) ---
 window.legitFlixPlay = async function (id) {
-    // Helper to wait for globals
+    logger.log('legitFlixPlay: Clicked', id);
+
     const waitForGlobals = async (retries = 10, delay = 200) => {
         for (let i = 0; i < retries; i++) {
             if (window.PlaybackManager && window.ApiClient) return true;
@@ -181,65 +199,85 @@ window.legitFlixPlay = async function (id) {
     };
 
     if (!window.PlaybackManager || !window.ApiClient) {
-        console.warn('LegitFlix: Globals not ready, waiting...');
+        logger.warn('legitFlixPlay: Globals not ready, waiting...');
         const ready = await waitForGlobals();
         if (!ready) {
-            alert("Jellyfin is still loading components. Please try again in a moment.");
+            alert("Jellyfin is still loading components. Please try again in moment.");
             return;
         }
     }
 
     const apiClient = window.ApiClient;
-    const userId = apiClient.getCurrentUserId();
-
     try {
-        // Fetch the full item details first (safest way to ensure playback works)
-        const item = await apiClient.getItem(userId, id);
-        if (!item) {
-            console.error('LegitFlix: Media item not found for playback.');
-            return;
-        }
+        const item = await apiClient.getItem(apiClient.getCurrentUserId(), id);
+        if (!item) return;
 
-        console.log('LegitFlix: Playing', item.Name);
-
+        logger.log('legitFlixPlay: Sending play command');
         window.PlaybackManager.play({
             items: [item],
             startPositionTicks: 0,
-            isMuted: false,
-            isPaused: false,
             serverId: apiClient.serverId()
         });
-
     } catch (error) {
-        console.error('LegitFlix: Error starting playback', error);
-        alert("Playback failed. See console for details.");
+        logger.error('legitFlixPlay: Failed', error);
+        alert("Playback failed. See console.");
     }
 };
 
-// --- INJECTION LOGIC ---
+// --- CUSTOM NAVIGATION (Dynamic) ---
+async function injectCustomNav() {
+    logger.log('injectCustomNav: Checking...');
+    if (document.querySelector('.legit-nav-links')) return;
+
+    const headerLeft = document.querySelector('.headerLeft');
+    if (!headerLeft) {
+        logger.log('injectCustomNav: headerLeft not found yet.');
+        return;
+    }
+
+    logger.log('injectCustomNav: Fetching views...');
+    const views = await fetchUserViews();
+
+    // Map views to HTML links
+    const linksHtml = views.map(v => {
+        // Special case for "Home" or "Dashboard"? 
+        // Usually views are just the libraries. We can add a manual 'Dashboard' link first.
+        return `<a href="#!/list?parentId=${v.Id}&id=${v.Id}" class="nav-link">${v.Name}</a>`;
+    }).join('');
+
+    const dashLink = `<a href="#!/home" class="nav-link active">Dashboard</a>`;
+
+    const finalHtml = `
+        <div class="legit-nav-links">
+            ${dashLink}
+            ${linksHtml}
+        </div>
+    `;
+
+    logger.log('injectCustomNav: Injecting HTML');
+    headerLeft.insertAdjacentHTML('beforeend', finalHtml);
+}
+
+// --- INJECTION & INIT ---
 async function injectMediaBar() {
+    logger.log('injectMediaBar: Started');
+
     const hash = window.location.hash;
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
-
     if (!isHomePage) return;
 
-    // CLEANUP
+    // Remove old
     document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove());
-    // Also remove old media bars if they exist
-    document.querySelectorAll('.legit-media-bar-container').forEach(el => el.remove());
 
     const items = await fetchMediaBarItems();
     if (items.length === 0) return;
 
+    // Attempt injection
     const checkInterval = setInterval(() => {
         let container = document.querySelector('.homeSectionsContainer');
         if (!container) container = document.querySelector('.mainAnimatedPages');
         if (!container) container = document.querySelector('#indexPage .pageContent');
 
-        // CHECK DOM AND GLOBALS
-        // Only inject if the container exists AND specific Jellyfin globals are mostly ready.
-        // We permit injection if container is ready, but checks in play button handle the rest.
-        // However, to be safe, let's wait for ApiClient at least.
         const isReady = container && window.ApiClient;
 
         if (isReady) {
@@ -247,27 +285,27 @@ async function injectMediaBar() {
             const wrapper = document.createElement('div');
             wrapper.innerHTML = createMediaBarHTML(items);
 
-            // Inject at very top
             container.insertBefore(wrapper, container.firstChild);
 
-            // Start the show
+            logger.log('injectMediaBar: Injected successfully');
             startCarousel();
-            console.log('LegitFlix: Hero Carousel Injected');
         }
     }, 1000);
 
-    setTimeout(() => clearInterval(checkInterval), 15000); // Extended timeout
+    setTimeout(() => {
+        clearInterval(checkInterval);
+        logger.log('injectMediaBar: Timeout reached');
+    }, 15000);
 }
 
 // --- JELLYSEERR INJECTION ---
 function injectJellyseerr() {
-    // Config
+    logger.log('injectJellyseerr: Checking...');
     const jellyseerrUrl = 'https://request.legitflix.eu';
     const logoUrl = 'https://belginux.com/content/images/size/w1200/2024/03/jellyseerr-1.webp';
     const cardId = 'jellyseerr-card';
 
     // 1. My Media Card
-    // Target the first itemsContainer in homePage, which is usually "My Media"
     const container = document.querySelector('.homePage .itemsContainer.scrollSlider');
 
     // Only inject if container exists and we haven't injected yet

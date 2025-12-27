@@ -29,6 +29,8 @@
     box-shadow: none !important;
     border-bottom: none !important;
     display: flex;
+    justify-content: flex-start !important;
+    /* Force Left Align */
     align-items: center;
 }
 
