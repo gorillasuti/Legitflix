@@ -336,12 +336,20 @@ h4,
 }
 
 /* CONTENT PUSH */
+/* CONTENT PUSH - Scoped only to Home/Library views typically, avoiding Settings */
 .homeSectionsContainer,
-.mainAnimatedPages,
-#indexPage .pageContent {
+.mainAnimatedPages:not(.type-UserView) {
     margin-top: 0 !important;
     padding-top: 85vh !important;
     min-height: 100vh;
+}
+
+/* Force standard spacing for Settings/Preferences pages to fix "Huge Space" */
+#myPreferencesMenuPage .pageContent,
+.type-UserView .pageContent {
+    padding-top: 120px !important;
+    /* Enough for header */
+    margin-top: 0 !important;
 }
 
 /* =========================================================================
@@ -798,4 +806,38 @@ h4,
     background: rgba(0, 0, 0, 0.8);
     border-color: white;
     transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* --- Form Styling --- */
+.legit-form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.legit-form-label {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.legit-form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 4px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.legit-form-input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--theme-primary-color, #00A4DC);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2);
 }

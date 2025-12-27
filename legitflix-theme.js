@@ -651,27 +651,48 @@ window.legitFlixOpenBannerPicker = async function () {
     } catch (e) { console.error(e); }
 };
 
+/* --- POPUP LOGIC --- */
 window.legitFlixOpenAvatarPicker = function () {
     const popup = document.createElement('div');
     popup.className = 'legit-popup-overlay';
 
+    // REDESIGN: Horizontal, Compact, "Options next to each other"
     popup.innerHTML = `
-        <div class="legit-popup-content avatar-picker-popup">
-            <h2>Change Avatar</h2>
-            <div class="avatar-options-grid">
-                <button class="legit-btn-primary" onclick="window.LegitFlixAvatarPicker.open(); document.querySelector('.legit-popup-overlay').remove()">
-                    <span class="material-icons">grid_view</span>
-                    Choose from Gallery
+        <div class="legit-popup-content small" style="text-align:center; padding: 30px; width: auto; min-width: 400px;">
+            <h2 style="margin-bottom: 25px; font-size: 1.4rem; font-weight: 600;">Change Avatar</h2>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button class="legit-btn-primary" id="btnOpenGallery" style="flex: 1; padding: 20px; flex-direction: column; gap: 8px; border-radius: 8px;">
+                    <span class="material-icons" style="font-size: 32px; display:block;">grid_view</span>
+                    <span style="font-size: 0.9rem;">Choose from Gallery</span>
                 </button>
-                <button class="legit-btn-accent" onclick="window.triggerNativeUpload()">
-                    <span class="material-icons">upload_file</span>
-                    Upload Image
+                
+                <button class="legit-btn-accent" id="btnUploadLocal" style="flex: 1; padding: 20px; flex-direction: column; gap: 8px; border-radius: 8px;">
+                    <span class="material-icons" style="font-size: 32px; display:block;">upload_file</span>
+                    <span style="font-size: 0.9rem;">Upload Image</span>
                 </button>
             </div>
-            <button class="legit-btn-secondary" style="margin-top:20px;" onclick="this.closest('.legit-popup-overlay').remove()">Close</button>
+            
+            <button class="legit-btn-secondary" id="btnClosePopup" style="margin-top: 20px; width: 100%; border: none;">Cancel</button>
         </div>
     `;
+
     document.body.appendChild(popup);
+
+    // Handlers
+    popup.querySelector('#btnOpenGallery').onclick = () => {
+        popup.remove();
+        if (window.LegitFlixAvatarPicker) window.LegitFlixAvatarPicker.open();
+    };
+
+    popup.querySelector('#btnUploadLocal').onclick = () => {
+        popup.remove();
+        window.triggerNativeUpload();
+    };
+
+    const close = () => popup.remove();
+    popup.querySelector('#btnClosePopup').onclick = close;
+    popup.onclick = (e) => { if (e.target === popup) close(); };
 };
 
 // Trigger Native Upload by finding the original (hidden) header image button
@@ -793,11 +814,11 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
 
 window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Banner');
 
-/* --- CUSTOM AVATAR PICKER (Native) --- */
 /* --- CUSTOM AVATAR PICKER (Netflix Style) --- */
 window.LegitFlixAvatarPicker = {
     repoBase: 'https://raw.githubusercontent.com/kalibrado/js-avatars-images/refs/heads/main',
     allImages: [],
+    selectedUrl: null,
 
     open: async function () {
         // Simple Loading Indicator
@@ -809,9 +830,10 @@ window.LegitFlixAvatarPicker = {
         try {
             const res = await fetch(`${this.repoBase}/images_metadata.json`);
             if (!res.ok) throw new Error('Network error');
-            this.allImages = await res.json(); // Data is a flat array
+            this.allImages = await res.json();
 
             loader.remove();
+            this.selectedUrl = null; // Reset selection
             this.renderModal();
         } catch (e) {
             loader.remove();
@@ -821,7 +843,6 @@ window.LegitFlixAvatarPicker = {
     },
 
     renderModal: function () {
-        // Extract Unique Categories from "folder" property
         const categories = [...new Set(this.allImages.map(img => img.folder))].sort();
 
         const overlay = document.createElement('div');
@@ -833,7 +854,7 @@ window.LegitFlixAvatarPicker = {
         const style = document.createElement('style');
         style.innerHTML = `
             .lf-picker-modal {
-                width: 95vw; height: 90vh;
+                width: 90vw; height: 85vh;
                 background: #141414;
                 color: #fff;
                 display: flex; flex-direction: column;
@@ -844,36 +865,65 @@ window.LegitFlixAvatarPicker = {
                 position: relative;
             }
             .lf-picker-header {
-                padding: 25px 40px;
+                padding: 20px 30px;
                 display: flex; justify-content: space-between; align-items: center;
-                border-bottom: 3px solid #000;
+                border-bottom: 2px solid #222;
                 background: linear-gradient(to bottom, #222, #141414);
                 z-index: 10;
+                gap: 20px;
             }
-            .lf-picker-title { font-size: 2vw; font-weight: 700; margin: 0; color: #e5e5e5; }
-            
-            .lf-picker-controls { display: flex; gap: 20px; align-items: center; }
-            
-            .lf-search-input {
-                background: #000; border: 1px solid #333; color: white;
-                padding: 12px 18px; border-radius: 4px; font-size: 1rem; width: 300px;
-                transition: border 0.3s;
+            .lf-picker-title { 
+                font-size: 1.5rem; 
+                font-weight: 600; 
+                margin: 0; 
+                color: #e5e5e5;
+                white-space: nowrap;
             }
-            .lf-search-input:focus { border-color: #fff; outline: none; }
             
-            .lf-category-select {
-                background: #333; border: 1px solid #444; color: white;
-                padding: 12px 18px; border-radius: 4px; font-size: 1rem;
-                cursor: pointer; font-weight: bold;
+            .lf-picker-controls { 
+                display: flex; gap: 15px; align-items: center; 
+                flex: 1; justify-content: flex-end;
             }
-            .lf-category-select:hover { background: #444; }
+            
+            /* Stylized Inputs to match theme */
+            .lf-control-input {
+                background: rgba(255, 255, 255, 0.1); 
+                border: 1px solid rgba(255, 255, 255, 0.2); 
+                color: white;
+                padding: 10px 15px; 
+                border-radius: 4px; 
+                font-size: 0.95rem;
+                transition: all 0.2s;
+            }
+            .lf-control-input:focus { 
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.5); 
+                outline: none; 
+            }
+            .lf-control-input option {
+                background: #222;
+                color: white;
+            }
+            
+            .lf-search-input { width: 250px; }
+            .lf-category-select { cursor: pointer; }
+
+            .lf-picker-close {
+                background: transparent; border: none; color: #fff;
+                font-size: 28px; cursor: pointer; opacity: 0.6;
+                transition: opacity 0.2s;
+                margin-left: 10px;
+                line-height: 1;
+                display: flex; align-items: center;
+            }
+            .lf-picker-close:hover { opacity: 1; }
 
             .lf-picker-grid {
                 flex: 1; overflow-y: auto;
-                padding: 40px;
+                padding: 30px;
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                gap: 30px;
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 25px;
                 justify-content: center;
                 align-content: start;
             }
@@ -883,32 +933,51 @@ window.LegitFlixAvatarPicker = {
                 border-radius: 50%;
                 background-size: cover; background-position: center;
                 cursor: pointer;
-                transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border 0.2s;
+                transition: transform 0.2s, box-shadow 0.2s;
                 border: 4px solid transparent;
                 position: relative;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             }
             .lf-picker-item:hover {
-                transform: scale(1.15);
-                border-color: #fff; 
-                box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                transform: scale(1.1);
+                border-color: rgba(255,255,255,0.5);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.5);
                 z-index: 2;
             }
-            
-            .lf-picker-close {
-                position: absolute; top: 15px; right: 25px;
-                background: transparent; border: none; color: #fff;
-                font-size: 35px; cursor: pointer; opacity: 0.5;
-                transition: opacity 0.2s;
-                z-index: 20;
+            .lf-picker-item.selected {
+                border-color: #00a4dc; /* Theme Color */
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(0, 164, 220, 0.6);
+                z-index: 3;
             }
-            .lf-picker-close:hover { opacity: 1; }
+
+            .lf-picker-footer {
+                padding: 20px 30px;
+                background: #1a1a1a;
+                border-top: 1px solid #333;
+                display: flex; justify-content: flex-end; gap: 15px;
+            }
             
+            /* Footer Buttons */
+            .lf-btn {
+                padding: 10px 24px; border-radius: 4px; 
+                font-weight: 600; font-size: 1rem; cursor: pointer; border: none;
+                transition: all 0.2s;
+            }
+            .lf-btn-cancel { background: transparent; color: #aaa; border: 1px solid #444; }
+            .lf-btn-cancel:hover { color: white; border-color: white; }
+            
+            .lf-btn-save { 
+                background: #00a4dc; color: white; 
+                opacity: 0.5; pointer-events: none; /* Disabled by default */
+            }
+            .lf-btn-save.active { opacity: 1; pointer-events: auto; }
+            .lf-btn-save:hover { background: #0087b5; box-shadow: 0 0 15px rgba(0, 164, 220, 0.4); }
+
             @media (max-width: 768px) {
-                .lf-picker-header { flex-direction: column; gap: 15px; align-items: flex-start; padding: 20px; }
+                .lf-picker-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
                 .lf-picker-controls { width: 100%; flex-wrap: wrap; }
                 .lf-search-input { width: 100%; }
-                .lf-picker-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); padding: 15px; gap: 15px; }
+                .lf-picker-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); padding: 15px; gap: 15px; }
             }
         `;
         overlay.appendChild(style);
@@ -921,27 +990,45 @@ window.LegitFlixAvatarPicker = {
         modal.innerHTML = `
             <div class="lf-picker-header">
                 <h1 class="lf-picker-title">Select your avatar</h1>
+                
                 <div class="lf-picker-controls">
-                    <input type="text" class="lf-search-input" id="lfAvatarSearch" placeholder="Search for an avatar...">
-                    <select class="lf-category-select" id="lfAvatarFilter">
+                    <input type="text" class="lf-control-input lf-search-input" id="lfAvatarSearch" placeholder="Search...">
+                    <select class="lf-control-input lf-category-select" id="lfAvatarFilter">
                         <option value="All">All Categories</option>
                         ${catOptions}
                     </select>
                 </div>
-                <button class="lf-picker-close" id="lfPickerClose">&times;</button>
+                
+                <button class="lf-picker-close" id="lfPickerClose">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
+            
             <div class="lf-picker-grid" id="lfPickerGrid"></div>
+            
+            <div class="lf-picker-footer">
+                <button class="lf-btn lf-btn-cancel" id="lfBtnCancel">Cancel</button>
+                <button class="lf-btn lf-btn-save" id="lfBtnSave">Save Avatar</button>
+            </div>
         `;
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
+        // Elements
         const searchInput = modal.querySelector('#lfAvatarSearch');
         const filterSelect = modal.querySelector('#lfAvatarFilter');
         const grid = modal.querySelector('#lfPickerGrid');
         const closeBtn = modal.querySelector('#lfPickerClose');
+        const cancelBtn = modal.querySelector('#lfBtnCancel');
+        const saveBtn = modal.querySelector('#lfBtnSave');
 
-        closeBtn.onclick = () => overlay.remove();
+        // Handlers
+        const close = () => overlay.remove();
+        closeBtn.onclick = close;
+        cancelBtn.onclick = close;
+
+        saveBtn.onclick = () => this.saveAvatar(saveBtn);
 
         const refreshGrid = () => {
             const query = searchInput.value.toLowerCase();
@@ -959,46 +1046,62 @@ window.LegitFlixAvatarPicker = {
         searchInput.oninput = refreshGrid;
         filterSelect.onchange = refreshGrid;
 
-        // Render initial
+        // Initial Render
         this.renderGridItems(grid, this.allImages);
     },
 
     renderGridItems: function (container, images) {
-        // PERFORMANCE GUARD: Limit rendering to 500 items to prevent DOM freeze
+        // Limit render count for performance
         const displayImages = images.slice(0, 500);
 
         const html = displayImages.map(img => `
             <div class="lf-picker-item" 
                  title="${img.name}" 
-                 style="background-image: url('${img.url}')">
+                 style="background-image: url('${img.url}')"
+                 data-url="${img.url}">
             </div>
         `).join('');
 
         container.innerHTML = html;
 
+        // View More Indicator if truncated
         if (images.length > 500) {
-            container.insertAdjacentHTML('beforeend', '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">(Only showing first 500 results. Use search to find specific items.)</div>');
+            container.insertAdjacentHTML('beforeend', '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">(Only showing first 500 results. Use search to filter.)</div>');
         }
 
-        // Add Listeners
+        // Add Selection Logic
         const items = container.querySelectorAll('.lf-picker-item');
-        items.forEach((item, index) => {
-            item.onclick = () => this.selectAvatar(displayImages[index].url);
+        items.forEach(item => {
+            item.onclick = () => {
+                // Deselect all
+                container.querySelectorAll('.lf-picker-item.selected').forEach(el => el.classList.remove('selected'));
+                // Select clicked
+                item.classList.add('selected');
+
+                // Update State
+                this.selectedUrl = item.dataset.url;
+
+                // Enable Save
+                const saveBtn = document.querySelector('#lfBtnSave');
+                if (saveBtn) saveBtn.classList.add('active');
+            };
         });
     },
 
-    selectAvatar: async function (url) {
-        if (!confirm('Set as your avatar?')) return;
+    saveAvatar: async function (btn) {
+        if (!this.selectedUrl) return;
 
-        const grid = document.querySelector('.lf-picker-grid');
-        grid.innerHTML = '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white;"><h1>Updating Profile...</h1><p>Please wait...</p></div>';
+        btn.textContent = "Saving...";
+        btn.classList.remove('active'); // Disable double click
 
-        const success = await window.uploadExternalImage(url, 'Primary');
+        const success = await window.uploadExternalImage(this.selectedUrl, 'Primary');
+
         if (success) {
             location.reload();
         } else {
             alert('Update failed. Please try again.');
-            document.querySelector('.legit-popup-overlay').remove();
+            btn.textContent = "Save Avatar";
+            btn.classList.add('active');
         }
     }
 };
