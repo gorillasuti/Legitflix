@@ -29,31 +29,60 @@
     box-shadow: none !important;
     border-bottom: none !important;
     display: flex;
-    /* Ensure alignment */
     align-items: center;
 }
 
-/* 2. Hide "Home / Favorites" Tabs */
+/* 2. Custom Nav Links */
+.legit-nav-links {
+    display: flex;
+    gap: 30px;
+    margin-left: 40px;
+}
+
+.nav-link {
+    color: #e5e5e5;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+    font-family: 'Outfit', sans-serif;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* 3. Hide Native Tabs */
 .headerTabs {
     display: none !important;
 }
 
-/* 3. Remove Gaps above Hero */
-.app-footer {
-    margin-bottom: 0 !important;
-}
-
+/* 4. Fix Overlap & Gaps */
+/* Ensure the body actually has content area if Hero missing */
 .homeSectionsContainer,
 .mainAnimatedPages,
 #indexPage .pageContent {
     margin-top: 0 !important;
     padding-top: 0 !important;
+    /* Min height to prevent header covering empty content if hero fails */
+    min-height: 100vh;
 }
 
-/* 4. Fix Header Content Alignment */
+/* Force hero container to have space even if empty initially? */
+.hero-carousel-container {
+    min-height: 80vh;
+}
+
+/* 5. Fix Header Content Alignment */
 .headerLeft,
 .headerRight {
     z-index: 101;
+    display: flex;
+    align-items: center;
 }
 
 /* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */

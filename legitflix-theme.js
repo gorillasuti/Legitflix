@@ -1,9 +1,9 @@
-/* LegitFlix Theme JS v3.3
-   - Navigation: Integrated Jellyseerr injection into "My Media" list.
-   - Core: Single-file "God Mode" logic updates.
+/* LegitFlix Theme JS v3.4
+   - UI: Added Custom Navigation (Dashboard, Movies, Series, Kids).
+   - Core: Improved Init/Auth retry logic to ensure Media Bar loads.
 */
 
-console.log('%c LegitFlix: Theme v3.3 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Theme v3.4 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
 // --- GLOBAL NAVIGATION HELPER ---
@@ -303,38 +303,88 @@ function injectJellyseerr() {
     }
 }
 
+// --- CUSTOM NAVIGATION (Dribbble Style) ---
+function injectCustomNav() {
+    // Only inject if not already present
+    if (document.querySelector('.legit-nav-links')) return;
+
+    // We need to find the header container. Usually .headerLeft or .skinHeader
+    const headerLeft = document.querySelector('.headerLeft');
+    if (!headerLeft) return;
+
+    // Create the links container
+    const navHtml = `
+        <div class="legit-nav-links">
+            <a href="#!/home" class="nav-link active">Dashboard</a>
+            <a href="#!/movies" class="nav-link">Movies</a>
+            <a href="#!/tv" class="nav-link">Series</a>
+            <a href="#!/kids" class="nav-link">Kids</a>
+        </div>
+    `;
+
+    // Inject after the logo
+    headerLeft.insertAdjacentHTML('beforeend', navHtml);
+}
+
 function init() {
-    // 1. Hero Carousel
-    injectMediaBar();
+    console.log('LegitFlix: Init Sequence Started');
+
+    // 1. Hero Carousel (Wait for Auth)
+    // We wrap this in a retry block to ensure we don't give up too early
+    const startHero = async () => {
+        let attempts = 0;
+        // Try for up to 30 seconds to find ApiClient
+        while (!window.ApiClient && attempts < 60) {
+            await new Promise(r => setTimeout(r, 500));
+            attempts++;
+        }
+        if (window.ApiClient) {
+            injectMediaBar();
+        } else {
+            console.error('LegitFlix: ApiClient never loaded. Hero canceled.');
+        }
+    };
+    startHero();
 
     // 2. Jellyseerr
     injectJellyseerr();
 
-    // 3. Observers for navigation/persistence
-    // Using MutationObserver to catch when views load
+    // 3. Custom Nav
+    injectCustomNav();
+
+    // 4. Observers for navigation/persistence
     const observer = new MutationObserver((mutations) => {
-        let shouldInjectMedia = false;
-        let shouldInjectJelly = false;
+        // Debounce or check flags
+        let headerChanged = false;
+        let contentChanged = false;
 
         for (const m of mutations) {
             if (m.addedNodes.length) {
-                // Check for Home Page containers
+                if (m.target.classList.contains('headerLeft') || document.querySelector('.skinHeader')) {
+                    headerChanged = true;
+                }
                 if (document.querySelector('.homeSectionsContainer')) {
-                    shouldInjectMedia = true;
-                    shouldInjectJelly = true;
+                    contentChanged = true;
                 }
             }
         }
 
-        if (shouldInjectMedia) injectMediaBar();
-        if (shouldInjectJelly) injectJellyseerr();
+        if (headerChanged) injectCustomNav();
+        if (contentChanged) {
+            injectJellyseerr();
+            // Re-inject media bar if lost
+            if (!document.querySelector('.hero-carousel-container') && window.ApiClient) {
+                injectMediaBar();
+            }
+        }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Also hook into viewshow event just in case
+    // Hook events
     document.addEventListener('viewshow', () => {
-        injectMediaBar();
+        // injectMediaBar call is handled by verify/observer usually, but safe to call
+        injectCustomNav();
         injectJellyseerr();
     });
 }
