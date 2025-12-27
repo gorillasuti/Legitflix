@@ -423,17 +423,26 @@ async function injectFeaturedPrefs() {
     hideLink('mypreferencescontrols');
 
     // 3. Build the Header HTML (Tabs ABOVE Banner)
-    // Check for Banner
+    // Check for Banner (Local Override or Server)
     let bannerStyle = '';
     let bannerClass = '';
-    let btnText = 'Add profile banner';
-    let btnIcon = 'add';
+    let btnText = 'Add profile banner'; // Default
+    let btnIcon = 'add_photo_alternate';
 
-    if (user.BackdropImageTags && user.BackdropImageTags.length > 0) {
-        const pBannerUrl = `/Users/${user.Id}/Images/Backdrop/0?maxHeight=500`;
-        bannerStyle = `background-image: url('${pBannerUrl}'); background-size: cover; background-position: center;`;
+    const localBanner = localStorage.getItem(`LegitFlix_Banner_${user.Id}`);
+
+    // Prioritize Local Selection
+    if (localBanner) {
+        bannerStyle = `background-image: url('${localBanner}');`;
+        // Note: CSS handles size/position now
         bannerClass = 'has-banner';
-        btnText = 'Edit banner';
+        btnText = 'Change profile banner';
+        btnIcon = 'edit';
+    } else if (user.BackdropImageTags && user.BackdropImageTags.length > 0) {
+        const pBannerUrl = `/Users/${user.Id}/Images/Backdrop/0?maxHeight=500`;
+        bannerStyle = `background-image: url('${pBannerUrl}');`;
+        bannerClass = 'has-banner';
+        btnText = 'Change profile banner';
         btnIcon = 'edit';
     }
 
@@ -557,6 +566,47 @@ window.triggerNativeUpload = function () {
 
 // Helper to trigger the installed avatars plugin
 // Helper to trigger the installed avatars plugin
+
+// Helper to upload backdrop to Jellyfin Server
+window.uploadUserBackdrop = async function (imageUrl) {
+    try {
+        const userId = await window.ApiClient.getCurrentUserId();
+        const serverId = window.ApiClient.serverId();
+        const accessToken = window.ApiClient.accessToken();
+
+        // 1. Fetch the image content (Proxy via client to avoid CORS if cross-origin, but these are local)
+        const res = await fetch(imageUrl);
+        const blob = await res.blob();
+
+        // 2. Prepare Upload
+        // Endpoint: POST /Users/{userId}/Images/Backdrop
+        // We send the blob directly.
+        const uploadUrl = window.ApiClient.getUrl(`/Users/${userId}/Images/Backdrop`);
+
+        console.log('LegitFlix: Uploading backdrop to', uploadUrl);
+
+        const uploadRes = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="ValidDevice", DeviceId="ValidId", Version="10.8.0", Token="${accessToken}"`,
+                'Content-Type': blob.type || 'image/png' // Attempt to guess or default
+            },
+            body: blob
+        });
+
+        if (uploadRes.ok) {
+            console.log('LegitFlix: Backdrop uploaded successfully.');
+            return true;
+        } else {
+            console.error('LegitFlix: Upload failed', uploadRes.status, uploadRes.statusText);
+            return false;
+        }
+    } catch (e) {
+        console.error('LegitFlix: Error uploading backdrop', e);
+        return false;
+    }
+};
+
 window.triggerAvatarsPlugin = function () {
     const findAndClickValue = () => {
         const pluginBtn = document.getElementById('jf-avatars-btn-show-modal') || document.getElementById('show-modal');
@@ -633,6 +683,38 @@ async function pollForUI() {
     if (window.location.hash.toLowerCase().includes('preferences')) {
         try {
             injectFeaturedPrefs();
+
+            // --- JELLYFIN ENHANCED PLUGIN INTEGRATION ---
+            // Look for the "Advanced Settings (Jellyfin Enhanced)" button injected by another plugin
+            const enhancedBtn = document.getElementById('jellyfinEnhancedUserPrefsLink');
+            const navTabs = document.querySelector('.profile-nav-tabs');
+
+            if (enhancedBtn && navTabs && !navTabs.querySelector('.tab-enhanced')) {
+                console.log('LegitFlix: Found Jellyfin Enhanced Plugin button. Moving to Tabs...');
+
+                // Create Tab
+                const tab = document.createElement('a');
+                tab.className = 'profile-tab tab-enhanced';
+                tab.textContent = 'Advanced'; // Shorter name
+
+                // Copy behavior
+                tab.onclick = (e) => {
+                    e.preventDefault();
+                    // update active state manually since it's not a hash change
+                    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    enhancedBtn.click();
+                };
+
+                navTabs.appendChild(tab);
+
+                // Hide original row (it's usually wrapped in a .listItem or similar)
+                // The user snippet shows it is an <a> with class "listItem-border" containing a .listItem div
+                // We should hide the <a> itself
+                enhancedBtn.style.display = 'none';
+            }
+            // ---------------------------------------------
+
         } catch (e) {
             logger.error('Prefs Header Injection failed', e);
         }
