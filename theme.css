@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* LegitFlix Theme CSS v3.1
    - Logo Replacement: Native override for Login, Header, Dashboard, and Startup logos.
    - Refinement: CSS lint fixes, "Outfit" font, rounded buttons.
@@ -9,59 +11,77 @@
     --theme-card-bg: #1f1f1f !important;
     --theme-text: #ffffff !important;
     --theme-text-muted: #bcbcbc !important;
+    --header-padding: 3rem !important;
 
     --selection-background: var(--theme-primary) !important;
     --skin-header-background: transparent !important;
-    /* Transparent for overlay */
     --skin-bg: var(--theme-background) !important;
+
+    /* Font Override */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+.emby-button,
+.nav-link {
+    font-family: var(--font-primary);
 }
 
 /* --- NAVIGATION REDESIGN --- */
 /* 1. Transparent Overlay Header */
 .skinHeader {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%) !important;
     background-color: transparent !important;
     position: absolute !important;
     top: 0;
     left: 0;
     width: 100%;
+    height: 6rem !important;
+    /* Fixed height for proper overlay */
     z-index: 1000 !important;
     box-shadow: none !important;
     border-bottom: none !important;
     display: flex !important;
     flex-direction: row !important;
     justify-content: flex-start !important;
-    /* Force Left Align */
     align-items: center !important;
-    padding-left: 20px !important;
+    padding: 0 var(--header-padding) !important;
+    /* 3rem padding */
+    box-sizing: border-box !important;
 }
 
 /* 2. Custom Nav Links */
 .legit-nav-links {
     display: flex !important;
     flex-direction: row !important;
-    gap: 30px !important;
-    margin-left: 30px !important;
+    gap: 35px !important;
+    margin-left: 40px !important;
     z-index: 1001 !important;
+    align-items: center;
 }
 
 .nav-link {
     color: #e5e5e5;
     text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 500;
+    font-size: 0.95rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: color 0.2s;
-    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
     cursor: pointer;
     white-space: nowrap !important;
+    opacity: 0.85;
 }
 
 .nav-link:hover,
 .nav-link.active {
     color: #ffffff;
     font-weight: 700;
+    opacity: 1;
 }
 
 /* 3. Hide Native Tabs */
@@ -86,6 +106,9 @@
     height: 85vh;
     /* Taller Hero */
     overflow: hidden;
+    /* Ensure it starts at the very top */
+    top: 0;
+    left: 0;
 }
 
 .hero-slide {
@@ -97,7 +120,7 @@
     height: 100%;
     opacity: 0;
     /* Hidden by default */
-    transition: opacity 1s ease-in-out;
+    transition: opacity 0.8s ease-in-out;
     z-index: 1;
 }
 
@@ -116,7 +139,7 @@
 
 /* Ensure content is readable */
 .hero-overlay {
-    background: linear-gradient(to top, #141414 0%, transparent 50%);
+    background: linear-gradient(to top, #141414 5%, transparent 60%);
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -126,10 +149,11 @@
 
 .hero-content {
     position: absolute;
-    bottom: 15%;
-    left: 4%;
+    bottom: 18%;
+    left: var(--header-padding);
+    /* Align with header padding */
     z-index: 10;
-    max-width: 45%;
+    max-width: 50%;
     text-align: left;
 }
 
@@ -141,12 +165,14 @@
     margin: 0 !important;
     width: auto !important;
     flex-grow: 0 !important;
+    padding: 0 !important;
 }
 
 /* Force header right to the far right */
 .headerRight {
     margin-left: auto !important;
     z-index: 1001;
+    padding-right: 0 !important;
 }
 
 /* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */
