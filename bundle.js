@@ -1,9 +1,10 @@
-/* LegitFlix Bundle.js v2.2
-   - Added: 'appRouter' Polyfill. Even if the browser caches old HTML, 
-     this script will catch the click and prevent the crash.
+/* LegitFlix Bundle.js v2.3
+   - Added: Auto-cleanup of stale DOM elements.
+   - Fixes: 'appRouter' error by forcing a rebuild of the media bar 
+     to apply new onclick handlers.
 */
 
-console.log('%c LegitFlix: Bundle v2.2 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Bundle v2.3 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
 window.legitFlixShowItem = function (id) {
@@ -30,10 +31,8 @@ window.legitFlixShowItem = function (id) {
     }
 };
 
-// --- SAFETY SHIM (The Fix for your Error) ---
-// If the old HTML is cached and tries to call appRouter, we catch it here.
+// --- SAFETY SHIM ---
 if (typeof appRouter === 'undefined') {
-    console.log('LegitFlix: Polyfilling missing appRouter');
     window.appRouter = {
         showItem: function (id) {
             window.legitFlixShowItem(id);
@@ -91,7 +90,6 @@ async function fetchMediaBarItems() {
 function createMediaBarHTML(items) {
     const cards = items.map(item => {
         const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=266&quality=90`;
-        // Using window.legitFlixShowItem explicitly
         return `
             <div class="legit-media-card" onclick="window.legitFlixShowItem('${item.Id}')">
                 <div class="legit-card-image" style="background-image: url('${imgUrl}')"></div>
@@ -121,12 +119,20 @@ async function injectMediaBar() {
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
 
     if (!isHomePage) return;
-    if (document.getElementById('legit-media-bar')) return;
+
+    // V2.3 CHANGE: CLEANUP OLD BARS
+    // We remove any existing bar to ensure we aren't using cached/broken HTML
+    const existing = document.getElementById('legit-media-bar');
+    if (existing) {
+        console.log('LegitFlix: Refreshing Media Bar...');
+        existing.remove();
+    }
 
     const items = await fetchMediaBarItems();
     if (items.length === 0) return;
 
     const checkInterval = setInterval(() => {
+        // Aggressive container search
         let container = document.querySelector('.homeSectionsContainer');
         if (!container) container = document.querySelector('.mainAnimatedPages');
         if (!container) container = document.querySelector('#indexPage .pageContent');
@@ -135,10 +141,13 @@ async function injectMediaBar() {
             clearInterval(checkInterval);
             const wrapper = document.createElement('div');
             wrapper.innerHTML = createMediaBarHTML(items);
+
+            // Inject
             container.insertBefore(wrapper, container.firstChild);
-            console.log('LegitFlix: Media Bar Injected');
+            console.log('LegitFlix: Media Bar Injected (Fresh Build)');
         }
     }, 1000);
+
     setTimeout(() => clearInterval(checkInterval), 10000);
 }
 
