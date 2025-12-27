@@ -369,6 +369,8 @@ function injectJellyseerr() {
 // --- PREFERENCES: FEATURED HEADER ---
 // --- PREFERENCES: GAMING PROFILE LAYOUT ---
 async function injectFeaturedPrefs() {
+    console.log('[LegitFlix] injectFeaturedPrefs: Starting...');
+
     // 1. Target ANY user preferences page (Menu, Display, Home, Playback, etc.)
     const prefsPage = document.querySelector('#myPreferencesMenuPage') ||
         document.querySelector('#myPreferencesDisplayPage') ||
@@ -378,16 +380,28 @@ async function injectFeaturedPrefs() {
         document.querySelector('#quickConnectPage') ||
         document.querySelector('.type-UserView'); // Generic fallback
 
-    if (!prefsPage) return;
+    if (!prefsPage) {
+        console.log('[LegitFlix] injectFeaturedPrefs: No prefs page found');
+        return;
+    }
+    console.log('[LegitFlix] injectFeaturedPrefs: Found page:', prefsPage.id || prefsPage.className);
 
     // Use .readOnlyContent or specific containers based on user HTML
     const contentContainer = prefsPage.querySelector('.readOnlyContent') ||
         prefsPage.querySelector('.content-primary') || // Common on detail pages
         prefsPage.querySelector('.pageContent'); // Generic fallback
-    if (!contentContainer) return;
+
+    if (!contentContainer) {
+        console.log('[LegitFlix] injectFeaturedPrefs: No content container found');
+        return;
+    }
+    console.log('[LegitFlix] injectFeaturedPrefs: Found container:', contentContainer.className);
 
     // Avoid double injection
-    if (prefsPage.querySelector('.gaming-profile-header')) return;
+    if (prefsPage.querySelector('.gaming-profile-header')) {
+        console.log('[LegitFlix] injectFeaturedPrefs: Header already exists');
+        return;
+    }
 
     // 1. Get User Data
     let user = null;
@@ -408,7 +422,7 @@ async function injectFeaturedPrefs() {
         return a ? a.getAttribute('href') : defaultHash;
     };
 
-    const profileHref = findLink('userprofile', '#/userprofile');
+    const profileHref = findLink('mypreferencesmenu', '#/mypreferencesmenu');
     const displayHref = findLink('mypreferencesdisplay', '#/mypreferencesdisplay');
     const homeHref = findLink('mypreferenceshome', '#/mypreferenceshome');
     const playbackHref = findLink('mypreferencesplayback', '#/mypreferencesplayback');
@@ -471,7 +485,7 @@ async function injectFeaturedPrefs() {
             <h1 class="profile-page-title">Account Settings</h1>
             
             <div class="profile-nav-tabs" style="padding-bottom: 1rem; flex-wrap: wrap;">
-                <a class="profile-tab ${window.location.hash.toLowerCase().includes('userprofile') ? 'active' : ''}" onclick="location.href='${profileHref}'">My details</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencesmenu') ? 'active' : ''}" onclick="location.href='${profileHref}'">My details</a>
                 <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencesdisplay') ? 'active' : ''}" onclick="location.href='${displayHref}'">Display</a>
                 <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferenceshome') ? 'active' : ''}" onclick="location.href='${homeHref}'">Home Screen</a>
                 <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencesplayback') ? 'active' : ''}" onclick="location.href='${playbackHref}'">Playback</a>
