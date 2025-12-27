@@ -415,11 +415,11 @@ async function injectFeaturedPrefs() {
         ? `/Users/${user.Id}/Images/Primary?tag=${user.PrimaryImageTag}&quality=90&maxHeight=300`
         : 'https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_circle/materialicons/48dp/2x/baseline_account_circle_white_48dp.png';
 
-    // 2. Map Links for Tabs
-    // We try to find existing links to make tabs functional, fallback to standard hashes
+    // 2. Map Links for Tabs - ensure they include userId parameter
+    // We try to find existing links to make tabs functional, fallback to standard hashes with userId
     const findLink = (str, defaultHash) => {
         const a = contentContainer.querySelector(`a[href*="${str}"]`);
-        return a ? a.getAttribute('href') : defaultHash;
+        return a ? a.getAttribute('href') : `${defaultHash}?userId=${user.Id}`;
     };
 
     const profileHref = findLink('mypreferencesmenu', '#/mypreferencesmenu');
