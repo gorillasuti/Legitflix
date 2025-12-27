@@ -1,38 +1,70 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 
-/* LegitFlix Theme CSS v3.1
-   - Logo Replacement: Native override for Login, Header, Dashboard, and Startup logos.
-   - Refinement: CSS lint fixes, "Outfit" font, rounded buttons.
-*/
+/* =========================================================================
+   LEGITFLIX THEME SYSTEM v6.0
+   ========================================================================= */
 
 :root {
-    --theme-primary: #e50914 !important;
-    --theme-background: #141414 !important;
-    --theme-card-bg: #1f1f1f !important;
-    --theme-text: #ffffff !important;
-    --theme-text-muted: #bcbcbc !important;
-    --header-padding: 3rem !important;
+    /* --- COLOR PALETTE --- */
+    --clr-accent: #6200ea !important;
+    /* Brand Purple */
+    --clr-accent-hover: #5000cc !important;
+    --clr-bg-main: #141414 !important;
+    --clr-bg-surface: #1f1f1f !important;
+    --clr-bg-glass: rgba(255, 255, 255, 0.1) !important;
+    --clr-bg-glass-hover: rgba(255, 255, 255, 0.2) !important;
 
-    --selection-background: var(--theme-primary) !important;
-    --skin-header-background: transparent !important;
-    --skin-bg: var(--theme-background) !important;
+    --clr-text-main: #ffffff !important;
+    --clr-text-muted: #bcbcbc !important;
 
-    /* Font Override */
+    /* --- TYPOGRAPHY --- */
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    --font-display: 'Outfit', sans-serif !important;
+
+    /* --- SPACING & SHAPE --- */
+    --radius-sm: 8px !important;
+    --radius-md: 16px !important;
+    --radius-lg: 24px !important;
+    --radius-pill: 50px !important;
+    --radius-round: 50% !important;
+
+    --spacing-header: 3rem !important;
+
+    /* --- OVERRIDES --- */
+    --selection-background: var(--clr-accent) !important;
+    --skin-header-background: transparent !important;
+    --skin-bg: var(--clr-bg-main) !important;
 }
 
+/* =========================================================================
+   GLOBAL RESET & BASICS
+   ========================================================================= */
 body,
 h1,
 h2,
 h3,
 h4,
 .emby-button,
-.nav-link {
+.nav-link,
+.legit-btn {
     font-family: var(--font-primary);
 }
 
-/* --- NAVIGATION REDESIGN --- */
-/* 1. Transparent Overlay Header */
+/* Reusable Button Base */
+.legit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    outline: none !important;
+}
+
+/* =========================================================================
+   HEADER & NAVIGATION
+   ========================================================================= */
 .skinHeader {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%) !important;
     background-color: transparent !important;
@@ -41,308 +73,115 @@ h4,
     left: 0;
     width: 100%;
     height: 6rem !important;
-    /* Fixed height for proper overlay */
     z-index: 1000 !important;
     box-shadow: none !important;
-    border-bottom: none !important;
     display: flex !important;
     flex-direction: row !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    padding: 0 var(--header-padding) !important;
-    /* 3rem padding */
-    box-sizing: border-box !important;
+    padding: 0 var(--spacing-header) !important;
 }
 
-/* 2. Custom Nav Links */
+/* Layout Fixers */
+.headerLeft {
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+    width: auto !important;
+}
+
+.headerRight {
+    margin-left: auto !important;
+    z-index: 1001;
+}
+
+/* Hiding Native Elements Properly */
+.headerTabs {
+    display: none !important;
+}
+
+/* Hide TEXT of generic titles, Keep LOGO backgrounds */
+.headerLeft .pageTitle {
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+
+.pageTitleWithDefaultLogo,
+.pageTitleWithLogo,
+.headerLogo {
+    display: block !important;
+    font-size: initial !important;
+    color: transparent !important;
+}
+
+.pageTitle:not(.pageTitleWithDefaultLogo):not(.pageTitleWithLogo) {
+    width: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+/* CUSTOM NAV LINKS */
 .legit-nav-links {
     display: flex !important;
     flex-direction: row !important;
-    gap: 20px !important;
-    /* Reduced from 35px */
+    gap: 15px !important;
     margin-left: 20px !important;
-    /* Minimized (was 20px) */
     z-index: 1001 !important;
     align-items: center;
 }
 
 .nav-link {
-    color: #e5e5e5;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95rem;
+    position: relative;
+    padding: 8px 24px;
+    border-radius: var(--radius-pill);
+    color: var(--clr-text-muted);
+    font-weight: 600;
     text-transform: uppercase;
+    font-size: 0.9rem;
     letter-spacing: 0.5px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    white-space: nowrap !important;
-    opacity: 0.85;
+    text-decoration: none;
+    transition: all 0.2s ease-out;
+    border: 1px solid transparent;
 }
 
-.nav-link:hover,
+.nav-link:hover {
+    color: var(--clr-text-main);
+    background: var(--clr-bg-glass);
+}
+
 .nav-link.active {
-    color: #ffffff;
-    font-weight: 700;
-    opacity: 1;
+    background: var(--clr-accent) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(98, 0, 234, 0.4);
+    /* Purple glow */
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* 3. Hide Native Tabs & Title (Fixing "Double Display") */
-.headerTabs,
-.headerLeft .pageTitle {
-    display: none !important;
-}
-
-/* 4. Fix Overlap & Gaps (THE FIX FOR "Initial Height Disappeared") */
-/* Since Hero is Absolute, we MUST push content down manually */
-.homeSectionsContainer,
-.mainAnimatedPages,
-#indexPage .pageContent {
-    margin-top: 0 !important;
-    padding-top: 85vh !important;
-    /* Matches Hero Height */
-    min-height: 100vh;
-}
-
-/* 5. HERO CAROUSEL CSS */
+/* =========================================================================
+   HERO CAROUSEL
+   ========================================================================= */
 .hero-carousel-container {
     position: absolute !important;
-    /* Absolute top behind nav */
-    display: block !important;
     width: 100%;
     height: 90vh !important;
-    /* Extended height for visual overlap */
-    overflow: hidden;
     top: 0;
     left: 0;
     z-index: 0 !important;
-    /* Behind Header */
-    /* Subtle Fade Out at Bottom using Mask */
     mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
     -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
+    overflow: hidden;
+    font-family: var(--font-display) !important;
 }
 
 .hero-slide {
-    position: absolute !important;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
-    z-index: 1;
-}
-
-.hero-slide.active {
-    opacity: 1 !important;
-    z-index: 2;
-}
-
-.hero-backdrop {
-    background-size: cover;
-    background-position: center top;
-    width: 100%;
-    height: 100%;
-}
-
-/* Ensure content is readable */
-.hero-overlay {
-    background: linear-gradient(to top, #141414 10%, transparent 60%);
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-}
-
-/* 6. Alignment Fixes & Header Icons */
-.headerLeft {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    margin: 0 !important;
-    width: auto !important;
-    flex-grow: 0 !important;
-    padding: 0 !important;
-}
-
-.headerRight {
-    margin-left: auto !important;
-    z-index: 1001;
-    padding-right: 0 !important;
-}
-
-/* Hide specific header icons (Cast, Sync/Dice, etc.)
-   Keep Search (.headerSearchButton) and User (.userButton / .headerUserButton) */
-/* Explicitly hiding known classes is safer than :not() which might miss the user button class variations */
-.headerCastButton,
-.headerSyncButton,
-.headerButton[title="Cast"],
-.headerButton[title="Select Server"] {
-    display: none !important;
-}
-
-/* Revert the aggressive :not, as it hid the User Profile */
-/* .headerRight .paper-icon-button-light:not(.headerSearchButton):not(.headerUserButton) { display: none !important; } */
-
-/* --- USER PREFERENCES MENU REDESIGN (Grid) --- */
-#myPreferencesMenuPage .scrollSlider {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-    gap: 20px !important;
-    padding: 40px !important;
-    align-items: stretch !important;
-}
-
-#myPreferencesMenuPage .listItem {
-    background-color: var(--theme-card-bg) !important;
-    border-radius: 12px !important;
-    padding: 20px !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    transition: transform 0.2s, background-color 0.2s !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    margin: 0 !important;
-    /* Reset margin */
-}
-
-#myPreferencesMenuPage .listItem:hover {
-    background-color: #2a2a2a !important;
-    transform: translateY(-5px) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-#myPreferencesMenuPage .listItemIcon {
-    margin: 0 0 15px 0 !important;
-    width: auto !important;
-    font-size: 2rem !important;
-    height: auto !important;
-    background: transparent !important;
-    color: var(--theme-primary) !important;
-}
-
-#myPreferencesMenuPage .listItemBody {
-    padding: 0 !important;
-    min-height: auto !important;
-}
-
-#myPreferencesMenuPage .listItemBodyText {
-    font-weight: 600 !important;
-    color: #fff !important;
-    margin: 0 !important;
-}
-
-#myPreferencesMenuPage .listItemBodyText-secondary {
-    display: none !important;
-    /* Hide secondary text for cleaner look */
-}
-
-/* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */
-/* body { border: 5px solid red !important; } */
-
-/* --- LOGO REPLACEMENTS --- */
-/* Using "starts-with" selector to catch multiple logo variations */
-
-.pageTitleWithLogo {
-    background-image: url('logo.png') !important;
-    background-repeat: no-repeat;
-    background-position: left center;
-    background-size: contain;
-    text-indent: -9999px;
-    width: 150px;
-}
-
-.adminDrawerLogo img,
-.pageTitleWithLogo img,
-.authLogo img {
-    /* Hide the original image src */
-    opacity: 0 !important;
-}
-
-.adminDrawerLogo {
-    background-image: url('logo.png') !important;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-
-/* 1. Login Page Logo */
-.loginLogo img {
-    display: none !important;
-}
-
-.loginLogo {
-    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    height: 100px !important;
-    width: 300px !important;
-}
-
-/* 2. Main Header Logo (Top-left) */
-.headerLogo img {
-    display: none !important;
-}
-
-.headerLogo {
-    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    width: 150px !important;
-}
-
-/* 3. Dashboard Page Title Logo */
-.pageTitleWithDefaultLogo {
-    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: left center !important;
-    text-indent: -9999px !important;
-    color: transparent !important;
-}
-
-/* 4. Preloader / Splash Screen Logo */
-body.startupPage .startupLogo img {
-    display: none !important;
-}
-
-body.startupPage .startupLogo {
-    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    height: 120px !important;
-    width: 350px !important;
-}
-
-/* --- HERO CAROUSEL STYLES --- */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
-
-.hero-carousel-container {
-    position: relative;
-    width: 100%;
-    height: 80vh;
-    /* Dominant hero height */
-    overflow: hidden;
-    margin-bottom: -100px;
-    /* Pull content up slightly */
-    z-index: 0;
-    font-family: 'Outfit', sans-serif !important;
-    /* Force new font */
-}
-
-.hero-slide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
     z-index: 0;
 }
 
@@ -352,47 +191,33 @@ body.startupPage .startupLogo {
 }
 
 .hero-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     background-size: cover;
     background-position: center top;
 }
 
-/* Gradient Overlay - The "Cinematic" Look */
 .hero-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: linear-gradient(to bottom,
-            rgba(20, 20, 20, 0.3) 0%,
-            rgba(20, 20, 20, 0.1) 50%,
-            rgba(20, 20, 20, 1) 100%),
-        linear-gradient(to right,
-            rgba(20, 20, 20, 0.9) 0%,
-            rgba(20, 20, 20, 0.4) 40%,
-            transparent 100%);
+            rgba(20, 20, 20, 0.3) 0%, rgba(20, 20, 20, 0.1) 50%, rgba(20, 20, 20, 1) 100%),
+        linear-gradient(to right, rgba(20, 20, 20, 0.9) 0%, transparent 100%);
 }
 
 .hero-content {
     position: absolute;
     bottom: 25%;
-    left: 4%;
-    max-width: 45%;
+    left: 4rem;
+    max-width: 50%;
     color: white;
     z-index: 2;
-    /* Removed text-shadow as requested for cleaner look */
 }
 
-/* Typography */
 .hero-title {
-    font-size: 3.5rem;
+    font-size: 4rem;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1;
     margin-bottom: 1rem;
     text-transform: uppercase;
 }
@@ -401,28 +226,16 @@ body.startupPage .startupLogo {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 1rem;
-    font-weight: 600;
     font-size: 1.1rem;
-    color: #e5e5e5;
-}
-
-.star-rating {
-    color: #ffc107;
-    /* Gold star */
-}
-
-.ends-at {
-    color: #bcbcbc;
+    color: var(--clr-text-muted);
+    margin-bottom: 1.5rem;
 }
 
 .hero-desc {
     font-size: 1.1rem;
-    line-height: 1.5;
+    line-height: 1.6;
     color: #d1d1d1;
     margin-bottom: 2rem;
-
-    /* Clamp to 3 lines */
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
@@ -430,38 +243,25 @@ body.startupPage .startupLogo {
     overflow: hidden;
 }
 
-/* Buttons */
+/* Hero Buttons */
 .hero-actions {
     display: flex;
     gap: 15px;
 }
 
-.btn-play,
-.btn-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0.8rem 2.5rem;
-    /* Wider buttons */
-    font-size: 1.1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 50px;
-    /* Pillow/Rounded shape */
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-    font-family: 'Outfit', sans-serif;
-}
-
-/* Play Button Shine Effect */
 .btn-play {
-    background-color: #6200ea;
+    padding: 0.8rem 2.8rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--clr-accent);
     color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
     position: relative;
     overflow: hidden;
+    gap: 8px;
 }
 
+/* Shine Effect */
 .btn-play::after {
     content: '';
     position: absolute;
@@ -475,7 +275,7 @@ body.startupPage .startupLogo {
 }
 
 .btn-play:hover {
-    transform: scale(1.05);
+    background-color: var(--clr-accent-hover);
 }
 
 .btn-play:hover::after {
@@ -483,136 +283,228 @@ body.startupPage .startupLogo {
     transition: 0.7s ease-in-out;
 }
 
-/* More Info Button */
-/* More Info Button (Circular Icon) */
 .hero-button-info {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
+    width: 54px;
+    height: 54px;
+    border-radius: var(--radius-round);
+    background-color: var(--clr-bg-glass);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
 .hero-button-info:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.1);
+    background-color: var(--clr-bg-glass-hover);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .hero-button-info i {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    line-height: 1;
 }
 
-/* --- NAVIGATION PILL ACTIVE STATE --- */
-.nav-link {
+.btn-play i {
+    font-size: 1.8rem;
+}
+
+/* CONTENT PUSH */
+.homeSectionsContainer,
+.mainAnimatedPages,
+#indexPage .pageContent {
+    margin-top: 0 !important;
+    padding-top: 85vh !important;
+    min-height: 100vh;
+}
+
+/* =========================================================================
+   GAMING PROFILE PAGE (Redesign)
+   ========================================================================= */
+.gaming-profile-header {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 40px auto;
+    font-family: var(--font-primary);
+}
+
+.profile-page-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 30px;
+    margin-left: 10px;
+}
+
+/* 1. Banner */
+.profile-banner {
     position: relative;
-    padding: 8px 20px;
-    border-radius: 50px;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    border: 1px solid transparent;
-    /* Prevent layout shift */
-}
-
-.nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
-}
-
-.nav-link.active {
-    background: rgba(229, 9, 20, 0.8) !important;
-    /* Brand Red Pill */
-    color: white !important;
-    font-weight: 700;
-    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-
-/* --- PREFERENCES: FEATURED HEADER --- */
-/* Native Header Injection Styles */
-.featured-prefs-container {
-    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
-    border-radius: 24px;
-    padding: 30px;
-    margin: 20px 40px 0 40px !important;
+    width: 100%;
+    height: 250px;
+    background-color: #2a2a2a;
+    /* Fallback */
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    overflow: visible;
+    /* Allow avatar overlap */
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.featured-user-info {
+.banner-add-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.featured-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+.banner-add-btn:hover {
+    border-color: white;
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.banner-add-text {
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+/* 2. Overlapping Avatar */
+.profile-avatar-container {
+    position: absolute;
+    bottom: -60px;
+    /* Overlap */
+    left: 60px;
+    z-index: 2;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-round);
     background-size: cover;
     background-position: center;
-    border: 3px solid var(--theme-primary);
-    box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+    border: 4px solid var(--clr-bg-main);
+    /* Cutout effect */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background-color: #333;
 }
 
-.featured-text h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    color: white;
-}
-
-.featured-text span {
-    font-size: 1rem;
-    color: #aaa;
-}
-
-.featured-actions {
-    display: flex;
-    gap: 15px;
-}
-
-/* Action Buttons (Profile / QuickConnect) */
-.pref-action-btn {
+.avatar-edit-icon {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 36px;
+    height: 36px;
+    background: rgba(40, 40, 40, 0.8);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 12px 24px;
-    border-radius: 50px;
+    justify-content: center;
     color: white;
+    border: 2px solid var(--clr-bg-main);
+    cursor: pointer;
+}
+
+/* 3. Navigation "Tabs" below profile */
+.profile-nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin-top: 20px;
+    /* Space for avatar */
+    padding-left: 200px;
+    /* Clear avatar */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0;
+}
+
+.profile-tab {
+    padding: 15px 0;
+    color: var(--clr-text-muted);
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
     text-decoration: none;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: color 0.2s;
 }
 
-.pref-action-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+.profile-tab:hover,
+.profile-tab.active {
+    color: white;
 }
 
-.pref-action-btn i {
-    font-size: 1.2rem;
+.profile-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--clr-accent);
+    /* Orange/Red/Purple */
+    border-radius: 2px 2px 0 0;
 }
 
-/* SPECIFIC PAGE STYLES */
-/* User Profile & Quick Connect Pages */
-#userProfilesPage .pageContent,
-#quickConnectPage .pageContent {
-    max-width: 800px;
-    margin: 0 auto;
-    background: #1f1f1f;
-    padding: 40px;
-    border-radius: 20px;
-    margin-top: 50px;
+/* Hide original chaos of preferences page if needed or restyle grid */
+#myPreferencesMenuPage .scrollSlider {
+    padding-top: 0 !important;
+}
+
+/* Override existing List Items to look cleaner */
+#myPreferencesMenuPage .listItem {
+    background: transparent !important;
+    border: none !important;
+    padding: 10px !important;
+    margin: 0 !important;
+}
+
+#myPreferencesMenuPage .listItemBodyText {
+    color: var(--clr-text-muted) !important;
+}
+
+#myPreferencesMenuPage .listItem:hover .listItemBodyText {
+    color: white !important;
+}
+
+/* LOGO REPLACEMENTS */
+.loginLogo {
+    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    height: 100px !important;
+    width: 300px !important;
+}
+
+.loginLogo img,
+.headerLogo img,
+.startupLogo img {
+    display: none !important;
+}
+
+.headerLogo {
+    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    width: 150px !important;
+}
+
+.startupLogo {
+    background-image: url('https://i.imgur.com/9tbXBxu.png') !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    height: 120px !important;
+    width: 350px !important;
 }

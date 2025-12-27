@@ -264,13 +264,21 @@ async function injectCustomNav() {
     if (!document.querySelector('.legit-nav-links')) {
         headerLeft.insertAdjacentHTML('beforeend', finalHtml);
 
-        // Mark active link
+        // Mark active link & Add Click Listener for Instant Feedback
         const currentHash = window.location.hash;
         document.querySelectorAll('.legit-nav-links .nav-link').forEach(link => {
-            // Simple active check
+            // Initial Active Check
             if (currentHash.includes(link.getAttribute('href'))) {
                 link.classList.add('active');
             }
+
+            // Click Listener - Instant Feedback
+            link.addEventListener('click', (e) => {
+                // Remove active from all
+                document.querySelectorAll('.legit-nav-links .nav-link').forEach(l => l.classList.remove('active'));
+                // Add to this
+                e.currentTarget.classList.add('active');
+            });
         });
     }
 }
