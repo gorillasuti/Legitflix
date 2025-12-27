@@ -1479,7 +1479,12 @@ function init() {
 
         // Remove profile header to force re-injection on new page
         const oldHeader = document.querySelector('.gaming-profile-header');
-        if (oldHeader) oldHeader.remove();
+        if (oldHeader) {
+            console.log('[LegitFlix] hashchange: Removing old header, new hash:', window.location.hash);
+            oldHeader.remove();
+        } else {
+            console.log('[LegitFlix] hashchange: No header to remove, new hash:', window.location.hash);
+        }
 
         // RE-RUN ACTIVE STATE CHECK ON NAV (For Pill Effect)
         setTimeout(() => {
