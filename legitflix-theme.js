@@ -413,30 +413,32 @@ async function injectFeaturedPrefs() {
     hideLink('mypreferenceshome');
     hideLink('mypreferencesplayback');
 
-    // 3. Build the Header HTML (Banner + Avatar + Tabs)
+
+
+    // 3. Build the Header HTML (Tabs ABOVE Banner)
     const headerHtml = `
         <div class="gaming-profile-header">
             <h1 class="profile-page-title">Account Settings</h1>
             
+            <div class="profile-nav-tabs" style="padding-bottom: 1rem;">
+                <a class="profile-tab active" onclick="location.href='${profileHref}'">My details</a>
+                <a class="profile-tab" onclick="location.href='${displayHref}'">Display</a>
+                <a class="profile-tab" onclick="location.href='${homeHref}'">Home Screen</a>
+                <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
+            </div>
+
             <div class="profile-banner">
-                <div class="banner-add-btn">
-                    <span class="material-icons-outlined">add</span>
+                <div class="banner-add-btn" onclick="window.legitFlixOpenBannerPicker()">
+                    <span class="material-icons-outlined">add_photo_alternate</span>
                     <span class="banner-add-text">Add profile banner</span>
                 </div>
                 
                 <div class="profile-avatar-container">
                     <div class="profile-avatar" style="background-image: url('${userImageUrl}');"></div>
-                    <div class="avatar-edit-icon">
-                        <span class="material-icons-outlined" style="font-size: 18px;">photo_camera</span>
+                    <div class="avatar-edit-icon" onclick="window.legitFlixOpenAvatarPicker()">
+                        <span class="material-icons-outlined" style="font-size: 18px;">edit</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="profile-nav-tabs">
-                <a class="profile-tab active" onclick="location.href='${profileHref}'">My details</a>
-                <a class="profile-tab" onclick="location.href='${displayHref}'">Display</a>
-                <a class="profile-tab" onclick="location.href='${homeHref}'">Home Screen</a>
-                <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
             </div>
         </div>
     `;
@@ -445,10 +447,58 @@ async function injectFeaturedPrefs() {
     contentContainer.insertAdjacentHTML('afterbegin', headerHtml);
 
     // 5. Cleanup Redundant Titles
-    // The first "h2.headerUsername" is usually the username we just replaced
     const oldTitle = contentContainer.querySelector('.headerUsername');
     if (oldTitle) oldTitle.style.display = 'none';
 }
+
+// --- POPUP HELPERS ---
+window.legitFlixOpenBannerPicker = async function () {
+    // Fetch random backdrops
+    const auth = await getAuth();
+    if (!auth) return;
+
+    // Create UI
+    const popup = document.createElement('div');
+    popup.className = 'legit-popup-overlay';
+    popup.innerHTML = `
+        <div class="legit-popup-content">
+            <h2>Select Banner</h2>
+            <div class="legit-popup-grid" id="bannerGrid">Loading...</div>
+            <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="margin-top:20px;width:100%;">Close</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+
+    // Fetch
+    try {
+        const url = `/Users/${auth.UserId}/Items?Recursive=true&IncludeItemTypes=Movie,Series&ImageTypes=Backdrop&SortBy=Random&Limit=12&Fields=Id,Name`;
+        const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
+        const data = await res.json();
+
+        const grid = popup.querySelector('#bannerGrid');
+        grid.innerHTML = data.Items.map(item => `
+            <div class="banner-option" onclick="alert('Set Banner Feature Coming Soon: ${item.Name}')" 
+                 style="background-image: url('/Items/${item.Id}/Images/Backdrop/0?maxHeight=200');">
+            </div>
+        `).join('');
+    } catch (e) { console.error(e); }
+};
+
+window.legitFlixOpenAvatarPicker = function () {
+    const popup = document.createElement('div');
+    popup.className = 'legit-popup-overlay';
+    popup.innerHTML = `
+        <div class="legit-popup-content small">
+            <h2>Edit Avatar</h2>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="legit-btn" onclick="alert('Upload Coming Soon')"><i class="material-icons">upload</i> Upload Image</button>
+                <button class="legit-btn" onclick="alert('Plugin Coming Soon')"><i class="material-icons">face</i> Choose Avatar</button>
+            </div>
+            <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="margin-top:20px;width:100%;">Close</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+};
 
 // --- INIT & ROBUSTNESS ---
 // We use a polling mechanism to ensure the UI is ready before injecting.
