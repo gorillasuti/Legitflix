@@ -386,7 +386,10 @@ async function injectFeaturedPrefs() {
     } catch (e) { console.error('Error getting user', e); }
     if (!user) return;
 
-    const userImageUrl = `/Users/${user.Id}/Images/Primary?quality=90&maxHeight=300`;
+    const hasAvatar = user.PrimaryImageTag;
+    const userImageUrl = hasAvatar
+        ? `/Users/${user.Id}/Images/Primary?tag=${user.PrimaryImageTag}&quality=90&maxHeight=300`
+        : 'https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_circle/materialicons/48dp/2x/baseline_account_circle_white_48dp.png';
 
     // 2. Map Links for Tabs
     // We try to find existing links to make tabs functional
@@ -769,39 +772,40 @@ window.uploadUserBackdrop = async function (imageUrl) {
         const serverId = window.ApiClient.serverId();
         const accessToken = window.ApiClient.accessToken();
 
-        // 1. Fetch the image content
-        // Note: imageUrl is relative e.g. /Items/..., fetch handles it.
+        // 1. Fetch
         const res = await fetch(imageUrl);
         if (!res.ok) throw new Error(`Failed to fetch source image: ${res.status}`);
-
         const blob = await res.blob();
-        console.log('LegitFlix: Image blob fetched.', blob.type, blob.size);
 
-        if (blob.size === 0) throw new Error('Fetched blob is empty.');
+        // 2. Convert to Base64 (Jellyfin API often prefers this for Images endpoint via Web)
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+        });
+        reader.readAsDataURL(blob);
+        const base64Data = await base64Promise;
+        const rawBase64 = base64Data.split(',')[1]; // Remove 'data:image/xyz;base64,' prefix
 
-        // 2. Prepare Upload
-        // Endpoint: POST /Users/{userId}/Images/Backdrop
-        // Note: Jellyfin API usually expects the raw bytes in body
+        // 3. Upload
         const uploadUrl = window.ApiClient.getUrl(`/Users/${userId}/Images/Backdrop`);
-
-        console.log('LegitFlix: Uploading backdrop to', uploadUrl);
+        console.log('LegitFlix: Uploading Base64 to', uploadUrl);
 
         const uploadRes = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `MediaBrowser Client="Jellyfin Web", Device="ValidDevice", DeviceId="ValidId", Version="10.8.0", Token="${accessToken}"`,
-                'Content-Type': blob.type || 'image/png' // Strict type
+                'Content-Type': 'image/png' // API expects this or just the type
             },
-            body: blob
+            body: rawBase64
         });
 
         if (uploadRes.ok) {
             console.log('LegitFlix: Backdrop uploaded successfully.');
+            // Force a profile refresh or just alert user
             return true;
         } else {
             console.error('LegitFlix: Upload failed', uploadRes.status, uploadRes.statusText);
-            const errText = await uploadRes.text(); // Read server error if any
-            console.error('LegitFlix: Server response:', errText);
             return false;
         }
     } catch (e) {
@@ -937,17 +941,17 @@ window.ensurePasswordForm = function () {
         const formHtml = `
             <div id="customPasswordForm" class="profile-settings-card">
                 <h2>Change Password</h2>
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtCurrentPassword">Current Password</label>
-                    <input type="password" id="txtCurrentPassword" class="emby-input" autocomplete="current-password">
+                <div class="legit-form-group">
+                    <label class="legit-form-label" for="txtCurrentPassword">Current Password</label>
+                    <input type="password" id="txtCurrentPassword" class="legit-form-input" autocomplete="current-password">
                 </div>
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtNewPassword">New Password</label>
-                    <input type="password" id="txtNewPassword" class="emby-input" autocomplete="new-password">
+                <div class="legit-form-group">
+                    <label class="legit-form-label" for="txtNewPassword">New Password</label>
+                    <input type="password" id="txtNewPassword" class="legit-form-input" autocomplete="new-password">
                 </div>
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtNewPasswordConfirm">Confirm New Password</label>
-                    <input type="password" id="txtNewPasswordConfirm" class="emby-input" autocomplete="new-password">
+                <div class="legit-form-group">
+                    <label class="legit-form-label" for="txtNewPasswordConfirm">Confirm New Password</label>
+                    <input type="password" id="txtNewPasswordConfirm" class="legit-form-input" autocomplete="new-password">
                 </div>
                 <div style="margin-top:20px;">
                     <button id="btnSavePassword" class="legit-btn-primary">Save Password</button>
