@@ -341,65 +341,74 @@ function injectJellyseerr() {
     }
 }
 
-function init() {
-    console.log('LegitFlix: Init Sequence Started');
+// --- INIT & ROBUSTNESS ---
+// We use a polling mechanism to ensure the UI is ready before injecting.
+// This is more reliable than Observers for the initial load.
 
-    // 1. Hero Carousel (Wait for Auth)
-    const startHero = async () => {
-        let attempts = 0;
-        while (!window.ApiClient && attempts < 60) {
-            await new Promise(r => setTimeout(r, 500));
-            attempts++;
+let _injectedNav = false;
+let _injectedHero = false;
+let _injectedJelly = false;
+
+async function pollForUI() {
+    const isReady = window.ApiClient && document.body;
+    if (!isReady) return;
+
+    // 1. Try Inject Nav
+    if (!_injectedNav && document.querySelector('.headerLeft')) {
+        try {
+            await injectCustomNav();
+            _injectedNav = true; // Set flag only if successful
+        } catch (e) {
+            logger.error('Nav Injection failed', e);
         }
-        if (window.ApiClient) {
-            injectMediaBar();
-        } else {
-            console.error('LegitFlix: ApiClient never loaded. Hero canceled.');
+    }
+
+    // 2. Try Inject Hero (Home Page Only)
+    const isHome = window.location.hash.includes('home') || window.location.hash === '' || window.location.hash.includes('startup');
+    const sections = document.querySelector('.homeSectionsContainer') || document.querySelector('.mainAnimatedPages');
+
+    if (isHome && sections && !_injectedHero) {
+        try {
+            await injectMediaBar();
+            // injectMediaBar handles its own success flag internally if items found
+            _injectedHero = true;
+        } catch (e) {
+            logger.error('Hero Injection failed', e);
         }
-    };
-    startHero();
+    }
 
-    // 2. Jellyseerr
-    injectJellyseerr();
-
-    // 3. Custom Nav
-    injectCustomNav();
-
-    // 4. Observers
-    let debounceTimer;
-    const observer = new MutationObserver((mutations) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            let headerChanged = false;
-            let homeChanged = false;
-
-            for (const m of mutations) {
-                if (m.addedNodes.length) {
-                    if (document.querySelector('.headerLeft') && !document.querySelector('.legit-nav-links')) {
-                        headerChanged = true;
-                    }
-                    if (document.querySelector('.homeSectionsContainer')) {
-                        homeChanged = true;
-                    }
-                }
-            }
-
-            if (headerChanged) injectCustomNav();
-
-            if (homeChanged || (window.location.hash.includes('home') && !document.querySelector('.hero-carousel-container'))) {
-                injectMediaBar();
-                injectJellyseerr();
-            }
-
-        }, 500);
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // 5. Global Events
-    document.addEventListener('viewshow', () => {
-        logger.log('Event: viewshow');
-        injectCustomNav();
-        injectJellyseerr();
-    });
+    // 3. Try Inject Jellyseerr (Home Page Only)
+    if (isHome && document.querySelector('.homePage .itemsContainer.scrollSlider') && !_injectedJelly) {
+        try {
+            injectJellyseerr();
+            if (document.querySelector('#jellyseerr-card')) _injectedJelly = true;
+        } catch (e) {
+            logger.error('Jellyseerr Injection failed', e);
+        }
+    }
 }
+
+function init() {
+    console.log('LegitFlix: V4.5 Robust Init');
+
+    // Start Polling Loop (Runs every 1s)
+    setInterval(pollForUI, 1000);
+
+    // Watch for Route Changes to reset flags
+    window.addEventListener('hashchange', () => {
+        logger.log('Route Changed');
+        // Reset home flags to force re-check
+        _injectedHero = false;
+        _injectedJelly = false;
+        // Keep Nav flag true as header usually persists, but check if it was wiped:
+        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+    });
+
+    // Backup Observer for partial DOM updates
+    const observer = new MutationObserver((mutations) => {
+        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+init();
