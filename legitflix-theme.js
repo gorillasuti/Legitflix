@@ -358,6 +358,84 @@ function injectJellyseerr() {
     }
 }
 
+// --- PREFERENCES: FEATURED HEADER ---
+async function injectFeaturedPrefs() {
+    const prefsPage = document.querySelector('#myPreferencesMenuPage');
+    if (!prefsPage) return;
+
+    // Check if aligned
+    if (prefsPage.querySelector('.featured-prefs-container')) return;
+
+    // 1. Get User Data
+    let user = null;
+    try {
+        user = await window.ApiClient.getCurrentUser();
+    } catch (e) { console.error('Error getting user', e); }
+
+    if (!user) return;
+
+    // 2. Identify Target Links in the Grid
+    // We want to move "Profile" and "Quick Connect" (if exists)
+    const scrollSlider = prefsPage.querySelector('.scrollSlider');
+    if (!scrollSlider) return;
+
+    const allLinks = Array.from(scrollSlider.querySelectorAll('.listItem'));
+    const profileLink = allLinks.find(el => el.getAttribute('href') && el.getAttribute('href').includes('userprofile'));
+    const quickConnectLink = allLinks.find(el => el.getAttribute('href') && el.getAttribute('href').includes('quickconnect'));
+
+    // 3. Construct Featured Header
+    // We use the User Image (or default) + Name
+    const userImageUrl = `/Users/${user.Id}/Images/Primary?quality=90&maxHeight=200`;
+
+    // Check if user has image (if not, use placeholder)
+    // For simplicity, we assume the URL is valid, or fallback in CSS
+
+    // Create 'Action Buttons' HTML from potential links
+    let actionsHtml = '';
+
+    if (profileLink) {
+        actionsHtml += `
+            <a href="${profileLink.getAttribute('href')}" class="pref-action-btn">
+                <i class="material-icons-outlined">person</i>
+                <span>Profile</span>
+            </a>
+        `;
+        // Hide original
+        profileLink.style.display = 'none';
+        profileLink.classList.add('moved-to-featured');
+    }
+
+    if (quickConnectLink) {
+        actionsHtml += `
+            <a href="${quickConnectLink.getAttribute('href')}" class="pref-action-btn">
+                <i class="material-icons-outlined">qr_code</i>
+                <span>Quick Connect</span>
+            </a>
+        `;
+        // Hide original
+        quickConnectLink.style.display = 'none';
+        quickConnectLink.classList.add('moved-to-featured');
+    }
+
+    const headerHtml = `
+        <div class="featured-prefs-container">
+            <div class="featured-user-info">
+                <div class="featured-avatar" style="background-image: url('${userImageUrl}');"></div>
+                <div class="featured-text">
+                    <h1>${user.Name}</h1>
+                    <span>Preferences & Settings</span>
+                </div>
+            </div>
+            <div class="featured-actions">
+                ${actionsHtml}
+            </div>
+        </div>
+    `;
+
+    // Insert BEFORE the grid
+    scrollSlider.insertAdjacentHTML('beforebegin', headerHtml);
+}
+
 // --- INIT & ROBUSTNESS ---
 // We use a polling mechanism to ensure the UI is ready before injecting.
 // This is more reliable than Observers for the initial load.
@@ -401,6 +479,15 @@ async function pollForUI() {
             if (document.querySelector('#jellyseerr-card')) _injectedJelly = true;
         } catch (e) {
             logger.error('Jellyseerr Injection failed', e);
+        }
+    }
+
+    // 4. Try Inject Preferences Header (Prefs Page Only)
+    if (window.location.hash.includes('myPreferencesMenuPage')) {
+        try {
+            injectFeaturedPrefs();
+        } catch (e) {
+            logger.error('Prefs Header Injection failed', e);
         }
     }
 }

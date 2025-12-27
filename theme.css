@@ -60,7 +60,7 @@ h4,
     flex-direction: row !important;
     gap: 20px !important;
     /* Reduced from 35px */
-    margin-left: 0 !important;
+    margin-left: 20px !important;
     /* Minimized (was 20px) */
     z-index: 1001 !important;
     align-items: center;
@@ -483,19 +483,128 @@ body.startupPage .startupLogo {
 }
 
 /* More Info Button */
-.btn-info {
-    background-color: rgba(109, 109, 110, 0.7);
-    color: white;
+/* More Info Button (Circular Icon) */
+.hero-button-info {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.btn-info:hover {
-    background-color: rgba(109, 109, 110, 0.5);
-    transform: scale(1.05);
+.hero-button-info:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
 }
 
-/* Material Icons size fix in buttons */
-.btn-play i,
-.btn-info i {
-    font-size: 1.6rem;
+.hero-button-info i {
+    font-size: 1.5rem;
+}
+
+/* --- NAVIGATION PILL ACTIVE STATE --- */
+.nav-link {
+    position: relative;
+    padding: 8px 16px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+/* --- PREFERENCES: FEATURED HEADER --- */
+/* Native Header Injection Styles */
+.featured-prefs-container {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
+    border-radius: 24px;
+    padding: 30px;
+    margin: 20px 40px 0 40px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.featured-user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.featured-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid var(--theme-primary);
+    box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+}
+
+.featured-text h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.featured-text span {
+    font-size: 1rem;
+    color: #aaa;
+}
+
+.featured-actions {
+    display: flex;
+    gap: 15px;
+}
+
+/* Action Buttons (Profile / QuickConnect) */
+.pref-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 12px 24px;
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pref-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.pref-action-btn i {
+    font-size: 1.2rem;
+}
+
+/* SPECIFIC PAGE STYLES */
+/* User Profile & Quick Connect Pages */
+#userProfilesPage .pageContent,
+#quickConnectPage .pageContent {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #1f1f1f;
+    padding: 40px;
+    border-radius: 20px;
+    margin-top: 50px;
 }
