@@ -841,3 +841,85 @@ h4,
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2);
 }
+
+/* --- USER SETTINGS PAGE STYLING (Global for type-UserView) --- */
+.type-UserView .inputContainer,
+.type-UserView .selectContainer,
+.type-UserView .checkboxContainer {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.type-UserView .inputLabel,
+.type-UserView .selectLabel,
+.type-UserView .textareaLabel {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.type-UserView .emby-input,
+.type-UserView .emby-textarea,
+.type-UserView .emby-select-withcolor {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    box-shadow: none;
+    width: 100%;
+    box-sizing: border-box;
+    /* Ensure no double borders */
+    appearance: none;
+}
+
+.type-UserView .emby-input:focus,
+.type-UserView .emby-textarea:focus,
+.type-UserView .emby-select-withcolor:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--theme-primary-color, #00A4DC);
+    box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2) !important;
+}
+
+/* Checkboxes */
+.type-UserView .checkboxContainer {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.type-UserView .checkboxContainer:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.type-UserView .emby-checkbox-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.type-UserView .checkboxLabel {
+    font-weight: 500;
+    flex-grow: 1;
+}
+
+/* Titles */
+.type-UserView .sectionTitle {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--theme-text-color, #fff);
+    margin-top: 40px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}

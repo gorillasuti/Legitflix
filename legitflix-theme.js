@@ -369,11 +369,21 @@ function injectJellyseerr() {
 // --- PREFERENCES: FEATURED HEADER ---
 // --- PREFERENCES: GAMING PROFILE LAYOUT ---
 async function injectFeaturedPrefs() {
-    const prefsPage = document.querySelector('#myPreferencesMenuPage');
+    // 1. Target ANY user preferences page (Menu, Display, Home, Playback, etc.)
+    const prefsPage = document.querySelector('#myPreferencesMenuPage') ||
+        document.querySelector('#myPreferencesDisplayPage') ||
+        document.querySelector('#myPreferencesHomePage') ||
+        document.querySelector('#myPreferencesPlaybackPage') ||
+        document.querySelector('#myPreferencesSubtitlesPage') ||
+        document.querySelector('#quickConnectPage') ||
+        document.querySelector('.type-UserView'); // Generic fallback
+
     if (!prefsPage) return;
 
-    // Use .readOnlyContent as the main container based on user HTML
-    const contentContainer = prefsPage.querySelector('.readOnlyContent');
+    // Use .readOnlyContent or specific containers based on user HTML
+    const contentContainer = prefsPage.querySelector('.readOnlyContent') ||
+        prefsPage.querySelector('.content-primary') || // Common on detail pages
+        prefsPage.querySelector('.pageContent'); // Generic fallback
     if (!contentContainer) return;
 
     // Avoid double injection
@@ -392,19 +402,19 @@ async function injectFeaturedPrefs() {
         : 'https://raw.githubusercontent.com/google/material-design-icons/master/png/action/account_circle/materialicons/48dp/2x/baseline_account_circle_white_48dp.png';
 
     // 2. Map Links for Tabs
-    // We try to find existing links to make tabs functional
-    const findLink = (str) => {
+    // We try to find existing links to make tabs functional, fallback to standard hashes
+    const findLink = (str, defaultHash) => {
         const a = contentContainer.querySelector(`a[href*="${str}"]`);
-        return a ? a.getAttribute('href') : '#';
+        return a ? a.getAttribute('href') : defaultHash;
     };
 
-    const profileHref = findLink('userprofile');
-    const displayHref = findLink('mypreferencesdisplay');
-    const homeHref = findLink('mypreferenceshome');
-    const playbackHref = findLink('mypreferencesplayback');
-    const subtitleHref = findLink('mypreferencessubtitles');
-    const quickConnectHref = findLink('quickconnect');
-    const controlsHref = findLink('mypreferencescontrols'); // Assuming standard naming
+    const profileHref = findLink('userprofile', '#/userprofile');
+    const displayHref = findLink('mypreferencesdisplay', '#/mypreferencesdisplay');
+    const homeHref = findLink('mypreferenceshome', '#/mypreferenceshome');
+    const playbackHref = findLink('mypreferencesplayback', '#/mypreferencesplayback');
+    const subtitleHref = findLink('mypreferencessubtitles', '#/mypreferencessubtitles');
+    const quickConnectHref = findLink('quickconnect', '#/quickconnect');
+    const controlsHref = findLink('mypreferencescontrols', '#/mypreferencescontrols'); // Assuming standard naming
 
     // HIDE ORIGINAL LINKS
     const hideLink = (str) => {
@@ -461,12 +471,12 @@ async function injectFeaturedPrefs() {
             <h1 class="profile-page-title">Account Settings</h1>
             
             <div class="profile-nav-tabs" style="padding-bottom: 1rem; flex-wrap: wrap;">
-                <a class="profile-tab active" onclick="location.href='${profileHref}'">My details</a>
-                <a class="profile-tab" onclick="location.href='${displayHref}'">Display</a>
-                <a class="profile-tab" onclick="location.href='${homeHref}'">Home Screen</a>
-                <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
-                <a class="profile-tab" onclick="location.href='${subtitleHref}'">Subtitles</a>
-                <a class="profile-tab" onclick="location.href='${quickConnectHref}'">Quick Connect</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('userprofile') ? 'active' : ''}" onclick="location.href='${profileHref}'">My details</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencesdisplay') ? 'active' : ''}" onclick="location.href='${displayHref}'">Display</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferenceshome') ? 'active' : ''}" onclick="location.href='${homeHref}'">Home Screen</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencesplayback') ? 'active' : ''}" onclick="location.href='${playbackHref}'">Playback</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('mypreferencessubtitles') ? 'active' : ''}" onclick="location.href='${subtitleHref}'">Subtitles</a>
+                <a class="profile-tab ${window.location.hash.toLowerCase().includes('quickconnect') ? 'active' : ''}" onclick="location.href='${quickConnectHref}'">Quick Connect</a>
                 
                 <!-- Sign Out (Icon) -->
                 <a class="profile-tab logout-tab" onclick="document.querySelector('.btnLogout').click()" title="Sign Out">
@@ -1251,7 +1261,8 @@ async function pollForUI() {
 
     // 4. Try Inject Preferences Header (Prefs Page Only)
     // FIX: URL hash is often lowercase, check broadly
-    if (window.location.hash.toLowerCase().includes('preferences')) {
+    const hashLower = window.location.hash.toLowerCase();
+    if (hashLower.includes('preferences') || hashLower.includes('quickconnect') || hashLower.includes('userprofile')) {
         try {
             injectFeaturedPrefs();
 
@@ -1307,8 +1318,9 @@ async function pollForUI() {
 
 // Helper to Inject Password Form (if valid container doesn't have it)
 window.ensurePasswordForm = function () {
-    // Only on preferences page
-    if (!window.location.hash.toLowerCase().includes('preferences')) return;
+    // Only on preferences/profile pages
+    const hashLower = window.location.hash.toLowerCase();
+    if (!(hashLower.includes('preferences') || hashLower.includes('quickconnect') || hashLower.includes('userprofile'))) return;
 
     // Check if we already have it
     if (document.getElementById('customPasswordForm')) return;
