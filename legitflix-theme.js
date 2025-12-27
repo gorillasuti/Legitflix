@@ -372,8 +372,18 @@ async function injectFeaturedPrefs() {
     console.log('[LegitFlix] injectFeaturedPrefs: Starting...');
 
     // 1. Target ANY user preferences page (Menu, Display, Home, Playback, etc.)
-    // All settings pages have the 'userPreferencesPage' class
-    const prefsPage = document.querySelector('.userPreferencesPage');
+    // Multiple pages may exist in DOM simultaneously (client-side routing)
+    // We need to find the VISIBLE/ACTIVE one
+    let prefsPage = null;
+    const allPrefsPages = document.querySelectorAll('.userPreferencesPage');
+    for (const page of allPrefsPages) {
+        // Check if page is visible (not display:none)
+        const style = window.getComputedStyle(page);
+        if (style.display !== 'none' && style.visibility !== 'hidden') {
+            prefsPage = page;
+            break;
+        }
+    }
 
     if (!prefsPage) {
         // Debug: Log all pages with data-role="page" to see what's available
