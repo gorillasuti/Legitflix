@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined');
 
 /* =========================================================================
    LEGITFLIX THEME SYSTEM v6.0
@@ -373,35 +374,69 @@ h4,
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: visible;
-    /* Allow avatar overlap */
+    overflow: hidden;
+    /* Important for image/overlay */
     border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 1rem;
 }
 
+/* Dark Overlay (Hidden by default) */
+.banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+/* Logic: If banner is set, show overlay on hover */
+.profile-banner.has-banner:hover .banner-overlay {
+    opacity: 1;
+}
+
+/* Button Styling (Unique Glass) */
 .banner-add-btn {
-    width: 60px;
-    height: 60px;
-    border-radius: 20px;
-    border: 1px dashed rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
+    padding: 12px 24px;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.5);
-    flex-direction: column;
-    gap: 5px;
+    gap: 10px;
+    color: white;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .banner-add-btn:hover {
-    border-color: white;
-    color: white;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .banner-add-text {
-    font-size: 0.8rem;
-    margin-top: 5px;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Show/Hide Logic */
+/* If has banner, hide button by default */
+.profile-banner.has-banner .banner-add-btn {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* Show on hover */
+.profile-banner.has-banner:hover .banner-add-btn {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* 2. Overlapping Avatar */
@@ -440,23 +475,33 @@ h4,
     color: white;
     border: 2px solid var(--clr-bg-main);
     cursor: pointer;
+    transition: background 0.2s;
 }
 
-/* 3. Navigation "Tabs" below profile */
+.avatar-edit-icon:hover {
+    background: var(--clr-accent);
+}
+
+/* 3. Navigation "Tabs" */
 .profile-nav-tabs {
     display: flex;
     align-items: center;
-    gap: 40px;
-    margin-top: 20px;
-    /* Space for avatar */
-    padding-left: 200px;
-    /* Clear avatar */
+    justify-content: flex-start;
+    /* Explicit Left Align */
+    gap: 30px;
+    margin-top: 0;
+    /* JS handles top spacing or order */
+    padding-left: 10px;
+    /* Minimal padding */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 0;
+    margin-bottom: 30px;
+    /* Gap AFTER the line before banner */
 }
 
 .profile-tab {
-    padding: 15px 0;
+    padding: 10px 0;
+    /* Reduced padding between text and line */
     color: var(--clr-text-muted);
     font-weight: 500;
     cursor: pointer;
@@ -478,7 +523,6 @@ h4,
     width: 100%;
     height: 3px;
     background: var(--clr-accent);
-    /* Orange/Red/Purple */
     border-radius: 2px 2px 0 0;
 }
 
@@ -487,20 +531,92 @@ h4,
     padding-top: 0 !important;
 }
 
-/* Override existing List Items to look cleaner */
+/* Override existing List Items to look cleaner (Glass) */
 #myPreferencesMenuPage .listItem {
-    background: transparent !important;
-    border: none !important;
-    padding: 10px !important;
-    margin: 0 !important;
+    background: var(--clr-bg-surface) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 15px 20px !important;
+    margin-bottom: 10px !important;
+    border-radius: var(--radius-md) !important;
+    transition: all 0.2s ease;
 }
 
 #myPreferencesMenuPage .listItemBodyText {
     color: var(--clr-text-muted) !important;
+    font-weight: 500;
+}
+
+#myPreferencesMenuPage .listItem:hover {
+    background: var(--clr-bg-glass-hover) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: translateX(5px);
 }
 
 #myPreferencesMenuPage .listItem:hover .listItemBodyText {
     color: white !important;
+}
+
+#myPreferencesMenuPage .listItemIcon {
+    color: var(--clr-accent) !important;
+    /* Icon Color */
+}
+
+/* POPUP STYLES */
+.legit-popup-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(5px) !important;
+    z-index: 99999 !important;
+    /* Max Z-Index */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.legit-popup-content {
+    background: #1f1f1f !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 30px !important;
+    width: 90% !important;
+    max-width: 800px !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    position: relative !important;
+}
+
+.legit-popup-content.small {
+    max-width: 400px !important;
+}
+
+.legit-popup-content h2 {
+    margin-top: 0 !important;
+    margin-bottom: 20px !important;
+    color: white !important;
+}
+
+.legit-popup-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    gap: 15px !important;
+}
+
+.banner-option {
+    height: 100px !important;
+    border-radius: 10px !important;
+    background-size: cover !important;
+    background-position: center !important;
+    cursor: pointer !important;
+    border: 2px solid transparent !important;
+}
+
+.banner-option:hover {
+    border-color: var(--clr-accent) !important;
 }
 
 /* LOGO REPLACEMENTS */

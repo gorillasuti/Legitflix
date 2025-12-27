@@ -399,44 +399,69 @@ async function injectFeaturedPrefs() {
     const displayHref = findLink('mypreferencesdisplay');
     const homeHref = findLink('mypreferenceshome');
     const playbackHref = findLink('mypreferencesplayback');
+    const subtitleHref = findLink('mypreferencessubtitles');
+    const quickConnectHref = findLink('quickconnect');
+    const controlsHref = findLink('mypreferencescontrols'); // Assuming standard naming
 
     // HIDE ORIGINAL LINKS
     const hideLink = (str) => {
         const a = contentContainer.querySelector(`a[href*="${str}"]`);
         if (a) a.style.display = 'none';
-        // Also try to find a parent 'a' if the structure is nested differently
         const btn = contentContainer.querySelector(`a[href*="${str}"].emby-button`);
         if (btn) btn.style.display = 'none';
+        // Hide parent wrapper if clean
+        if (a && a.parentElement && a.parentElement.classList.contains('listItem-border')) {
+            a.parentElement.style.display = 'none';
+        }
     };
     hideLink('userprofile');
     hideLink('mypreferencesdisplay');
     hideLink('mypreferenceshome');
     hideLink('mypreferencesplayback');
-
-
+    hideLink('mypreferencessubtitles');
+    hideLink('quickconnect');
+    hideLink('mypreferencescontrols');
 
     // 3. Build the Header HTML (Tabs ABOVE Banner)
+    // Check for Banner
+    let bannerStyle = '';
+    let bannerClass = '';
+    let btnText = 'Add profile banner';
+    let btnIcon = 'add';
+
+    if (user.BackdropImageTags && user.BackdropImageTags.length > 0) {
+        const pBannerUrl = `/Users/${user.Id}/Images/Backdrop/0?maxHeight=500`;
+        bannerStyle = `background-image: url('${pBannerUrl}'); background-size: cover; background-position: center;`;
+        bannerClass = 'has-banner';
+        btnText = 'Edit banner';
+        btnIcon = 'edit';
+    }
+
     const headerHtml = `
         <div class="gaming-profile-header">
             <h1 class="profile-page-title">Account Settings</h1>
             
-            <div class="profile-nav-tabs" style="padding-bottom: 1rem;">
+            <div class="profile-nav-tabs" style="padding-bottom: 1rem; flex-wrap: wrap;">
                 <a class="profile-tab active" onclick="location.href='${profileHref}'">My details</a>
                 <a class="profile-tab" onclick="location.href='${displayHref}'">Display</a>
                 <a class="profile-tab" onclick="location.href='${homeHref}'">Home Screen</a>
                 <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
+                <a class="profile-tab" onclick="location.href='${subtitleHref}'">Subtitles</a>
+                <a class="profile-tab" onclick="location.href='${quickConnectHref}'">Quick Connect</a>
             </div>
 
-            <div class="profile-banner">
+            <div class="profile-banner ${bannerClass}" style="${bannerStyle}">
+                <div class="banner-overlay"></div>
+                
                 <div class="banner-add-btn" onclick="window.legitFlixOpenBannerPicker()">
-                    <span class="material-icons-outlined">add_photo_alternate</span>
-                    <span class="banner-add-text">Add profile banner</span>
+                    <span class="material-icons-outlined">${btnIcon}</span>
+                    <span class="banner-add-text">${btnText}</span>
                 </div>
                 
                 <div class="profile-avatar-container">
                     <div class="profile-avatar" style="background-image: url('${userImageUrl}');"></div>
                     <div class="avatar-edit-icon" onclick="window.legitFlixOpenAvatarPicker()">
-                        <span class="material-icons-outlined" style="font-size: 18px;">edit</span>
+                        <span class="material-icons-outlined" style="font-size: 18px;">mode_edit</span>
                     </div>
                 </div>
             </div>
