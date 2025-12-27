@@ -1,41 +1,55 @@
-/* LegitFlix Theme CSS
-   Updated Path: /themes/legitflix/
+/* LegitFlix Theme CSS v2.0 
+   - Added !important to override plugins
+   - Added "Red Border Test" to verify loading
 */
 
 :root {
-    --theme-primary: #e50914;
-    --theme-background: #141414;
-    --theme-card-bg: #1f1f1f;
-    --theme-text: #ffffff;
-    --theme-text-muted: #bcbcbc;
-
-    --selection-background: var(--theme-primary);
-    --skin-header-background: rgba(20, 20, 20, 0.95);
-    --skin-bg: var(--theme-background);
-    --button-primary-background: var(--theme-primary);
-    --button-primary-hover-background: #b20710;
+    --theme-primary: #e50914 !important;
+    --theme-background: #141414 !important;
+    --theme-card-bg: #1f1f1f !important;
+    --theme-text: #ffffff !important;
+    --theme-text-muted: #bcbcbc !important;
+    
+    --selection-background: var(--theme-primary) !important;
+    --skin-header-background: rgba(20, 20, 20, 0.95) !important;
+    --skin-bg: var(--theme-background) !important;
 }
 
+/* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */
+/* body { border: 5px solid red !important; } */
+
 /* --- LOGO REPLACEMENTS --- */
-/* Updated paths to point to /themes/legitflix/ */
+/* Using "starts-with" selector to catch multiple logo variations */
 
 .pageTitleWithLogo {
-    background-image: url('/themes/legitflix/logo.png') !important;
+    background-image: url('logo.png') !important;
     background-repeat: no-repeat;
     background-position: left center;
     background-size: contain;
-    text-indent: -9999px;
-    width: 150px;
+    text-indent: -9999px; 
+    width: 150px; 
 }
 
-.adminDrawerLogo img {
-    content: url('/themes/legitflix/logo.png') !important;
-}
-
+.adminDrawerLogo img, 
+.pageTitleWithLogo img,
 .authLogo img {
-    content: url('/themes/legitflix/logo-large.png') !important;
+    /* Hide the original image src */
+    opacity: 0 !important; 
 }
 
+.adminDrawerLogo {
+    background-image: url('logo.png') !important;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.authLogo {
+    background-image: url('logo-large.png') !important;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
 
 /* --- MEDIA BAR STYLES --- */
 
@@ -44,13 +58,15 @@
     margin-bottom: 20px;
     position: relative;
     z-index: 10;
+    /* Ensure it sits on top of any plugin backgrounds */
+    background: var(--theme-background); 
 }
 
 .legit-media-header {
     display: flex;
     flex-direction: column;
     margin-bottom: 15px;
-    padding-left: 2%;
+    padding-left: 2%; 
 }
 
 .legit-header-title {
@@ -71,11 +87,11 @@
     overflow-x: auto;
     gap: 15px;
     padding: 10px 2%;
-    scrollbar-width: none;
+    scrollbar-width: none; 
 }
 
 .legit-media-scroller::-webkit-scrollbar {
-    display: none;
+    display: none; 
 }
 
 .legit-media-card {
@@ -87,13 +103,13 @@
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
 .legit-media-card:hover {
     transform: scale(1.1);
     z-index: 20;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .legit-card-image {
@@ -108,7 +124,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
     padding: 40px 10px 10px;
     opacity: 0;
     transition: opacity 0.2s;
