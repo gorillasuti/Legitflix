@@ -7,11 +7,14 @@
 console.log('%c LegitFlix: Bundle v2.3 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
+// --- GLOBAL NAVIGATION HELPER ---
 window.legitFlixShowItem = function (id) {
     console.log('LegitFlix: Navigating to', id);
 
     // Strategy 1: Try standard global router
-    if (window.appRouter) {
+    // We check !window.appRouter.isShim so we don't infinitely loop
+    // if the shim calls US (legitFlixShowItem).
+    if (window.appRouter && !window.appRouter.isShim) {
         window.appRouter.showItem(id);
         return;
     }
@@ -34,6 +37,7 @@ window.legitFlixShowItem = function (id) {
 // --- SAFETY SHIM ---
 if (typeof appRouter === 'undefined') {
     window.appRouter = {
+        isShim: true, // Marker to prevent infinite loops
         showItem: function (id) {
             window.legitFlixShowItem(id);
         }
@@ -121,7 +125,9 @@ async function injectMediaBar() {
     if (!isHomePage) return;
 
     // V2.3 CHANGE: CLEANUP OLD BARS
-    // We remove any existing bar to ensure we aren't using cached/broken HTML
+    // Aggressively remove ALL instances by class, not just ID
+    document.querySelectorAll('.legit-media-bar-container').forEach(el => el.remove());
+
     const existing = document.getElementById('legit-media-bar');
     if (existing) {
         console.log('LegitFlix: Refreshing Media Bar...');
