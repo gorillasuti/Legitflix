@@ -400,6 +400,19 @@ async function injectFeaturedPrefs() {
     const homeHref = findLink('mypreferenceshome');
     const playbackHref = findLink('mypreferencesplayback');
 
+    // HIDE ORIGINAL LINKS
+    const hideLink = (str) => {
+        const a = contentContainer.querySelector(`a[href*="${str}"]`);
+        if (a) a.style.display = 'none';
+        // Also try to find a parent 'a' if the structure is nested differently
+        const btn = contentContainer.querySelector(`a[href*="${str}"].emby-button`);
+        if (btn) btn.style.display = 'none';
+    };
+    hideLink('userprofile');
+    hideLink('mypreferencesdisplay');
+    hideLink('mypreferenceshome');
+    hideLink('mypreferencesplayback');
+
     // 3. Build the Header HTML (Banner + Avatar + Tabs)
     const headerHtml = `
         <div class="gaming-profile-header">

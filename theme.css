@@ -65,13 +65,16 @@ h4,
 /* =========================================================================
    HEADER & NAVIGATION
    ========================================================================= */
+/* =========================================================================
+   HEADER & NAVIGATION
+   ========================================================================= */
 .skinHeader {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%) !important;
     background-color: transparent !important;
     position: absolute !important;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100% !important;
     height: 6rem !important;
     z-index: 1000 !important;
     box-shadow: none !important;
@@ -79,7 +82,10 @@ h4,
     flex-direction: row !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    padding: 0 var(--spacing-header) !important;
+    padding: 0 3rem !important;
+    /* Fixed spacing */
+    box-sizing: border-box !important;
+    /* Fixes overflow */
 }
 
 /* Layout Fixers */
@@ -93,6 +99,8 @@ h4,
 .headerRight {
     margin-left: auto !important;
     z-index: 1001;
+    margin-right: 0 !important;
+    /* Prevent extra margin causing overflow */
 }
 
 /* Hiding Native Elements Properly */
@@ -100,25 +108,32 @@ h4,
     display: none !important;
 }
 
-/* Hide TEXT of generic titles, Keep LOGO backgrounds */
+/* LOGO VISIBILITY FIX */
+/* We hide the text content but keep the container for the background-image logo */
 .headerLeft .pageTitle {
     color: transparent !important;
     font-size: 0 !important;
     line-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
 }
 
+/* But if it has the logo class, ensure it has dimensions */
 .pageTitleWithDefaultLogo,
 .pageTitleWithLogo,
 .headerLogo {
     display: block !important;
-    font-size: initial !important;
-    color: transparent !important;
+    width: 150px !important;
+    /* Force width for logo */
+    height: 40px !important;
+    background-repeat: no-repeat !important;
+    background-position: left center !important;
+    background-size: contain !important;
 }
 
-.pageTitle:not(.pageTitleWithDefaultLogo):not(.pageTitleWithLogo) {
-    width: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
+.pageTitle:not(.pageTitleWithDefaultLogo):not(.pageTitleWithLogo):not(.headerLogo) {
+    display: none !important;
 }
 
 /* CUSTOM NAV LINKS */
@@ -126,7 +141,7 @@ h4,
     display: flex !important;
     flex-direction: row !important;
     gap: 15px !important;
-    margin-left: 20px !important;
+    margin-left: 10px !important;
     z-index: 1001 !important;
     align-items: center;
 }
@@ -243,7 +258,7 @@ h4,
     overflow: hidden;
 }
 
-/* Hero Buttons */
+/* Hero Buttons Fix */
 .hero-actions {
     display: flex;
     gap: 15px;
@@ -259,6 +274,9 @@ h4,
     position: relative;
     overflow: hidden;
     gap: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Shine Effect */
@@ -291,6 +309,9 @@ h4,
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .hero-button-info:hover {
@@ -298,13 +319,19 @@ h4,
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-.hero-button-info i {
-    font-size: 1.6rem;
+/* Material Icons Centering */
+.hero-button-info i,
+.hero-button-info span {
+    font-size: 24px;
     line-height: 1;
+    display: block;
 }
 
-.btn-play i {
-    font-size: 1.8rem;
+.btn-play i,
+.btn-play span {
+    font-size: 24px;
+    line-height: 1;
+    display: block;
 }
 
 /* CONTENT PUSH */
