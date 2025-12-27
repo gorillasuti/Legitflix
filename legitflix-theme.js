@@ -139,8 +139,8 @@ function createMediaBarHTML(items) {
                         <button class="btn-play" onclick="${playOnClick}">
                             <i class="material-icons">play_arrow</i> PLAY
                         </button>
-                        <button class="btn-info" onclick="${infoOnClick}">
-                            <i class="material-icons">info_outline</i> MORE INFO
+                        <button class="hero-button-info" onclick="window.appRouter.showItem('${item.Id}')" title="More Info">
+                            <span class="material-icons-outlined">info</span>
                         </button>
                     </div>
                 </div>

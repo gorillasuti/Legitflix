@@ -60,8 +60,8 @@ h4,
     flex-direction: row !important;
     gap: 20px !important;
     /* Reduced from 35px */
-    margin-left: 20px !important;
-    /* Reduced from 40px */
+    margin-left: 0 !important;
+    /* Minimized (was 20px) */
     z-index: 1001 !important;
     align-items: center;
 }
