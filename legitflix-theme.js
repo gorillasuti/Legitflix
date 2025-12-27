@@ -812,7 +812,7 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
     }
 };
 
-window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Banner');
+window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Backdrop');
 
 /* --- CUSTOM AVATAR PICKER (Netflix Style) --- */
 window.LegitFlixAvatarPicker = {
@@ -1183,10 +1183,17 @@ async function pollForUI() {
                     enhancedBtn.click();
                 };
 
-                // Insert BEFORE Logout tab if possible, otherwise append
+                // Insert BEFORE Admin Tabs (Dashboard/Metadata) if present, else Logout
+                // User Request: Advanced - Admin tabs - Sign out
+                const dashboardTab = navTabs.querySelector('a[href*="dashboard"]');
+                const metadataTab = navTabs.querySelector('a[href*="metadata"]');
                 const logoutTab = navTabs.querySelector('.logout-tab');
-                if (logoutTab) {
-                    navTabs.insertBefore(tab, logoutTab);
+
+                // Target the first one found
+                const targetTab = dashboardTab || metadataTab || logoutTab;
+
+                if (targetTab) {
+                    navTabs.insertBefore(tab, targetTab);
                 } else {
                     navTabs.appendChild(tab);
                 }
