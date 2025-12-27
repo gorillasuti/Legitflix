@@ -368,16 +368,20 @@ h4,
     width: 100%;
     height: 250px;
     background-color: #2a2a2a;
-    /* Fallback */
     background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    /* Clips image/overlay */
     border: 1px solid rgba(255, 255, 255, 0.05);
     margin-top: 1rem;
+
+    /* Ensure image fills and aligns top (heads of characters) */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center 20%;
+    /* Slight offset from top, better than hard 'top' */
 }
 
 /* Gradient Primary Button */
@@ -407,25 +411,44 @@ h4,
     filter: brightness(1.1);
 }
 
+/* Secondary Button (Glass) */
+.legit-btn-secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 0.8rem 2rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.legit-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
 /* 2. Overlapping Avatar (Now Sibling of Banner) */
 .gaming-profile-header {
     position: relative;
 }
 
-/* Ensure parent is anchor */
-
 .profile-avatar-container {
     position: absolute;
-    top: 290px;
-    /* Banner (250) + Margin (~40) - Overlap (60) ? No. */
-    /* Tabs (Height?) + Banner (250) + Margin around... */
-    /* Better: position relative to banner bottom using negative margin if strict header flow, 
-       OR just absolute relative to the Header container which has Title + Tabs + Banner. */
-    /* Let's guess: Title (~50) + Tabs (~50) + Mar (~30) + Banner (250) = ~380. 
-       Easier: Let JS structure put it AFTER banner, use margin-top: -60px. */
-    margin-top: -60px;
-    margin-left: 40px;
-    /* Left align */
+    /* top: 60px; REMOVED per user request */
+    margin-top: -80px;
+    /* Overlap the banner bottom */
+    margin-left: 20px;
+    /* Slight offset from left edge */
     z-index: 10;
     pointer-events: none;
     /* Let clicks pass through empty space */
@@ -617,7 +640,13 @@ h4,
 }
 
 .banner-option:hover {
-    border-color: var(--clr-accent) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.banner-option.selected {
+    border-color: var(--theme-primary-color, #00A4DC) !important;
+    box-shadow: 0 0 15px rgba(0, 164, 220, 0.4);
+    transform: scale(1.05);
 }
 
 /* LOGO REPLACEMENTS */
@@ -651,4 +680,74 @@ h4,
     background-position: center !important;
     height: 120px !important;
     width: 350px !important;
+}
+
+/* --- Banner Add/Edit Button Logic --- */
+
+/* 1. Default State (No Banner): Large Dashed Box */
+.banner-add-btn {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 2;
+    position: relative;
+    /* Default relative for full size */
+}
+
+.profile-banner .banner-add-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.banner-add-text {
+    margin-top: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* 2. Banner Exists State: Subtle "Edit" Glass Pill */
+.profile-banner.has-banner .banner-add-btn {
+    width: auto;
+    height: auto;
+    position: absolute;
+    /* Center it */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 10px 25px;
+    display: flex;
+    flex-direction: row;
+    /* Icon + Text side by side */
+    gap: 10px;
+
+    opacity: 0;
+    /* Hidden by default */
+}
+
+/* Show on hover of parent */
+.profile-banner.has-banner:hover .banner-add-btn {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.profile-banner.has-banner .banner-add-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: white;
+    transform: translate(-50%, -50%) scale(1.05);
 }
