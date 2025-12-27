@@ -58,8 +58,10 @@ h4,
 .legit-nav-links {
     display: flex !important;
     flex-direction: row !important;
-    gap: 35px !important;
-    margin-left: 40px !important;
+    gap: 20px !important;
+    /* Reduced from 35px */
+    margin-left: 20px !important;
+    /* Reduced from 40px */
     z-index: 1001 !important;
     align-items: center;
 }
@@ -89,12 +91,14 @@ h4,
     display: none !important;
 }
 
-/* 4. Fix Overlap & Gaps */
+/* 4. Fix Overlap & Gaps (THE FIX FOR "Initial Height Disappeared") */
+/* Since Hero is Absolute, we MUST push content down manually */
 .homeSectionsContainer,
 .mainAnimatedPages,
 #indexPage .pageContent {
     margin-top: 0 !important;
-    padding-top: 0 !important;
+    padding-top: 85vh !important;
+    /* Matches Hero Height */
     min-height: 100vh;
 }
 
@@ -104,8 +108,8 @@ h4,
     /* Absolute top behind nav */
     display: block !important;
     width: 100%;
-    height: 90vh;
-    /* Extended height */
+    height: 90vh !important;
+    /* Extended height for visual overlap */
     overflow: hidden;
     top: 0;
     left: 0;
@@ -166,11 +170,18 @@ h4,
     padding-right: 0 !important;
 }
 
-/* Hide specific header icons (Cast, Sync/Dice, etc.) 
-   Keep Search (.headerSearchButton) and User (.headerUserButton) */
-.headerRight .paper-icon-button-light:not(.headerSearchButton):not(.headerUserButton) {
+/* Hide specific header icons (Cast, Sync/Dice, etc.)
+   Keep Search (.headerSearchButton) and User (.userButton / .headerUserButton) */
+/* Explicitly hiding known classes is safer than :not() which might miss the user button class variations */
+.headerCastButton,
+.headerSyncButton,
+.headerButton[title="Cast"],
+.headerButton[title="Select Server"] {
     display: none !important;
 }
+
+/* Revert the aggressive :not, as it hid the User Profile */
+/* .headerRight .paper-icon-button-light:not(.headerSearchButton):not(.headerUserButton) { display: none !important; } */
 
 /* --- USER PREFERENCES MENU REDESIGN (Grid) --- */
 #myPreferencesMenuPage .scrollSlider {
