@@ -11,8 +11,49 @@
     --theme-text-muted: #bcbcbc !important;
 
     --selection-background: var(--theme-primary) !important;
-    --skin-header-background: rgba(20, 20, 20, 0.95) !important;
+    --skin-header-background: transparent !important;
+    /* Transparent for overlay */
     --skin-bg: var(--theme-background) !important;
+}
+
+/* --- NAVIGATION REDESIGN --- */
+/* 1. Transparent Overlay Header */
+.skinHeader {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
+    background-color: transparent !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    box-shadow: none !important;
+    border-bottom: none !important;
+    display: flex;
+    /* Ensure alignment */
+    align-items: center;
+}
+
+/* 2. Hide "Home / Favorites" Tabs */
+.headerTabs {
+    display: none !important;
+}
+
+/* 3. Remove Gaps above Hero */
+.app-footer {
+    margin-bottom: 0 !important;
+}
+
+.homeSectionsContainer,
+.mainAnimatedPages,
+#indexPage .pageContent {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* 4. Fix Header Content Alignment */
+.headerLeft,
+.headerRight {
+    z-index: 101;
 }
 
 /* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */

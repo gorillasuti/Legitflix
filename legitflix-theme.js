@@ -1,9 +1,9 @@
-/* LegitFlix Theme JS v3.1
-   - Loader: Removed custom overlay (using CSS logo replacement instead).
-   - Core: Robust playback logic and strict checks.
+/* LegitFlix Theme JS v3.3
+   - Navigation: Integrated Jellyseerr injection into "My Media" list.
+   - Core: Single-file "God Mode" logic updates.
 */
 
-console.log('%c LegitFlix: Theme v3.1 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Theme v3.3 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
 // --- GLOBAL NAVIGATION HELPER ---
@@ -169,11 +169,24 @@ function startCarousel() {
     }, 8000); // 8 seconds per slide
 }
 
-// --- PLAYBACK HELPER (Robust Logic) ---
+// --- PLAYBACK HELPER (Robust Logic with Retry) ---
 window.legitFlixPlay = async function (id) {
+    // Helper to wait for globals
+    const waitForGlobals = async (retries = 10, delay = 200) => {
+        for (let i = 0; i < retries; i++) {
+            if (window.PlaybackManager && window.ApiClient) return true;
+            await new Promise(r => setTimeout(r, delay));
+        }
+        return false;
+    };
+
     if (!window.PlaybackManager || !window.ApiClient) {
-        alert("Please wait for Jellyfin to finish loading...");
-        return;
+        console.warn('LegitFlix: Globals not ready, waiting...');
+        const ready = await waitForGlobals();
+        if (!ready) {
+            alert("Jellyfin is still loading components. Please try again in a moment.");
+            return;
+        }
     }
 
     const apiClient = window.ApiClient;
@@ -223,7 +236,13 @@ async function injectMediaBar() {
         if (!container) container = document.querySelector('.mainAnimatedPages');
         if (!container) container = document.querySelector('#indexPage .pageContent');
 
-        if (container) {
+        // CHECK DOM AND GLOBALS
+        // Only inject if the container exists AND specific Jellyfin globals are mostly ready.
+        // We permit injection if container is ready, but checks in play button handle the rest.
+        // However, to be safe, let's wait for ApiClient at least.
+        const isReady = container && window.ApiClient;
+
+        if (isReady) {
             clearInterval(checkInterval);
             const wrapper = document.createElement('div');
             wrapper.innerHTML = createMediaBarHTML(items);
@@ -237,13 +256,86 @@ async function injectMediaBar() {
         }
     }, 1000);
 
-    setTimeout(() => clearInterval(checkInterval), 10000);
+    setTimeout(() => clearInterval(checkInterval), 15000); // Extended timeout
+}
+
+// --- JELLYSEERR INJECTION ---
+function injectJellyseerr() {
+    // Config
+    const jellyseerrUrl = 'https://request.legitflix.eu';
+    const logoUrl = 'https://belginux.com/content/images/size/w1200/2024/03/jellyseerr-1.webp';
+    const cardId = 'jellyseerr-card';
+
+    // 1. My Media Card
+    // Target the first itemsContainer in homePage, which is usually "My Media"
+    const container = document.querySelector('.homePage .itemsContainer.scrollSlider');
+
+    // Only inject if container exists and we haven't injected yet
+    if (container && !document.querySelector(`#${cardId}`)) {
+        console.log('LegitFlix: Injecting Jellyseerr Card...');
+
+        const cardHtml = `
+        <div id="${cardId}" data-isfolder="true" class="card overflowBackdropCard card-hoverable card-withuserdata">
+            <div class="cardBox cardBox-bottompadded">
+                <div class="cardScalable">
+                    <div class="cardPadder cardPadder-overflowBackdrop"></div>
+                    <a href="${jellyseerrUrl}" target="_blank" class="cardImageContainer coveredImage cardContent itemAction" 
+                       aria-label="Jellyseerr" 
+                       style="background-image: url('${logoUrl}'); background-size: cover; background-position: center;">
+                    </a>
+                </div>
+                <div class="cardText cardTextCentered cardText-first">
+                    <bdi>
+                        <a href="${jellyseerrUrl}" target="_blank" class="itemAction textActionButton" title="Jellyseerr">Jellyseerr</a>
+                    </bdi>
+                </div>
+            </div>
+        </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', cardHtml);
+
+        // Refresh scroller if possible
+        const scroller = container.closest('[is="emby-scroller"]');
+        if (scroller && typeof scroller.refreshSize === 'function') {
+            setTimeout(() => scroller.refreshSize(), 50);
+        }
+    }
 }
 
 function init() {
+    // 1. Hero Carousel
     injectMediaBar();
+
+    // 2. Jellyseerr
+    injectJellyseerr();
+
+    // 3. Observers for navigation/persistence
+    // Using MutationObserver to catch when views load
+    const observer = new MutationObserver((mutations) => {
+        let shouldInjectMedia = false;
+        let shouldInjectJelly = false;
+
+        for (const m of mutations) {
+            if (m.addedNodes.length) {
+                // Check for Home Page containers
+                if (document.querySelector('.homeSectionsContainer')) {
+                    shouldInjectMedia = true;
+                    shouldInjectJelly = true;
+                }
+            }
+        }
+
+        if (shouldInjectMedia) injectMediaBar();
+        if (shouldInjectJelly) injectJellyseerr();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Also hook into viewshow event just in case
     document.addEventListener('viewshow', () => {
         injectMediaBar();
+        injectJellyseerr();
     });
 }
 
