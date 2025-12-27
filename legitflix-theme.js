@@ -1477,6 +1477,10 @@ function init() {
         _injectedHero = false;
         _injectedJelly = false;
 
+        // Remove profile header to force re-injection on new page
+        const oldHeader = document.querySelector('.gaming-profile-header');
+        if (oldHeader) oldHeader.remove();
+
         // RE-RUN ACTIVE STATE CHECK ON NAV (For Pill Effect)
         setTimeout(() => {
             const currentHash = window.location.hash;
