@@ -480,7 +480,11 @@ async function injectFeaturedPrefs() {
         btnIcon = 'edit';
     }
 
-    const headerHtml = `
+    // Detect if we're on "My Details" page (needs banner/avatar) vs other settings pages
+    const isMyDetailsPage = prefsPage.id === 'myPreferencesMenuPage';
+
+    // Build header HTML with conditional banner/avatar sections
+    let headerHtml = `
         <div class="gaming-profile-header">
             <h1 class="profile-page-title">Account Settings</h1>
             
@@ -497,7 +501,11 @@ async function injectFeaturedPrefs() {
                     <span class="material-icons">exit_to_app</span>
                 </a>
             </div>
+    `;
 
+    // Only add banner and avatar on "My Details" page
+    if (isMyDetailsPage) {
+        headerHtml += `
             <div class="profile-banner ${bannerClass}" style="${bannerStyle}">
                 <div class="banner-overlay"></div>
                 
@@ -514,6 +522,10 @@ async function injectFeaturedPrefs() {
                     <span class="material-icons-outlined" style="font-size: 18px;">mode_edit</span>
                 </div>
             </div>
+        `;
+    }
+
+    headerHtml += `
         </div>
     `;
 
@@ -1332,8 +1344,9 @@ async function pollForUI() {
 
 // Helper to Inject Password Form (if valid container doesn't have it)
 window.ensurePasswordForm = function () {
-    // Only on preferences page
-    if (!window.location.hash.toLowerCase().includes('preferences')) return;
+    // Only on "My Details" page (mypreferencesmenu), not other settings pages
+    const hash = window.location.hash.toLowerCase();
+    if (!hash.includes('mypreferencesmenu')) return;
 
     // Check if we already have it
     if (document.getElementById('customPasswordForm')) return;
