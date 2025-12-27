@@ -372,13 +372,8 @@ async function injectFeaturedPrefs() {
     console.log('[LegitFlix] injectFeaturedPrefs: Starting...');
 
     // 1. Target ANY user preferences page (Menu, Display, Home, Playback, etc.)
-    const prefsPage = document.querySelector('#myPreferencesMenuPage') ||
-        document.querySelector('#myPreferencesDisplayPage') ||
-        document.querySelector('#myPreferencesHomePage') ||
-        document.querySelector('#myPreferencesPlaybackPage') ||
-        document.querySelector('#myPreferencesSubtitlesPage') ||
-        document.querySelector('#quickConnectPage') ||
-        document.querySelector('.type-UserView'); // Generic fallback
+    // All settings pages have the 'userPreferencesPage' class
+    const prefsPage = document.querySelector('.userPreferencesPage');
 
     if (!prefsPage) {
         // Debug: Log all pages with data-role="page" to see what's available
@@ -390,9 +385,11 @@ async function injectFeaturedPrefs() {
     console.log('[LegitFlix] injectFeaturedPrefs: Found page:', prefsPage.id || prefsPage.className);
 
     // Use .readOnlyContent or specific containers based on user HTML
+    // Form pages often have the form directly as child, card pages use .readOnlyContent
     const contentContainer = prefsPage.querySelector('.readOnlyContent') ||
-        prefsPage.querySelector('.content-primary') || // Common on detail pages
-        prefsPage.querySelector('.pageContent'); // Generic fallback
+        prefsPage.querySelector('.content-primary') ||
+        prefsPage.querySelector('form') || // Form-based pages (Display, Playback, etc.)
+        prefsPage; // Ultimate fallback: inject into page itself
 
     if (!contentContainer) {
         console.log('[LegitFlix] injectFeaturedPrefs: No content container found');
