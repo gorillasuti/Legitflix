@@ -9,7 +9,7 @@
     --theme-card-bg: #1f1f1f !important;
     --theme-text: #ffffff !important;
     --theme-text-muted: #bcbcbc !important;
-    
+
     --selection-background: var(--theme-primary) !important;
     --skin-header-background: rgba(20, 20, 20, 0.95) !important;
     --skin-bg: var(--theme-background) !important;
@@ -26,15 +26,15 @@
     background-repeat: no-repeat;
     background-position: left center;
     background-size: contain;
-    text-indent: -9999px; 
-    width: 150px; 
+    text-indent: -9999px;
+    width: 150px;
 }
 
-.adminDrawerLogo img, 
+.adminDrawerLogo img,
 .pageTitleWithLogo img,
 .authLogo img {
     /* Hide the original image src */
-    opacity: 0 !important; 
+    opacity: 0 !important;
 }
 
 .adminDrawerLogo {
@@ -59,14 +59,14 @@
     position: relative;
     z-index: 10;
     /* Ensure it sits on top of any plugin backgrounds */
-    background: var(--theme-background); 
+    background: var(--theme-background);
 }
 
 .legit-media-header {
     display: flex;
     flex-direction: column;
     margin-bottom: 15px;
-    padding-left: 2%; 
+    padding-left: 2%;
 }
 
 .legit-header-title {
@@ -87,11 +87,11 @@
     overflow-x: auto;
     gap: 15px;
     padding: 10px 2%;
-    scrollbar-width: none; 
+    scrollbar-width: none;
 }
 
 .legit-media-scroller::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
 
 .legit-media-card {
@@ -103,13 +103,13 @@
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .legit-media-card:hover {
     transform: scale(1.1);
     z-index: 20;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
 
 .legit-card-image {
@@ -124,7 +124,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
     padding: 40px 10px 10px;
     opacity: 0;
     transition: opacity 0.2s;
