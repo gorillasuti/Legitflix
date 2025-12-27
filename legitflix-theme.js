@@ -770,7 +770,7 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
         const uploadRes = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${window.ApiClient.deviceName()}", DeviceId="${window.ApiClient.deviceId()}", Version="${window.ApiClient.applicationVersion()}", Token="${accessToken}"`,
+                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${accessToken}"`,
                 'Content-Type': 'image/png'
             },
             body: rawBase64
@@ -794,129 +794,211 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
 window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Banner');
 
 /* --- CUSTOM AVATAR PICKER (Native) --- */
+/* --- CUSTOM AVATAR PICKER (Netflix Style) --- */
 window.LegitFlixAvatarPicker = {
     repoBase: 'https://raw.githubusercontent.com/kalibrado/js-avatars-images/refs/heads/main',
+    allImages: [],
 
     open: async function () {
-        // Show Loading Spinner
+        // Simple Loading Indicator
         const loader = document.createElement('div');
         loader.className = 'legit-popup-overlay';
-        loader.innerHTML = '<div style="color:white; font-size:20px; display:flex; justify-content:center; align-items:center; height:100%;">Loading Avatars...</div>';
+        loader.innerHTML = '<div style="color:white; font-size:24px; font-weight:bold;">Loading Avatars...</div>';
         document.body.appendChild(loader);
 
         try {
             const res = await fetch(`${this.repoBase}/images_metadata.json`);
             if (!res.ok) throw new Error('Network error');
-            const data = await res.json();
+            this.allImages = await res.json(); // Data is a flat array
 
             loader.remove();
-            this.renderModal(data);
+            this.renderModal();
         } catch (e) {
             loader.remove();
             console.error('Failed to load avatars', e);
-            alert('Failed to load avatar library. Please obtain internet connection or check console.');
+            alert('Failed to load avatars. Please check console.');
         }
     },
 
-    renderModal: function (data) {
+    renderModal: function () {
+        // Extract Unique Categories from "folder" property
+        const categories = [...new Set(this.allImages.map(img => img.folder))].sort();
+
         const overlay = document.createElement('div');
         overlay.className = 'legit-popup-overlay';
-        overlay.style.backdropFilter = 'blur(10px)';
+        overlay.style.backdropFilter = 'blur(15px)';
+        overlay.style.background = 'rgba(0, 0, 0, 0.85)';
+        overlay.style.zIndex = '99999';
 
         const style = document.createElement('style');
         style.innerHTML = `
-            .lf-picker-container {
-                width: 90%; max-width: 900px; height: 80vh;
-                background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 12px; display: flex; flex-direction: column;
-                box-shadow: 0 0 50px rgba(0,0,0,0.5); font-family: sans-serif;
+            .lf-picker-modal {
+                width: 95vw; height: 90vh;
+                background: #141414;
+                color: #fff;
+                display: flex; flex-direction: column;
+                border-radius: 12px;
+                box-shadow: 0 0 80px rgba(0,0,0,0.9);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                overflow: hidden;
+                position: relative;
             }
-            .lf-picker-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; color: white; }
-            .lf-picker-tabs { display: flex; overflow-x: auto; padding: 15px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-            .lf-picker-tab { padding: 8px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; cursor: pointer; white-space: nowrap; transition: 0.2s; color: #ccc; user-select: none; }
-            .lf-picker-tab:hover, .lf-picker-tab.active { background: #00a4dc; color: white; }
-            .lf-picker-grid { flex: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; }
-            .lf-picker-item { aspect-ratio: 1; border-radius: 50%; background-size: cover; cursor: pointer; transition: 0.2s; border: 3px solid transparent; background-position: center; }
-            .lf-picker-item:hover { transform: scale(1.1); border-color: #00a4dc; z-index: 2; }
+            .lf-picker-header {
+                padding: 25px 40px;
+                display: flex; justify-content: space-between; align-items: center;
+                border-bottom: 3px solid #000;
+                background: linear-gradient(to bottom, #222, #141414);
+                z-index: 10;
+            }
+            .lf-picker-title { font-size: 2vw; font-weight: 700; margin: 0; color: #e5e5e5; }
+            
+            .lf-picker-controls { display: flex; gap: 20px; align-items: center; }
+            
+            .lf-search-input {
+                background: #000; border: 1px solid #333; color: white;
+                padding: 12px 18px; border-radius: 4px; font-size: 1rem; width: 300px;
+                transition: border 0.3s;
+            }
+            .lf-search-input:focus { border-color: #fff; outline: none; }
+            
+            .lf-category-select {
+                background: #333; border: 1px solid #444; color: white;
+                padding: 12px 18px; border-radius: 4px; font-size: 1rem;
+                cursor: pointer; font-weight: bold;
+            }
+            .lf-category-select:hover { background: #444; }
+
+            .lf-picker-grid {
+                flex: 1; overflow-y: auto;
+                padding: 40px;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 30px;
+                justify-content: center;
+                align-content: start;
+            }
+            
+            .lf-picker-item {
+                aspect-ratio: 1;
+                border-radius: 50%;
+                background-size: cover; background-position: center;
+                cursor: pointer;
+                transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border 0.2s;
+                border: 4px solid transparent;
+                position: relative;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            }
+            .lf-picker-item:hover {
+                transform: scale(1.15);
+                border-color: #fff; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                z-index: 2;
+            }
+            
+            .lf-picker-close {
+                position: absolute; top: 15px; right: 25px;
+                background: transparent; border: none; color: #fff;
+                font-size: 35px; cursor: pointer; opacity: 0.5;
+                transition: opacity 0.2s;
+                z-index: 20;
+            }
+            .lf-picker-close:hover { opacity: 1; }
+            
+            @media (max-width: 768px) {
+                .lf-picker-header { flex-direction: column; gap: 15px; align-items: flex-start; padding: 20px; }
+                .lf-picker-controls { width: 100%; flex-wrap: wrap; }
+                .lf-search-input { width: 100%; }
+                .lf-picker-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); padding: 15px; gap: 15px; }
+            }
         `;
         overlay.appendChild(style);
 
-        const container = document.createElement('div');
-        container.className = 'lf-picker-container';
+        const modal = document.createElement('div');
+        modal.className = 'lf-picker-modal';
 
-        container.innerHTML = `
+        const catOptions = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        modal.innerHTML = `
             <div class="lf-picker-header">
-                <h2 style="margin:0; font-size: 1.5rem;">Choose an Avatar</h2>
-                <button class="legit-btn-secondary" id="btnCloseLFPicker">Close</button>
+                <h1 class="lf-picker-title">Select your avatar</h1>
+                <div class="lf-picker-controls">
+                    <input type="text" class="lf-search-input" id="lfAvatarSearch" placeholder="Search for an avatar...">
+                    <select class="lf-category-select" id="lfAvatarFilter">
+                        <option value="All">All Categories</option>
+                        ${catOptions}
+                    </select>
+                </div>
+                <button class="lf-picker-close" id="lfPickerClose">&times;</button>
             </div>
-            <div class="lf-picker-tabs" id="lfPickerTabs"></div>
             <div class="lf-picker-grid" id="lfPickerGrid"></div>
         `;
 
-        overlay.appendChild(container);
+        overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        container.querySelector('#btnCloseLFPicker').onclick = () => overlay.remove();
+        const searchInput = modal.querySelector('#lfAvatarSearch');
+        const filterSelect = modal.querySelector('#lfAvatarFilter');
+        const grid = modal.querySelector('#lfPickerGrid');
+        const closeBtn = modal.querySelector('#lfPickerClose');
 
-        const tabsContainer = container.querySelector('#lfPickerTabs');
-        const gridContainer = container.querySelector('#lfPickerGrid');
+        closeBtn.onclick = () => overlay.remove();
 
-        // Data Handling - assuming Dictionary { "Category": [url, url], ... }
-        // or whatever format. 
-        // If it is different, we iterate keys.
-        const categories = Object.keys(data);
+        const refreshGrid = () => {
+            const query = searchInput.value.toLowerCase();
+            const cat = filterSelect.value;
 
-        categories.forEach((category, index) => {
-            const tab = document.createElement('div');
-            tab.className = 'lf-picker-tab';
-            tab.textContent = category;
+            const filtered = this.allImages.filter(img => {
+                const matchesSearch = img.name.toLowerCase().includes(query) || img.folder.toLowerCase().includes(query);
+                const matchesCat = cat === 'All' || img.folder === cat;
+                return matchesSearch && matchesCat;
+            });
 
-            tab.onclick = () => {
-                document.querySelectorAll('.lf-picker-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.renderGrid(gridContainer, data[category]);
-            };
-            tabsContainer.appendChild(tab);
+            this.renderGridItems(grid, filtered);
+        };
 
-            if (index === 0) tab.click();
-        });
+        searchInput.oninput = refreshGrid;
+        filterSelect.onchange = refreshGrid;
+
+        // Render initial
+        this.renderGridItems(grid, this.allImages);
     },
 
-    renderGrid: function (container, images) {
-        container.innerHTML = '';
-        images.forEach(img => {
-            // Check if img is object or string
-            let url = img;
-            if (typeof img === 'object' && img.url) url = img.url;
-            if (typeof img === 'object' && img.src) url = img.src;
+    renderGridItems: function (container, images) {
+        // PERFORMANCE GUARD: Limit rendering to 500 items to prevent DOM freeze
+        const displayImages = images.slice(0, 500);
 
-            // Handle relative paths
-            if (!url.startsWith('http')) {
-                url = `${this.repoBase}/${url}`;
-            }
+        const html = displayImages.map(img => `
+            <div class="lf-picker-item" 
+                 title="${img.name}" 
+                 style="background-image: url('${img.url}')">
+            </div>
+        `).join('');
 
-            const item = document.createElement('div');
-            item.className = 'lf-picker-item';
-            item.style.backgroundImage = `url('${url}')`;
-            item.title = "Select Avatar";
-            item.onclick = () => this.selectAvatar(url);
-            container.appendChild(item);
+        container.innerHTML = html;
+
+        if (images.length > 500) {
+            container.insertAdjacentHTML('beforeend', '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">(Only showing first 500 results. Use search to find specific items.)</div>');
+        }
+
+        // Add Listeners
+        const items = container.querySelectorAll('.lf-picker-item');
+        items.forEach((item, index) => {
+            item.onclick = () => this.selectAvatar(displayImages[index].url);
         });
     },
 
     selectAvatar: async function (url) {
-        if (!confirm('Use this avatar?')) return;
+        if (!confirm('Set as your avatar?')) return;
 
         const grid = document.querySelector('.lf-picker-grid');
-        if (grid) grid.innerHTML = '<div style="color:white; display:flex; justify-content:center; align-items:center; height:100%;"><h3>Uploading...</h3></div>';
+        grid.innerHTML = '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white;"><h1>Updating Profile...</h1><p>Please wait...</p></div>';
 
         const success = await window.uploadExternalImage(url, 'Primary');
         if (success) {
-            alert('Avatar Updated!');
             location.reload();
         } else {
-            // Error handled in uploader
-            if (grid) grid.innerHTML = '<div style="color:red; text-align:center;">Upload Failed.</div>';
+            alert('Update failed. Please try again.');
+            document.querySelector('.legit-popup-overlay').remove();
         }
     }
 };
