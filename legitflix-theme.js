@@ -546,26 +546,85 @@ window.legitFlixOpenAvatarPicker = function () {
 };
 
 // Trigger Native Upload by finding the original (hidden) header image button
+// Trigger Native Upload by finding the original input
 window.triggerNativeUpload = function () {
-    // Attempt 1: The original headerUserButton (hidden by us)
-    const originalBtn = document.querySelector('.headerUserButton');
-    if (originalBtn) {
-        originalBtn.click();
+    console.log('LegitFlix: Triggering Native Upload...');
+
+    // The user identified <input id="uploadImage">
+    const input = document.getElementById('uploadImage');
+    if (input) {
+        // Ensure it's not hidden in a way that prevents click (though file inputs usually work)
+        console.log('LegitFlix: Found #uploadImage. Clicking...');
+        input.click();
         document.querySelector('.legit-popup-overlay').remove();
         return;
     }
-    // Attempt 2: Generic fallback if we are on a page with an upload button
-    const uploadBtn = document.querySelector('.btnUpload');
-    if (uploadBtn) {
-        uploadBtn.click();
+
+    // Fallback: The container
+    const placeholder = document.querySelector('.imagePlaceHolder');
+    if (placeholder) {
+        console.log('LegitFlix: Found .imagePlaceHolder. Clicking...');
+        placeholder.click();
         document.querySelector('.legit-popup-overlay').remove();
         return;
     }
-    alert('Native upload button not found. Please verify you are on the User Settings page.');
+
+    // Fallback 2: The standard button classes
+    const btn = document.querySelector('.btnUpload') || document.querySelector('.headerUserButton');
+    if (btn) {
+        btn.click();
+        document.querySelector('.legit-popup-overlay').remove();
+        return;
+    }
+
+    alert('Native upload button (#uploadImage) not found. This feature depends on Jellyfin\'s default elements being present (even if hidden).');
 };
 
+// Helper for Avatars Plugin detection
+function ensurePluginTriggers() {
+    // The bundled avatars.js waits for node.id === "cssBranding" or text "Profile"
+    // We inject a dummy cssBranding to wake it up if it hasn't fired.
+    if (!document.getElementById('cssBranding')) {
+        const dummy = document.createElement('div');
+        dummy.id = 'cssBranding';
+        dummy.style.display = 'none';
+        document.body.appendChild(dummy);
+        console.log('LegitFlix: Injected #cssBranding to trigger avatars plugin.');
+    }
+}
+
 // Helper to trigger the installed avatars plugin
-// Helper to trigger the installed avatars plugin
+window.triggerAvatarsPlugin = function () {
+    const findAndClickValue = () => {
+        // Plugin injects ID 'show-modal' or 'jf-avatars-btn-show-modal'
+        // It injects it BEFORE the upload button usually.
+        const pluginBtn = document.getElementById('jf-avatars-btn-show-modal') || document.getElementById('show-modal');
+        if (pluginBtn) {
+            console.log('LegitFlix: Found plugin button. Clicking...');
+            pluginBtn.click();
+            document.querySelector('.legit-popup-overlay').remove();
+            return true;
+        }
+        return false;
+    };
+
+    if (!findAndClickValue()) {
+        console.log('LegitFlix: Plugin button empty. Ensuring triggers...');
+        ensurePluginTriggers();
+
+        // Retry
+        let retries = 10;
+        const interval = setInterval(() => {
+            if (findAndClickValue()) {
+                clearInterval(interval);
+            } else if (retries <= 0) {
+                clearInterval(interval);
+                alert('Avatars Plugin not ready. Please ensure the "jf-avatars" plugin is installed and that we are on the Profile page.');
+            }
+            retries--;
+        }, 200);
+    }
+};
 
 // Helper to upload backdrop to Jellyfin Server
 window.uploadUserBackdrop = async function (imageUrl) {
