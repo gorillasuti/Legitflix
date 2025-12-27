@@ -381,7 +381,10 @@ async function injectFeaturedPrefs() {
         document.querySelector('.type-UserView'); // Generic fallback
 
     if (!prefsPage) {
-        console.log('[LegitFlix] injectFeaturedPrefs: No prefs page found');
+        // Debug: Log all pages with data-role="page" to see what's available
+        const allPages = document.querySelectorAll('[data-role="page"]');
+        console.log('[LegitFlix] injectFeaturedPrefs: No matching page. Available pages:',
+            Array.from(allPages).map(p => `${p.id} (${p.className})`).join(', '));
         return;
     }
     console.log('[LegitFlix] injectFeaturedPrefs: Found page:', prefsPage.id || prefsPage.className);
