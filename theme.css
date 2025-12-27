@@ -338,7 +338,7 @@ h4,
 /* CONTENT PUSH */
 /* CONTENT PUSH - Scoped only to Home/Library views typically, avoiding Settings */
 .homeSectionsContainer,
-.mainAnimatedPages:not(.type-UserView) {
+.mainAnimatedPages:not(.userPreferencesPage) {
     margin-top: 0 !important;
     padding-top: 85vh !important;
     min-height: 100vh;
@@ -346,7 +346,7 @@ h4,
 
 /* Force standard spacing for Settings/Preferences pages to fix "Huge Space" */
 #myPreferencesMenuPage .pageContent,
-.type-UserView .pageContent {
+.userPreferencesPage .pageContent {
     padding-top: 120px !important;
     /* Enough for header */
     margin-top: 0 !important;
@@ -843,25 +843,25 @@ h4,
 }
 
 /* --- USER SETTINGS PAGE STYLING (Global for type-UserView) --- */
-.type-UserView .inputContainer,
-.type-UserView .selectContainer,
-.type-UserView .checkboxContainer {
+.userPreferencesPage .inputContainer,
+.userPreferencesPage .selectContainer,
+.userPreferencesPage .checkboxContainer {
     margin-bottom: 20px;
     width: 100%;
 }
 
-.type-UserView .inputLabel,
-.type-UserView .selectLabel,
-.type-UserView .textareaLabel {
+.userPreferencesPage .inputLabel,
+.userPreferencesPage .selectLabel,
+.userPreferencesPage .textareaLabel {
     margin-bottom: 8px;
     font-size: 0.95rem;
     color: #ccc;
     font-weight: 500;
 }
 
-.type-UserView .emby-input,
-.type-UserView .emby-textarea,
-.type-UserView .emby-select-withcolor {
+.userPreferencesPage .emby-input,
+.userPreferencesPage .emby-textarea,
+.userPreferencesPage .emby-select-withcolor {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
@@ -876,16 +876,16 @@ h4,
     appearance: none;
 }
 
-.type-UserView .emby-input:focus,
-.type-UserView .emby-textarea:focus,
-.type-UserView .emby-select-withcolor:focus {
+.userPreferencesPage .emby-input:focus,
+.userPreferencesPage .emby-textarea:focus,
+.userPreferencesPage .emby-select-withcolor:focus {
     background: rgba(255, 255, 255, 0.1);
     border-color: var(--theme-primary-color, #00A4DC);
     box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2) !important;
 }
 
 /* Checkboxes */
-.type-UserView .checkboxContainer {
+.userPreferencesPage .checkboxContainer {
     background: rgba(255, 255, 255, 0.03);
     padding: 15px;
     border-radius: 6px;
@@ -896,24 +896,24 @@ h4,
     justify-content: space-between;
 }
 
-.type-UserView .checkboxContainer:hover {
+.userPreferencesPage .checkboxContainer:hover {
     background: rgba(255, 255, 255, 0.07);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-.type-UserView .emby-checkbox-label {
+.userPreferencesPage .emby-checkbox-label {
     flex: 1;
     display: flex;
     align-items: center;
 }
 
-.type-UserView .checkboxLabel {
+.userPreferencesPage .checkboxLabel {
     font-weight: 500;
     flex-grow: 1;
 }
 
 /* Titles */
-.type-UserView .sectionTitle {
+.userPreferencesPage .sectionTitle {
     font-size: 1.1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
