@@ -367,81 +367,74 @@ function injectJellyseerr() {
 }
 
 // --- PREFERENCES: FEATURED HEADER ---
+// --- PREFERENCES: GAMING PROFILE LAYOUT ---
 async function injectFeaturedPrefs() {
     const prefsPage = document.querySelector('#myPreferencesMenuPage');
     if (!prefsPage) return;
 
-    // Check if aligned
-    if (prefsPage.querySelector('.featured-prefs-container')) return;
+    // Use .readOnlyContent as the main container based on user HTML
+    const contentContainer = prefsPage.querySelector('.readOnlyContent');
+    if (!contentContainer) return;
+
+    // Avoid double injection
+    if (prefsPage.querySelector('.gaming-profile-header')) return;
 
     // 1. Get User Data
     let user = null;
     try {
         user = await window.ApiClient.getCurrentUser();
     } catch (e) { console.error('Error getting user', e); }
-
     if (!user) return;
 
-    // 2. Identify Target Links in the Grid
-    // We want to move "Profile" and "Quick Connect" (if exists)
-    const scrollSlider = prefsPage.querySelector('.scrollSlider');
-    if (!scrollSlider) return;
+    const userImageUrl = `/Users/${user.Id}/Images/Primary?quality=90&maxHeight=300`;
 
-    const allLinks = Array.from(scrollSlider.querySelectorAll('.listItem'));
-    const profileLink = allLinks.find(el => el.getAttribute('href') && el.getAttribute('href').includes('userprofile'));
-    const quickConnectLink = allLinks.find(el => el.getAttribute('href') && el.getAttribute('href').includes('quickconnect'));
+    // 2. Map Links for Tabs
+    // We try to find existing links to make tabs functional
+    const findLink = (str) => {
+        const a = contentContainer.querySelector(`a[href*="${str}"]`);
+        return a ? a.getAttribute('href') : '#';
+    };
 
-    // 3. Construct Featured Header
-    // We use the User Image (or default) + Name
-    const userImageUrl = `/Users/${user.Id}/Images/Primary?quality=90&maxHeight=200`;
+    const profileHref = findLink('userprofile');
+    const displayHref = findLink('mypreferencesdisplay');
+    const homeHref = findLink('mypreferenceshome');
+    const playbackHref = findLink('mypreferencesplayback');
 
-    // Check if user has image (if not, use placeholder)
-    // For simplicity, we assume the URL is valid, or fallback in CSS
-
-    // Create 'Action Buttons' HTML from potential links
-    let actionsHtml = '';
-
-    if (profileLink) {
-        actionsHtml += `
-            <a href="${profileLink.getAttribute('href')}" class="pref-action-btn">
-                <i class="material-icons-outlined">person</i>
-                <span>Profile</span>
-            </a>
-        `;
-        // Hide original
-        profileLink.style.display = 'none';
-        profileLink.classList.add('moved-to-featured');
-    }
-
-    if (quickConnectLink) {
-        actionsHtml += `
-            <a href="${quickConnectLink.getAttribute('href')}" class="pref-action-btn">
-                <i class="material-icons-outlined">qr_code</i>
-                <span>Quick Connect</span>
-            </a>
-        `;
-        // Hide original
-        quickConnectLink.style.display = 'none';
-        quickConnectLink.classList.add('moved-to-featured');
-    }
-
+    // 3. Build the Header HTML (Banner + Avatar + Tabs)
     const headerHtml = `
-        <div class="featured-prefs-container">
-            <div class="featured-user-info">
-                <div class="featured-avatar" style="background-image: url('${userImageUrl}');"></div>
-                <div class="featured-text">
-                    <h1>${user.Name}</h1>
-                    <span>Preferences & Settings</span>
+        <div class="gaming-profile-header">
+            <h1 class="profile-page-title">Account Settings</h1>
+            
+            <div class="profile-banner">
+                <div class="banner-add-btn">
+                    <span class="material-icons-outlined">add</span>
+                    <span class="banner-add-text">Add profile banner</span>
+                </div>
+                
+                <div class="profile-avatar-container">
+                    <div class="profile-avatar" style="background-image: url('${userImageUrl}');"></div>
+                    <div class="avatar-edit-icon">
+                        <span class="material-icons-outlined" style="font-size: 18px;">photo_camera</span>
+                    </div>
                 </div>
             </div>
-            <div class="featured-actions">
-                ${actionsHtml}
+
+            <div class="profile-nav-tabs">
+                <a class="profile-tab active" onclick="location.href='${profileHref}'">My details</a>
+                <a class="profile-tab" onclick="location.href='${displayHref}'">Display</a>
+                <a class="profile-tab" onclick="location.href='${homeHref}'">Home Screen</a>
+                <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
             </div>
         </div>
     `;
 
-    // Insert BEFORE the grid
-    scrollSlider.insertAdjacentHTML('beforebegin', headerHtml);
+    // 4. Insert at TOP of content
+    contentContainer.insertAdjacentHTML('afterbegin', headerHtml);
+
+    // 5. Cleanup Redundant Titles
+    // The first "h2.headerUsername" is usually the username we just replaced
+    const oldTitle = contentContainer.querySelector('.headerUsername');
+    if (oldTitle) oldTitle.style.display = 'none';
 }
 
 // --- INIT & ROBUSTNESS ---
