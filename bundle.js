@@ -1,37 +1,45 @@
-/* LegitFlix Bundle.js v2.1
-   - Fixed: 'appRouter is not defined' error by adding a robust navigation helper.
-   - Fixed: Navigation now supports Jellyfin 10.9+.
+/* LegitFlix Bundle.js v2.2
+   - Added: 'appRouter' Polyfill. Even if the browser caches old HTML, 
+     this script will catch the click and prevent the crash.
 */
 
-console.log('%c LegitFlix: Core Bundle Loaded ', 'background: #e50914; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Bundle v2.2 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
-// --- GLOBAL NAVIGATION HELPER (FIXES CLICK ERROR) ---
+// --- GLOBAL NAVIGATION HELPER ---
 window.legitFlixShowItem = function (id) {
     console.log('LegitFlix: Navigating to', id);
 
-    // Strategy 1: Try standard global router (Older versions)
+    // Strategy 1: Try standard global router
     if (window.appRouter) {
         window.appRouter.showItem(id);
         return;
     }
 
-    // Strategy 2: Try Emby/Jellyfin Page Helper (Newer versions)
-    // Note: window.Emby might be undefined in some module scopes, but usually available globally
+    // Strategy 2: Emby/Jellyfin Page Helper
     if (window.Emby && window.Emby.Page && window.Emby.Page.showItem) {
         window.Emby.Page.showItem(id);
         return;
     }
 
-    // Strategy 3: Universal Hash Navigation (The "Nuclear" Option)
-    // This forces the router to pick up the change
+    // Strategy 3: Universal Hash Navigation
     const newHash = `#!/details?id=${id}`;
     if (window.location.hash !== newHash) {
         window.location.hash = newHash;
     } else {
-        // Force reload if already on the page (rare edge case)
         window.location.reload();
     }
 };
+
+// --- SAFETY SHIM (The Fix for your Error) ---
+// If the old HTML is cached and tries to call appRouter, we catch it here.
+if (typeof appRouter === 'undefined') {
+    console.log('LegitFlix: Polyfilling missing appRouter');
+    window.appRouter = {
+        showItem: function (id) {
+            window.legitFlixShowItem(id);
+        }
+    };
+}
 
 const CONFIG = {
     rootUrl: '',
@@ -65,7 +73,6 @@ async function fetchMediaBarItems() {
     const auth = await getAuth();
     if (!auth) return [];
 
-    // Filter by "IsFavorite" or other parameters if you want specific content
     const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.mediaBar.type}&Recursive=true&SortBy=${CONFIG.mediaBar.sortBy}&Limit=${CONFIG.mediaBar.limit}&Fields=PrimaryImageAspectRatio,Overview,BackdropImageTags&ImageTypeLimit=1`;
 
     try {
@@ -84,7 +91,7 @@ async function fetchMediaBarItems() {
 function createMediaBarHTML(items) {
     const cards = items.map(item => {
         const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=266&quality=90`;
-        // UPDATED ONCLICK: Uses our global helper instead of appRouter directly
+        // Using window.legitFlixShowItem explicitly
         return `
             <div class="legit-media-card" onclick="window.legitFlixShowItem('${item.Id}')">
                 <div class="legit-card-image" style="background-image: url('${imgUrl}')"></div>
@@ -111,8 +118,6 @@ function createMediaBarHTML(items) {
 // --- INJECTION LOGIC ---
 async function injectMediaBar() {
     const hash = window.location.hash;
-
-    // Standard Home + "Startup" handling
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
 
     if (!isHomePage) return;
@@ -121,28 +126,22 @@ async function injectMediaBar() {
     const items = await fetchMediaBarItems();
     if (items.length === 0) return;
 
-    // Aggressive Container Search (Works with standard and plugin themes)
     const checkInterval = setInterval(() => {
-        let container = document.querySelector('.homeSectionsContainer'); // Standard
-        if (!container) container = document.querySelector('.mainAnimatedPages'); // Alternative
-        if (!container) container = document.querySelector('#indexPage .pageContent'); // Fallback
+        let container = document.querySelector('.homeSectionsContainer');
+        if (!container) container = document.querySelector('.mainAnimatedPages');
+        if (!container) container = document.querySelector('#indexPage .pageContent');
 
         if (container) {
             clearInterval(checkInterval);
-
             const wrapper = document.createElement('div');
             wrapper.innerHTML = createMediaBarHTML(items);
-
-            // Inject at top
             container.insertBefore(wrapper, container.firstChild);
             console.log('LegitFlix: Media Bar Injected');
         }
     }, 1000);
-
     setTimeout(() => clearInterval(checkInterval), 10000);
 }
 
-// --- INIT ---
 function init() {
     injectMediaBar();
     document.addEventListener('viewshow', () => {
