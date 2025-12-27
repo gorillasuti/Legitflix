@@ -1,4 +1,4 @@
-/* LegitFlix Theme CSS v2.2
+/* LegitFlix Theme CSS v2.2.1
    - Hero Carousel: Styles for full-width 80vh hero, gradients, and overlays.
    - Refinement: "Outfit" font, rounded buttons, and hover shine animations.
 */
@@ -49,6 +49,80 @@
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+}
+
+/* --- APP LOADER --- */
+.legit-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 0.5s ease-out, visibility 0.5s;
+}
+
+.legit-loader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.loader-logo {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #e50914;
+    /* Netflix Red */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #e50914;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* --- HERO CAROUSEL STYLES --- */
