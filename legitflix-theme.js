@@ -674,49 +674,71 @@ window.legitFlixOpenAvatarPicker = function () {
 
 // Trigger Native Upload by finding the original (hidden) header image button
 // Trigger Native Upload by finding the original input
+// Trigger Native Upload by finding the original (hidden) header image button
+// Trigger Native Upload by finding the original input
 window.triggerNativeUpload = function () {
-    console.log('LegitFlix: Triggering Native Upload...');
+    console.log('LegitFlix: Triggering Custom Native Upload...');
 
-    // The user identified <input id="uploadImage">
-    const input = document.getElementById('uploadImage');
-    if (input) {
-        // Ensure it's not hidden in a way that prevents click (though file inputs usually work)
-        console.log('LegitFlix: Found #uploadImage. Clicking...');
-        input.click();
-        document.querySelector('.legit-popup-overlay').remove();
-        return;
+    // Create hidden input if not exists
+    let input = document.getElementById('legitFlixAvatarInput');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'legitFlixAvatarInput';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Close popup
+            const popup = document.querySelector('.legit-popup-overlay');
+            if (popup) popup.remove();
+
+            // Simple loading feedback
+            const btnEdit = document.querySelector('.avatar-edit-icon');
+            if (btnEdit) btnEdit.innerHTML = '<span class="material-icons rotating">sync</span>';
+
+            try {
+                const userId = window.ApiClient.getCurrentUserId();
+                const endpoint = window.ApiClient.getUrl(`/Users/${userId}/Images/Primary`);
+
+                // Use Base64 Upload (Reliable)
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const rawBase64 = reader.result.split(',')[1];
+
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${window.ApiClient.deviceName()}", DeviceId="${window.ApiClient.deviceId()}", Version="${window.ApiClient.applicationVersion()}", Token="${window.ApiClient.accessToken()}"`,
+                            'Content-Type': file.type // e.g. image/jpeg
+                        },
+                        body: rawBase64
+                    });
+
+                    if (res.ok) {
+                        location.reload();
+                    } else {
+                        throw new Error('Upload failed: ' + res.status);
+                    }
+                };
+                reader.readAsDataURL(file);
+
+            } catch (err) {
+                console.error(err);
+                alert('Upload failed. See console.');
+                if (btnEdit) btnEdit.innerHTML = '<span class="material-icons">mode_edit</span>';
+            }
+        };
     }
 
-    // Fallback: The container
-    const placeholder = document.querySelector('.imagePlaceHolder');
-    if (placeholder) {
-        console.log('LegitFlix: Found .imagePlaceHolder. Clicking...');
-        placeholder.click();
-        document.querySelector('.legit-popup-overlay').remove();
-        return;
-    }
-
-    // Fallback 2: The standard button classes
-    const btn = document.querySelector('.btnUpload') || document.querySelector('.headerUserButton');
-    if (btn) {
-        btn.click();
-        document.querySelector('.legit-popup-overlay').remove();
-        return;
-    }
-
-    // Fallback 3: Generic File Input Search
-    // Sometimes IDs are dynamic or obscured.
-    const anyFileInput = document.querySelector('input[type="file"]');
-    if (anyFileInput) {
-        console.log('LegitFlix: Found generic file input. Clicking...');
-        anyFileInput.click();
-        document.querySelector('.legit-popup-overlay').remove();
-        return;
-    }
-
-    alert('Native upload button (#uploadImage) not found. Please ensure you are in the "My details" or "Profile" section where the avatar usually appears.');
+    input.click();
 };
 
+// Helper for Avatars Plugin detection
 // Helper for Avatars Plugin detection
 function ensurePluginTriggers() {
     // The bundled avatars.js waits for node.id === "cssBranding" or text "Profile"
@@ -727,6 +749,17 @@ function ensurePluginTriggers() {
         dummy.style.display = 'none';
         document.body.appendChild(dummy);
         console.log('LegitFlix: Injected #cssBranding to trigger avatars plugin.');
+    }
+
+    // CRITICAL FIX: The plugin waits for a button to inject next to. 
+    // Usually #btnDeleteImage. If missing, it retries forever.
+    // We inject a dummy #btnDeleteImage so the plugin can attach itself.
+    if (!document.getElementById('btnDeleteImage')) {
+        const dummyBtn = document.createElement('button');
+        dummyBtn.id = 'btnDeleteImage';
+        dummyBtn.style.display = 'none';
+        document.body.appendChild(dummyBtn);
+        console.log('LegitFlix: Injected #btnDeleteImage to target avatars plugin insertion.');
     }
 }
 
@@ -941,22 +974,24 @@ window.ensurePasswordForm = function () {
         const formHtml = `
             <div id="customPasswordForm" class="profile-settings-card">
                 <h2>Change Password</h2>
-                <div class="legit-form-group">
-                    <label class="legit-form-label" for="txtCurrentPassword">Current Password</label>
-                    <input type="password" id="txtCurrentPassword" class="legit-form-input" autocomplete="current-password">
-                </div>
-                <div class="legit-form-group">
-                    <label class="legit-form-label" for="txtNewPassword">New Password</label>
-                    <input type="password" id="txtNewPassword" class="legit-form-input" autocomplete="new-password">
-                </div>
-                <div class="legit-form-group">
-                    <label class="legit-form-label" for="txtNewPasswordConfirm">Confirm New Password</label>
-                    <input type="password" id="txtNewPasswordConfirm" class="legit-form-input" autocomplete="new-password">
-                </div>
-                <div style="margin-top:20px;">
-                    <button id="btnSavePassword" class="legit-btn-primary">Save Password</button>
-                    <div id="passwordMsg" style="margin-top:10px; font-weight:bold;"></div>
-                </div>
+                <form onsubmit="event.preventDefault();">
+                    <div class="legit-form-group">
+                        <label class="legit-form-label" for="txtCurrentPassword">Current Password</label>
+                        <input type="password" id="txtCurrentPassword" class="legit-form-input" autocomplete="current-password">
+                    </div>
+                    <div class="legit-form-group">
+                        <label class="legit-form-label" for="txtNewPassword">New Password</label>
+                        <input type="password" id="txtNewPassword" class="legit-form-input" autocomplete="new-password">
+                    </div>
+                    <div class="legit-form-group">
+                        <label class="legit-form-label" for="txtNewPasswordConfirm">Confirm New Password</label>
+                        <input type="password" id="txtNewPasswordConfirm" class="legit-form-input" autocomplete="new-password">
+                    </div>
+                    <div style="margin-top:20px;">
+                        <button id="btnSavePassword" class="legit-btn-primary">Save Password</button>
+                        <div id="passwordMsg" style="margin-top:10px; font-weight:bold;"></div>
+                    </div>
+                </form>
             </div>
         `;
 
