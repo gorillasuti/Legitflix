@@ -899,12 +899,117 @@ async function pollForUI() {
                 enhancedBtn.style.display = 'none';
             }
             // ---------------------------------------------
-
         } catch (e) {
-            logger.error('Prefs Header Injection failed', e);
+            console.error('Prefs Header injection failed', e);
         }
     }
+
+    // 5. Ensure Password Form exists (Custom Injection)
+    if (window.ensurePasswordForm) window.ensurePasswordForm();
 }
+
+// Helper to Inject Password Form (if valid container doesn't have it)
+window.ensurePasswordForm = function () {
+    // Only on preferences page
+    if (!window.location.hash.toLowerCase().includes('preferences')) return;
+
+    // Check if we already have it
+    if (document.getElementById('customPasswordForm')) return;
+
+    // Check if native form exists (if so, we just style it)
+    const nativeForm = document.querySelector('#fldCurrentPassword');
+    if (nativeForm) {
+        if (window.stylePasswordSection) window.stylePasswordSection();
+        return;
+    }
+
+    // Attempt to inject at the end of the content
+    const content = document.querySelector('.page-content') || document.querySelector('.content-primary') || document.querySelector('[data-type="userprofile"]');
+    // For custom page, maybe #myPreferencesMenuPage ? 
+    // The user said: "I'm trying to move them out here: https://stream.legitflix.eu/web/#/mypreferencesmenu"
+    // Does this page have a specific container? Likely created by our script or a plugin.
+    // If we can find the profile header we injected, we can append after it.
+    const header = document.querySelector('.gaming-profile-header');
+
+    if (header && header.parentElement) {
+        console.log('LegitFlix: Native password form missing. Injecting Custom Form...');
+
+        const formHtml = `
+            <div id="customPasswordForm" class="profile-settings-card">
+                <h2>Change Password</h2>
+                <div class="inputContainer">
+                    <label class="inputLabel" for="txtCurrentPassword">Current Password</label>
+                    <input type="password" id="txtCurrentPassword" class="emby-input" autocomplete="current-password">
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel" for="txtNewPassword">New Password</label>
+                    <input type="password" id="txtNewPassword" class="emby-input" autocomplete="new-password">
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel" for="txtNewPasswordConfirm">Confirm New Password</label>
+                    <input type="password" id="txtNewPasswordConfirm" class="emby-input" autocomplete="new-password">
+                </div>
+                <div style="margin-top:20px;">
+                    <button id="btnSavePassword" class="legit-btn-primary">Save Password</button>
+                    <div id="passwordMsg" style="margin-top:10px; font-weight:bold;"></div>
+                </div>
+            </div>
+        `;
+
+        // Insert after header
+        header.insertAdjacentHTML('afterend', formHtml);
+
+        // Bind Logic
+        setTimeout(() => {
+            const btn = document.getElementById('btnSavePassword');
+            if (btn) {
+                btn.onclick = async () => {
+                    const current = document.getElementById('txtCurrentPassword').value;
+                    const newPw = document.getElementById('txtNewPassword').value;
+                    const confirm = document.getElementById('txtNewPasswordConfirm').value;
+                    const msg = document.getElementById('passwordMsg');
+
+                    if (!current || !newPw) {
+                        msg.textContent = 'Please fill in all fields.';
+                        msg.style.color = 'orange';
+                        return;
+                    }
+                    if (newPw !== confirm) {
+                        msg.textContent = 'New passwords do not match.';
+                        msg.style.color = 'red';
+                        return;
+                    }
+
+                    try {
+                        btn.disabled = true;
+                        btn.textContent = 'Projecting...';
+
+                        // Use Jellyfin API (ApiClient.updatePassword(current, new))
+                        // Note: ApiClient might expect just (new) if simple, but usually (current, new)
+                        // Checking usage: ApiClient.updatePassword(current, new)
+                        // If not available, we use UserService.
+
+                        await window.ApiClient.updatePassword(current, newPw);
+
+                        msg.textContent = 'Password updated successfully.';
+                        msg.style.color = 'lightgreen';
+                        // Clear fields
+                        document.getElementById('txtCurrentPassword').value = '';
+                        document.getElementById('txtNewPassword').value = '';
+                        document.getElementById('txtNewPasswordConfirm').value = '';
+                    } catch (e) {
+                        console.error(e);
+                        msg.textContent = 'Error: ' + (e.message || 'Failed to update.');
+                        msg.style.color = 'red';
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = 'Save Password';
+                    }
+                };
+            }
+        }, 100);
+    }
+};
 
 function init() {
     console.log('LegitFlix: V4.5 Robust Init');
