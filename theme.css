@@ -1,6 +1,6 @@
-/* LegitFlix Theme CSS v2.1 
-   - Added !important to override plugins
-   - Added "Red Border Test" to verify loading
+/* LegitFlix Theme CSS v2.2
+   - Hero Carousel: Styles for full-width 80vh hero, gradients, and overlays.
+   - Refinement: "Outfit" font, rounded buttons, and hover shine animations.
 */
 
 :root {
@@ -52,6 +52,7 @@
 }
 
 /* --- HERO CAROUSEL STYLES --- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 
 .hero-carousel-container {
     position: relative;
@@ -62,6 +63,8 @@
     margin-bottom: -100px;
     /* Pull content up slightly */
     z-index: 0;
+    font-family: 'Outfit', sans-serif !important;
+    /* Force new font */
 }
 
 .hero-slide {
@@ -114,7 +117,7 @@
     max-width: 45%;
     color: white;
     z-index: 2;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    /* Removed text-shadow as requested for cleaner look */
 }
 
 /* Typography */
@@ -124,8 +127,6 @@
     line-height: 1.1;
     margin-bottom: 1rem;
     text-transform: uppercase;
-    font-family: 'Open Sans', sans-serif;
-    /* Jellyfin default or similar */
 }
 
 .hero-meta {
@@ -135,24 +136,22 @@
     margin-bottom: 1rem;
     font-weight: 600;
     font-size: 1.1rem;
+    color: #e5e5e5;
 }
 
-.match-score {
-    color: #46d369;
-    /* Netflix-like match green */
+.star-rating {
+    color: #ffc107;
+    /* Gold star */
 }
 
-.rating-badge {
-    border: 1px solid #bcbcbc;
-    padding: 0px 6px;
-    font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.4);
+.ends-at {
+    color: #bcbcbc;
 }
 
 .hero-desc {
     font-size: 1.1rem;
     line-height: 1.5;
-    color: #e5e5e5;
+    color: #d1d1d1;
     margin-bottom: 2rem;
 
     /* Clamp to 3 lines */
@@ -169,46 +168,66 @@
 }
 
 .btn-play,
-.btn-list {
+.btn-info {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 0.8rem 2rem;
+    padding: 0.8rem 2.5rem;
+    /* Wider buttons */
     font-size: 1.1rem;
     font-weight: bold;
     border: none;
-    border-radius: 4px;
+    border-radius: 50px;
+    /* Pillow/Rounded shape */
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
+    font-family: 'Outfit', sans-serif;
 }
 
+/* Play Button Shine Effect */
 .btn-play {
     background-color: #6200ea;
-    /* Purple as requested (Deep Purple A700) */
     color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-play::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-20deg);
+    transition: none;
 }
 
 .btn-play:hover {
-    background-color: #7c43bd;
-    /* Lighter purple on hover */
     transform: scale(1.05);
 }
 
-.btn-list {
-    background-color: rgba(109, 109, 110, 0.7);
-    /* Glassy gray */
-    color: white;
-    backdrop-filter: blur(4px);
+.btn-play:hover::after {
+    left: 150%;
+    transition: 0.7s ease-in-out;
 }
 
-.btn-list:hover {
-    background-color: rgba(109, 109, 110, 0.4);
+/* More Info Button */
+.btn-info {
+    background-color: rgba(109, 109, 110, 0.7);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.btn-info:hover {
+    background-color: rgba(109, 109, 110, 0.5);
     transform: scale(1.05);
 }
 
 /* Material Icons size fix in buttons */
 .btn-play i,
-.btn-list i {
+.btn-info i {
     font-size: 1.6rem;
 }

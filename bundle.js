@@ -1,7 +1,7 @@
-/* LegitFlix Bundle.js v2.5
-   - UI Overhaul: Replaced Media Bar with "Hero Carousel" spotlight.
-   - Added: Auto-rotating slides, "Play" button, and specific metadata.
-   - Improved: Strict shuffling for random content display.
+/* LegitFlix Bundle.js v2.6
+   - UI Overhaul: Hero Carousel, "Outift" font, "Ends At" metadata.
+   - Refinement: "Play" button shine, "More Info" button.
+   - Interaction: Robust playback start logic.
 */
 
 console.log('%c LegitFlix: Bundle v2.6 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
@@ -86,10 +86,30 @@ function createMediaBarHTML(items) {
         const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=80`;
         const activeClass = index === 0 ? 'active' : '';
 
-        // Metadata formatting
+        // --- METADATA LOGIC ---
         const year = item.ProductionYear || '';
-        const rating = item.OfficialRating || 'NR';
-        const match = Math.floor(80 + Math.random() * 19); // Fake "Match" score for aesthetics 80-99%
+
+        // IMDb Rating (CommunityRating)
+        let ratingHtml = '';
+        if (item.CommunityRating) {
+            ratingHtml = `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>`;
+        } else {
+            ratingHtml = `<span class="star-rating">N/A</span>`;
+        }
+
+        // Ends At Calculation
+        let endsAtHtml = '';
+        if (item.RunTimeTicks && item.Type !== 'Series') {
+            // 1 tick = 10,000 ms ?? No, 1 tick = 100ns. 1ms = 10,000 ticks.
+            // Jellyfin uses 10,000 ticks per ms.
+            const ms = item.RunTimeTicks / 10000;
+            const endTime = new Date(Date.now() + ms);
+            const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            endsAtHtml = `<span class="ends-at">Ends at ${timeStr}</span>`;
+        } else if (item.Type === 'Series') {
+            endsAtHtml = `<span class="ends-at">${item.ChildCount ? item.ChildCount + ' Seasons' : 'Series'}</span>`;
+        }
+
         const desc = item.Overview || '';
         const title = item.Name;
 
@@ -104,17 +124,17 @@ function createMediaBarHTML(items) {
                 <div class="hero-content">
                     <h1 class="hero-title">${title}</h1>
                     <div class="hero-meta">
-                        <span class="match-score">${match}% Match</span>
+                        ${ratingHtml}
                         <span class="year">${year}</span>
-                        <span class="rating-badge">${rating}</span>
+                        ${endsAtHtml}
                     </div>
                     <p class="hero-desc">${desc}</p>
                     <div class="hero-actions">
                         <button class="btn-play" onclick="${playOnClick}">
                             <i class="material-icons">play_arrow</i> PLAY
                         </button>
-                        <button class="btn-list" onclick="${infoOnClick}">
-                            <i class="material-icons">add</i> MY LIST
+                        <button class="btn-info" onclick="${infoOnClick}">
+                            <i class="material-icons">info_outline</i> MORE INFO
                         </button>
                     </div>
                 </div>
@@ -150,19 +170,39 @@ function startCarousel() {
     }, 8000); // 8 seconds per slide
 }
 
-// --- PLAYBACK HELPER ---
+// --- PLAYBACK HELPER (Robust Logic) ---
 window.legitFlixPlay = async function (id) {
-    const auth = await getAuth();
-    if (!window.PlaybackManager || !auth) {
+    if (!window.PlaybackManager || !window.ApiClient) {
+        console.error('LegitFlix: PlaybackManager or ApiClient not found.');
         window.legitFlixShowItem(id); // Fallback to details
         return;
     }
 
-    // Simple play request
-    window.PlaybackManager.play({
-        items: [id],
-        serverId: window.ApiClient.serverId()
-    });
+    const apiClient = window.ApiClient;
+    const userId = apiClient.getCurrentUserId();
+
+    try {
+        // Fetch the full item details first (safest way to ensure playback works)
+        const item = await apiClient.getItem(userId, id);
+        if (!item) {
+            console.error('LegitFlix: Media item not found for playback.');
+            return;
+        }
+
+        console.log('LegitFlix: Playing', item.Name);
+
+        window.PlaybackManager.play({
+            items: [item],
+            startPositionTicks: 0,
+            isMuted: false,
+            isPaused: false,
+            serverId: apiClient.serverId()
+        });
+
+    } catch (error) {
+        console.error('LegitFlix: Error starting playback', error);
+        window.legitFlixShowItem(id); // Fallback
+    }
 };
 
 // --- INJECTION LOGIC ---
