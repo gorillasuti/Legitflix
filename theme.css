@@ -1,4 +1,4 @@
-/* LegitFlix Theme CSS v2.0 
+/* LegitFlix Theme CSS v2.1 
    - Added !important to override plugins
    - Added "Red Border Test" to verify loading
 */
@@ -51,93 +51,164 @@
     background-position: center;
 }
 
-/* --- MEDIA BAR STYLES --- */
+/* --- HERO CAROUSEL STYLES --- */
 
-.legit-media-bar-container {
-    padding: 20px 0 40px 0;
-    margin-bottom: 20px;
+.hero-carousel-container {
     position: relative;
-    z-index: 10;
-    /* Ensure it sits on top of any plugin backgrounds */
-    background: var(--theme-background);
-}
-
-.legit-media-header {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 15px;
-    padding-left: 2%;
-}
-
-.legit-header-title {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: var(--theme-text);
-}
-
-.legit-header-subtitle {
-    font-size: 0.9rem;
-    color: var(--theme-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.legit-media-scroller {
-    display: flex;
-    overflow-x: auto;
-    gap: 15px;
-    padding: 10px 2%;
-    scrollbar-width: none;
-}
-
-.legit-media-scroller::-webkit-scrollbar {
-    display: none;
-}
-
-.legit-media-card {
-    flex: 0 0 auto;
-    width: 200px;
-    height: 300px;
-    position: relative;
-    border-radius: 4px;
+    width: 100%;
+    height: 80vh;
+    /* Dominant hero height */
     overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin-bottom: -100px;
+    /* Pull content up slightly */
+    z-index: 0;
 }
 
-.legit-media-card:hover {
-    transform: scale(1.1);
-    z-index: 20;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 0;
 }
 
-.legit-card-image {
+.hero-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.hero-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background-size: cover;
-    background-position: center;
+    background-position: center top;
 }
 
-.legit-card-overlay {
+/* Gradient Overlay - The "Cinematic" Look */
+.hero-overlay {
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
-    padding: 40px 10px 10px;
-    opacity: 0;
-    transition: opacity 0.2s;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom,
+            rgba(20, 20, 20, 0.3) 0%,
+            rgba(20, 20, 20, 0.1) 50%,
+            rgba(20, 20, 20, 1) 100%),
+        linear-gradient(to right,
+            rgba(20, 20, 20, 0.9) 0%,
+            rgba(20, 20, 20, 0.4) 40%,
+            transparent 100%);
 }
 
-.legit-media-card:hover .legit-card-overlay {
-    opacity: 1;
-}
-
-.legit-card-title {
+.hero-content {
+    position: absolute;
+    bottom: 25%;
+    left: 4%;
+    max-width: 45%;
     color: white;
-    font-size: 0.9rem;
+    z-index: 2;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Typography */
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    font-family: 'Open Sans', sans-serif;
+    /* Jellyfin default or similar */
+}
+
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 1rem;
     font-weight: 600;
-    text-align: center;
-    display: block;
+    font-size: 1.1rem;
+}
+
+.match-score {
+    color: #46d369;
+    /* Netflix-like match green */
+}
+
+.rating-badge {
+    border: 1px solid #bcbcbc;
+    padding: 0px 6px;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hero-desc {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #e5e5e5;
+    margin-bottom: 2rem;
+
+    /* Clamp to 3 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Buttons */
+.hero-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-play,
+.btn-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-play {
+    background-color: #6200ea;
+    /* Purple as requested (Deep Purple A700) */
+    color: white;
+}
+
+.btn-play:hover {
+    background-color: #7c43bd;
+    /* Lighter purple on hover */
+    transform: scale(1.05);
+}
+
+.btn-list {
+    background-color: rgba(109, 109, 110, 0.7);
+    /* Glassy gray */
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.btn-list:hover {
+    background-color: rgba(109, 109, 110, 0.4);
+    transform: scale(1.05);
+}
+
+/* Material Icons size fix in buttons */
+.btn-play i,
+.btn-list i {
+    font-size: 1.6rem;
 }
