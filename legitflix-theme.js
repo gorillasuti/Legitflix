@@ -1,10 +1,9 @@
-/* LegitFlix Theme JS v3.0
-   - Architecture: Renamed from bundle.js.
-   - UX: Added Native CSS Loading Screen to prevent UI pop-in.
+/* LegitFlix Theme JS v3.1
+   - Loader: Removed custom overlay (using CSS logo replacement instead).
    - Core: Robust playback logic and strict checks.
 */
 
-console.log('%c LegitFlix: Theme v3.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Theme v3.1 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
 // --- GLOBAL NAVIGATION HELPER ---
@@ -170,34 +169,6 @@ function startCarousel() {
     }, 8000); // 8 seconds per slide
 }
 
-// --- LOADING SCREEN ---
-function initLoadingScreen() {
-    if (document.querySelector('.legit-loader')) return;
-
-    // Inject Loader HTML
-    const loaderHtml = `
-        <div class="legit-loader">
-            <div class="loader-content">
-                <div class="loader-logo">LegitFlix</div>
-                <div class="loader-spinner"></div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', loaderHtml);
-}
-
-// Dismiss Loader Helper
-function dismissLoader() {
-    const loader = document.querySelector('.legit-loader');
-    if (loader) {
-        loader.classList.add('fade-out');
-        setTimeout(() => loader.remove(), 600); // Matches CSS transition
-    }
-}
-
-// Call immediately
-initLoadingScreen();
-
 // --- PLAYBACK HELPER (Robust Logic) ---
 window.legitFlixPlay = async function (id) {
     if (!window.PlaybackManager || !window.ApiClient) {
@@ -237,10 +208,7 @@ async function injectMediaBar() {
     const hash = window.location.hash;
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
 
-    if (!isHomePage) {
-        dismissLoader(); // Ensure loader is gone if we navigate away or start elsewhere
-        return;
-    }
+    if (!isHomePage) return;
 
     // CLEANUP
     document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove());
@@ -248,10 +216,7 @@ async function injectMediaBar() {
     document.querySelectorAll('.legit-media-bar-container').forEach(el => el.remove());
 
     const items = await fetchMediaBarItems();
-    if (items.length === 0) {
-        dismissLoader();
-        return;
-    }
+    if (items.length === 0) return;
 
     const checkInterval = setInterval(() => {
         let container = document.querySelector('.homeSectionsContainer');
@@ -269,17 +234,10 @@ async function injectMediaBar() {
             // Start the show
             startCarousel();
             console.log('LegitFlix: Hero Carousel Injected');
-
-            // UI is ready, dismiss loader
-            dismissLoader();
         }
     }, 1000);
 
-    // Safety timeout to dismiss loader if injection hangs
-    setTimeout(() => {
-        clearInterval(checkInterval);
-        dismissLoader();
-    }, 12000);
+    setTimeout(() => clearInterval(checkInterval), 10000);
 }
 
 function init() {
