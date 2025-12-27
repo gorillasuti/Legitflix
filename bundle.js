@@ -1,48 +1,22 @@
-/* LegitFlix Bundle.js v2.3
-   - Added: Auto-cleanup of stale DOM elements.
-   - Fixes: 'appRouter' error by forcing a rebuild of the media bar 
-     to apply new onclick handlers.
+/* LegitFlix Bundle.js v2.4
+   - Fixes: 'appRouter' ReferenceError by replacing it with direct URL navigation.
+   - Removed: appRouter safety shim and dependency logic.
+   - Improved: Aggressive DOM cleanup to remove stale media bars.
 */
 
-console.log('%c LegitFlix: Bundle v2.3 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
+console.log('%c LegitFlix: Bundle v2.4 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- GLOBAL NAVIGATION HELPER ---
 // --- GLOBAL NAVIGATION HELPER ---
 window.legitFlixShowItem = function (id) {
     console.log('LegitFlix: Navigating to', id);
-
-    // Strategy 1: Try standard global router
-    // We check !window.appRouter.isShim so we don't infinitely loop
-    // if the shim calls US (legitFlixShowItem).
-    if (window.appRouter && !window.appRouter.isShim) {
-        window.appRouter.showItem(id);
-        return;
-    }
-
-    // Strategy 2: Emby/Jellyfin Page Helper
-    if (window.Emby && window.Emby.Page && window.Emby.Page.showItem) {
-        window.Emby.Page.showItem(id);
-        return;
-    }
-
-    // Strategy 3: Universal Hash Navigation
-    const newHash = `#!/details?id=${id}`;
-    if (window.location.hash !== newHash) {
-        window.location.hash = newHash;
-    } else {
-        window.location.reload();
-    }
+    // V2.4 CHANGE: Use direct URL navigation (mirrors working-mediabar.js)
+    // This avoids all 'appRouter' issues entirely.
+    window.top.location.href = `#!/details?id=${id}`;
 };
 
-// --- SAFETY SHIM ---
-if (typeof appRouter === 'undefined') {
-    window.appRouter = {
-        isShim: true, // Marker to prevent infinite loops
-        showItem: function (id) {
-            window.legitFlixShowItem(id);
-        }
-    };
-}
+// --- SAFETY SHIM REMOVED ---
+// We no longer rely on appRouter, so no shim is needed.
 
 const CONFIG = {
     rootUrl: '',
