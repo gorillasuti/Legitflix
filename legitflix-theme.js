@@ -491,13 +491,80 @@ async function injectFeaturedPrefs() {
     if (oldTitle) oldTitle.style.display = 'none';
 
     // Move Sign Out button into Nav (Hide original)
+    // Move Sign Out button into Nav (Hide original)
     const oldLogout = contentContainer.querySelector('.btnLogout');
-    if (oldLogout) oldLogout.style.display = 'none';
+    if (oldLogout) {
+        oldLogout.style.display = 'none';
+        // Also hide the container "User" section if it's mostly empty or redundant
+        const userSection = oldLogout.closest('.userSection');
+        if (userSection) {
+            // SAFEGUARD: Do NOT hide if this section also contains the password fields!
+            const hasPassword = userSection.querySelector('#fldCurrentPassword');
+            if (!hasPassword) {
+                userSection.style.display = 'none';
+            } else {
+                console.log('LegitFlix: User section contains password fields! Keeping visible but hiding title.');
+                const title = userSection.querySelector('.sectionTitle');
+                if (title) title.style.display = 'none';
+            }
+        }
+    }
+
+    // 7. Move Admin Section to Nav
+    const adminSection = contentContainer.querySelector('.adminSection');
+    const navTabs = contentContainer.querySelector('.profile-nav-tabs');
+
+    if (adminSection && navTabs) {
+        // Find links
+        const dashboardLink = adminSection.querySelector('a[href*="dashboard"]');
+        const metadataLink = adminSection.querySelector('a[href*="metadata"]');
+
+        if (dashboardLink) {
+            const tab = document.createElement('a');
+            tab.className = 'profile-tab';
+            tab.href = dashboardLink.getAttribute('href'); // Use original href (usually #/dashboard)
+            // tab.textContent = 'Dashboard'; // Text version
+            // Icon version to save space? User said "Move this div inside the nav"
+            // Typically Dashboard is important. Let's use Icon + Text or just Text.
+            // Given space, sticking to text is safer for clarity, or icon. "Sign Out" is icon.
+            // Let's use Icon for Admin items to distinguish them? Or just "Dashboard" text.
+            // "Metadata Manager" is long. "Metadata"?
+
+            // Let's use Icons with Tooltips for compactness if many items
+            tab.innerHTML = '<span class="material-icons">dashboard</span>';
+            tab.title = 'Dashboard';
+            // Bind click
+            tab.onclick = (e) => { e.preventDefault(); dashboardLink.click(); };
+
+            // Insert before Logout
+            const logoutTab = navTabs.querySelector('.logout-tab');
+            if (logoutTab) navTabs.insertBefore(tab, logoutTab);
+            else navTabs.appendChild(tab);
+        }
+
+        if (metadataLink) {
+            const tab = document.createElement('a');
+            tab.className = 'profile-tab';
+            // tab.textContent = 'Metadata';
+            tab.innerHTML = '<span class="material-icons">library_books</span>'; // or 'movie_filter'
+            tab.title = 'Metadata Manager';
+            tab.onclick = (e) => { e.preventDefault(); metadataLink.click(); };
+
+            // Insert before Logout
+            const logoutTab = navTabs.querySelector('.logout-tab');
+            if (logoutTab) navTabs.insertBefore(tab, logoutTab);
+            else navTabs.appendChild(tab);
+        }
+
+        // Hide original section
+        adminSection.style.display = 'none';
+    }
 
     // 6. Style Password Section as a Card
     // Find the section containing password fields
     const passwordInput = contentContainer.querySelector('#fldCurrentPassword');
     if (passwordInput) {
+        console.log('LegitFlix: Found Password Fields. Styling as card...');
         // The detailed section is likely the parent or grandparent
         const passwordSection = passwordInput.closest('.detailSection');
         if (passwordSection) {
@@ -510,10 +577,13 @@ async function injectFeaturedPrefs() {
 }
 
 // --- POPUP HELPERS ---
+// --- POPUP HELPERS ---
 window.legitFlixOpenBannerPicker = async function () {
     // Fetch random backdrops
     const auth = await getAuth();
     if (!auth) return;
+
+    window._pendingBannerUrl = null; // Reset pending
 
     // Create UI
     const popup = document.createElement('div');
@@ -524,13 +594,37 @@ window.legitFlixOpenBannerPicker = async function () {
             <div class="legit-popup-grid" id="bannerGrid">Loading...</div>
             <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
                 <button class="legit-btn-secondary" onclick="document.querySelector('.legit-popup-overlay').remove()">Close</button>
-                <button class="legit-btn-primary" onclick="alert('Save functionality coming soon!'); document.querySelector('.legit-popup-overlay').remove()">
+                <button class="legit-btn-primary" id="btnSaveBanner">
                     <span class="material-icons">save</span> Save
                 </button>
             </div>
         </div>
     `;
     document.body.appendChild(popup);
+
+    // Bind Save Button
+    const btnSave = popup.querySelector('#btnSaveBanner');
+    btnSave.onclick = async () => {
+        if (!window._pendingBannerUrl) {
+            alert('Please select a banner first.');
+            return;
+        }
+        btnSave.innerHTML = '<span class="material-icons">refresh</span> Saving...';
+        btnSave.disabled = true;
+
+        const success = await window.uploadUserBackdrop(window._pendingBannerUrl);
+        if (success) {
+            document.querySelector('.legit-popup-overlay').remove();
+            alert('Banner updated successfully!');
+            // Update button text on profile
+            const bannerBtnText = document.querySelector('.banner-add-text');
+            if (bannerBtnText) bannerBtnText.textContent = 'Change profile banner';
+        } else {
+            btnSave.innerHTML = '<span class="material-icons">error</span> Failed';
+            alert('Failed to upload banner. Check console for details.');
+            btnSave.disabled = false;
+        }
+    };
 
     // Fetch
     try {
@@ -540,7 +634,14 @@ window.legitFlixOpenBannerPicker = async function () {
 
         const grid = popup.querySelector('#bannerGrid');
         grid.innerHTML = data.Items.map(item => `
-            <div class="banner-option" onclick="document.querySelector('.profile-banner').style.backgroundImage='url(/Items/${item.Id}/Images/Backdrop/0?maxHeight=500)'; document.querySelector('.profile-banner').classList.add('has-banner'); document.querySelector('.legit-popup-overlay').remove();" 
+            <div class="banner-option" 
+                 onclick="
+                    window._pendingBannerUrl = '/Items/${item.Id}/Images/Backdrop/0';
+                    document.querySelectorAll('.banner-option').forEach(el => el.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.querySelector('.profile-banner').style.backgroundImage='url(/Items/${item.Id}/Images/Backdrop/0?maxHeight=500)';
+                    document.querySelector('.profile-banner').classList.add('has-banner');
+                 " 
                  style="background-image: url('/Items/${item.Id}/Images/Backdrop/0?maxHeight=200');">
             </div>
         `).join('');
@@ -600,7 +701,17 @@ window.triggerNativeUpload = function () {
         return;
     }
 
-    alert('Native upload button (#uploadImage) not found. This feature depends on Jellyfin\'s default elements being present (even if hidden).');
+    // Fallback 3: Generic File Input Search
+    // Sometimes IDs are dynamic or obscured.
+    const anyFileInput = document.querySelector('input[type="file"]');
+    if (anyFileInput) {
+        console.log('LegitFlix: Found generic file input. Clicking...');
+        anyFileInput.click();
+        document.querySelector('.legit-popup-overlay').remove();
+        return;
+    }
+
+    alert('Native upload button (#uploadImage) not found. Please ensure you are in the "My details" or "Profile" section where the avatar usually appears.');
 };
 
 // Helper for Avatars Plugin detection
@@ -776,11 +887,15 @@ async function pollForUI() {
                     enhancedBtn.click();
                 };
 
-                navTabs.appendChild(tab);
+                // Insert BEFORE Logout tab if possible, otherwise append
+                const logoutTab = navTabs.querySelector('.logout-tab');
+                if (logoutTab) {
+                    navTabs.insertBefore(tab, logoutTab);
+                } else {
+                    navTabs.appendChild(tab);
+                }
 
-                // Hide original row (it's usually wrapped in a .listItem or similar)
-                // The user snippet shows it is an <a> with class "listItem-border" containing a .listItem div
-                // We should hide the <a> itself
+                // Hide original row
                 enhancedBtn.style.display = 'none';
             }
             // ---------------------------------------------
