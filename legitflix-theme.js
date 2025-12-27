@@ -736,7 +736,7 @@ window.triggerNativeUpload = function () {
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${window.ApiClient.deviceName()}", DeviceId="${window.ApiClient.deviceId()}", Version="${window.ApiClient.applicationVersion()}", Token="${window.ApiClient.accessToken()}"`,
+                            'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${window.ApiClient.accessToken()}"`,
                             'Content-Type': file.type // e.g. image/jpeg
                         },
                         body: rawBase64
@@ -944,7 +944,7 @@ window.LegitFlixAvatarPicker = {
                 z-index: 2;
             }
             .lf-picker-item.selected {
-                border-color: #00a4dc; /* Theme Color */
+                border-color: #182737; /* Theme Color */
                 transform: scale(1.1);
                 box-shadow: 0 0 20px rgba(0, 164, 220, 0.6);
                 z-index: 3;
@@ -967,11 +967,11 @@ window.LegitFlixAvatarPicker = {
             .lf-btn-cancel:hover { color: white; border-color: white; }
             
             .lf-btn-save { 
-                background: #00a4dc; color: white; 
+                background: #141b21; color: white; 
                 opacity: 0.5; pointer-events: none; /* Disabled by default */
             }
             .lf-btn-save.active { opacity: 1; pointer-events: auto; }
-            .lf-btn-save:hover { background: #0087b5; box-shadow: 0 0 15px rgba(0, 164, 220, 0.4); }
+            .lf-btn-save:hover { background: #182737; }
 
             @media (max-width: 768px) {
                 .lf-picker-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
@@ -1293,7 +1293,7 @@ window.ensurePasswordForm = function () {
                         await fetch(url, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${window.ApiClient.deviceName()}", DeviceId="${window.ApiClient.deviceId()}", Version="${window.ApiClient.applicationVersion()}", Token="${window.ApiClient.accessToken()}"`,
+                                'Authorization': `MediaBrowser Client="Jellyfin Web", Device="${(typeof window.ApiClient.deviceName === 'function' ? window.ApiClient.deviceName() : 'Web Client')}", DeviceId="${(typeof window.ApiClient.deviceId === 'function' ? window.ApiClient.deviceId() : 'UnknownId')}", Version="${(typeof window.ApiClient.applicationVersion === 'function' ? window.ApiClient.applicationVersion() : '10.11.5')}", Token="${window.ApiClient.accessToken()}"`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
