@@ -447,6 +447,13 @@ async function injectFeaturedPrefs() {
         bannerClass = 'has-banner';
         btnText = 'Change profile banner';
         btnIcon = 'edit';
+    } else if (user.BackdropImageTags && user.BackdropImageTags.length > 0) {
+        // FALLBACK: If no Banner but has Backdrop (rare for users, but possible)
+        const pBannerUrl = `/Users/${user.Id}/Images/Backdrop/0?tag=${user.BackdropImageTags[0]}&maxHeight=500&v=${Date.now()}`;
+        bannerStyle = `background-image: url('${pBannerUrl}');`;
+        bannerClass = 'has-banner';
+        btnText = 'Change profile banner';
+        btnIcon = 'edit';
     }
 
     const headerHtml = `
@@ -594,7 +601,7 @@ window.legitFlixOpenBannerPicker = async function () {
     popup.innerHTML = `
         <div class="legit-popup-content">
             <h2>Select Banner</h2>
-            <div class="legit-popup-grid" id="bannerGrid">Loading...</div>
+            <div class="legit-popup-grid" id="bannerGrid" style="max-height: 50vh; overflow-y: auto; padding-right: 5px;">Loading...</div>
             <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
                 <button class="legit-btn-secondary" onclick="document.querySelector('.legit-popup-overlay').remove()">Close</button>
                 <button class="legit-btn-primary" id="btnSaveBanner">
@@ -618,7 +625,7 @@ window.legitFlixOpenBannerPicker = async function () {
         const success = await window.uploadUserBackdrop(window._pendingBannerUrl);
         if (success) {
             document.querySelector('.legit-popup-overlay').remove();
-            alert('Banner updated successfully!');
+            console.log('LegitFlix: Banner updated successfully!');
             // Update button text on profile
             const bannerBtnText = document.querySelector('.banner-add-text');
             if (bannerBtnText) bannerBtnText.textContent = 'Change profile banner';
@@ -631,7 +638,7 @@ window.legitFlixOpenBannerPicker = async function () {
 
     // Fetch
     try {
-        const url = `/Users/${auth.UserId}/Items?Recursive=true&IncludeItemTypes=Movie,Series&ImageTypes=Backdrop&SortBy=Random&Limit=12&Fields=Id,Name`;
+        const url = `/Users/${auth.UserId}/Items?Recursive=true&IncludeItemTypes=Movie,Series&ImageTypes=Backdrop&SortBy=Random&Limit=48&Fields=Id,Name`;
         const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
         const data = await res.json();
 
@@ -788,6 +795,10 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
         // 3. Upload
         const uploadUrl = window.ApiClient.getUrl(`/Users/${userId}/Images/${imageType}`);
 
+        // DEBUG: Verify Target
+        console.log(`LegitFlix DEBUG: Uploading ${imageType} to ${uploadUrl}`);
+        if (imageType === 'Backdrop') alert(`LegacyFlix Debug: Uploading Backdrop to:\n${uploadUrl}`);
+
         const uploadRes = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
@@ -812,7 +823,7 @@ window.uploadExternalImage = async function (imageUrl, imageType = 'Banner') {
     }
 };
 
-window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Backdrop');
+window.uploadUserBackdrop = (url) => window.uploadExternalImage(url, 'Banner');
 
 /* --- CUSTOM AVATAR PICKER (Netflix Style) --- */
 window.LegitFlixAvatarPicker = {
