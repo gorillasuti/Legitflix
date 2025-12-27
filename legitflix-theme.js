@@ -457,12 +457,13 @@ async function injectFeaturedPrefs() {
                     <span class="material-icons-outlined">${btnIcon}</span>
                     <span class="banner-add-text">${btnText}</span>
                 </div>
-                
-                <div class="profile-avatar-container">
-                    <div class="profile-avatar" style="background-image: url('${userImageUrl}');"></div>
-                    <div class="avatar-edit-icon" onclick="window.legitFlixOpenAvatarPicker()">
-                        <span class="material-icons-outlined" style="font-size: 18px;">mode_edit</span>
-                    </div>
+            </div>
+
+            <!-- Avatar Container (Moved Outside to prevent clipping) -->
+            <div class="profile-avatar-container">
+                <div class="profile-avatar" style="background-image: url('${userImageUrl}');"></div>
+                <div class="avatar-edit-icon" onclick="window.legitFlixOpenAvatarPicker()">
+                    <span class="material-icons-outlined" style="font-size: 18px;">mode_edit</span>
                 </div>
             </div>
         </div>
@@ -489,7 +490,12 @@ window.legitFlixOpenBannerPicker = async function () {
         <div class="legit-popup-content">
             <h2>Select Banner</h2>
             <div class="legit-popup-grid" id="bannerGrid">Loading...</div>
-            <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="margin-top:20px;width:100%;">Close</button>
+            <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+                <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="background:transparent; border:1px solid rgba(255,255,255,0.2);">Close</button>
+                <button class="legit-btn-primary" onclick="alert('Save functionality coming soon!'); document.querySelector('.legit-popup-overlay').remove()">
+                    <span class="material-icons">save</span> Save
+                </button>
+            </div>
         </div>
     `;
     document.body.appendChild(popup);
@@ -502,7 +508,7 @@ window.legitFlixOpenBannerPicker = async function () {
 
         const grid = popup.querySelector('#bannerGrid');
         grid.innerHTML = data.Items.map(item => `
-            <div class="banner-option" onclick="alert('Set Banner Feature Coming Soon: ${item.Name}')" 
+            <div class="banner-option" onclick="document.querySelector('.profile-banner').style.backgroundImage='url(/Items/${item.Id}/Images/Backdrop/0?maxHeight=500)'; document.querySelector('.profile-banner').classList.add('has-banner'); document.querySelector('.legit-popup-overlay').remove();" 
                  style="background-image: url('/Items/${item.Id}/Images/Backdrop/0?maxHeight=200');">
             </div>
         `).join('');
@@ -517,13 +523,25 @@ window.legitFlixOpenAvatarPicker = function () {
             <h2>Edit Avatar</h2>
             <div style="display:flex; flex-direction:column; gap:10px;">
                 <button class="legit-btn" onclick="alert('Upload Coming Soon')"><i class="material-icons">upload</i> Upload Image</button>
-                <button class="legit-btn" onclick="alert('Plugin Coming Soon')"><i class="material-icons">face</i> Choose Avatar</button>
+                <button class="legit-btn-primary" onclick="triggerAvatarsPlugin()"><i class="material-icons">face</i> Choose Avatar</button>
             </div>
-            <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="margin-top:20px;width:100%;">Close</button>
+            <button class="legit-btn" onclick="document.querySelector('.legit-popup-overlay').remove()" style="margin-top:20px;width:100%; background:transparent; border:1px solid rgba(255,255,255,0.2);">Close</button>
         </div>
     `;
     document.body.appendChild(popup);
 };
+
+// Helper to trigger the installed avatars plugin
+window.triggerAvatarsPlugin = function () {
+    const pluginBtn = document.getElementById('jf-avatars-btn-show-modal') || document.getElementById('show-modal');
+    if (pluginBtn) {
+        pluginBtn.click();
+        document.querySelector('.legit-popup-overlay').remove();
+    } else {
+        alert('Avatars Plugin not found or not loaded. Please ensure jf-avatars is installed.');
+    }
+};
+
 
 // --- INIT & ROBUSTNESS ---
 // We use a polling mechanism to ensure the UI is ready before injecting.

@@ -375,77 +375,78 @@ h4,
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    /* Important for image/overlay */
+    /* Clips image/overlay */
     border: 1px solid rgba(255, 255, 255, 0.05);
     margin-top: 1rem;
 }
 
-/* Dark Overlay (Hidden by default) */
-.banner-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 1;
-}
-
-/* Logic: If banner is set, show overlay on hover */
-.profile-banner.has-banner:hover .banner-overlay {
-    opacity: 1;
-}
-
-/* Button Styling (Unique Glass) */
-.banner-add-btn {
-    position: relative;
-    z-index: 2;
-    padding: 12px 24px;
-    border-radius: 50px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: flex;
+/* Gradient Primary Button */
+.legit-btn-primary {
+    background: linear-gradient(135deg, #AA5CC3 0%, #00A4DC 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 0.8rem 2rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 4px 15px rgba(0, 164, 220, 0.4) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    gap: 8px;
 }
 
-.banner-add-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+.legit-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 164, 220, 0.6) !important;
+    filter: brightness(1.1);
 }
 
-.banner-add-text {
-    font-size: 0.9rem;
-    margin: 0;
+/* 2. Overlapping Avatar (Now Sibling of Banner) */
+.gaming-profile-header {
+    position: relative;
 }
 
-/* Show/Hide Logic */
-/* If has banner, hide button by default */
-.profile-banner.has-banner .banner-add-btn {
-    opacity: 0;
-    transform: translateY(10px);
-}
+/* Ensure parent is anchor */
 
-/* Show on hover */
-.profile-banner.has-banner:hover .banner-add-btn {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* 2. Overlapping Avatar */
 .profile-avatar-container {
     position: absolute;
-    bottom: -60px;
-    /* Overlap */
-    left: 60px;
-    z-index: 2;
+    top: 290px;
+    /* Banner (250) + Margin (~40) - Overlap (60) ? No. */
+    /* Tabs (Height?) + Banner (250) + Margin around... */
+    /* Better: position relative to banner bottom using negative margin if strict header flow, 
+       OR just absolute relative to the Header container which has Title + Tabs + Banner. */
+    /* Let's guess: Title (~50) + Tabs (~50) + Mar (~30) + Banner (250) = ~380. 
+       Easier: Let JS structure put it AFTER banner, use margin-top: -60px. */
+    margin-top: -60px;
+    margin-left: 40px;
+    /* Left align */
+    z-index: 10;
+    pointer-events: none;
+    /* Let clicks pass through empty space */
+}
+
+.profile-avatar-container>* {
+    pointer-events: auto;
+}
+
+/* Re-enable clicks on avatar */
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-round);
+    background-size: cover;
+    background-position: center;
+    border: 4px solid var(--clr-bg-main);
+    /* Cutout effect */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background-color: #333;
 }
 
 .profile-avatar {
