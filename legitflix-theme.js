@@ -483,7 +483,8 @@ async function pollForUI() {
     }
 
     // 4. Try Inject Preferences Header (Prefs Page Only)
-    if (window.location.hash.includes('myPreferencesMenuPage')) {
+    // FIX: URL hash is often lowercase, check broadly
+    if (window.location.hash.toLowerCase().includes('preferences')) {
         try {
             injectFeaturedPrefs();
         } catch (e) {
@@ -504,6 +505,18 @@ function init() {
         // Reset home flags to force re-check
         _injectedHero = false;
         _injectedJelly = false;
+
+        // RE-RUN ACTIVE STATE CHECK ON NAV (For Pill Effect)
+        setTimeout(() => {
+            const currentHash = window.location.hash;
+            document.querySelectorAll('.legit-nav-links .nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (currentHash.includes(link.getAttribute('href'))) {
+                    link.classList.add('active');
+                }
+            });
+        }, 200);
+
         // Keep Nav flag true as header usually persists, but check if it was wiped:
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
     });

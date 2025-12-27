@@ -86,8 +86,9 @@ h4,
     opacity: 1;
 }
 
-/* 3. Hide Native Tabs */
-.headerTabs {
+/* 3. Hide Native Tabs & Title (Fixing "Double Display") */
+.headerTabs,
+.headerLeft .pageTitle {
     display: none !important;
 }
 
@@ -511,18 +512,25 @@ body.startupPage .startupLogo {
 /* --- NAVIGATION PILL ACTIVE STATE --- */
 .nav-link {
     position: relative;
-    padding: 8px 16px;
+    padding: 8px 20px;
     border-radius: 50px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid transparent;
+    /* Prevent layout shift */
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
 }
 
 .nav-link.active {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    color: white;
+    background: rgba(229, 9, 20, 0.8) !important;
+    /* Brand Red Pill */
+    color: white !important;
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 
