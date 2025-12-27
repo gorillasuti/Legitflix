@@ -98,35 +98,37 @@ h4,
     min-height: 100vh;
 }
 
-/* 5. HERO CAROUSEL CSS (Fixing Stacking Issue) */
+/* 5. HERO CAROUSEL CSS */
 .hero-carousel-container {
-    position: relative !important;
+    position: absolute !important;
+    /* Absolute top behind nav */
     display: block !important;
     width: 100%;
-    height: 85vh;
-    /* Taller Hero */
+    height: 90vh;
+    /* Extended height */
     overflow: hidden;
-    /* Ensure it starts at the very top */
     top: 0;
     left: 0;
+    z-index: 0 !important;
+    /* Behind Header */
+    /* Subtle Fade Out at Bottom using Mask */
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
 }
 
 .hero-slide {
     position: absolute !important;
-    /* Slides are stacked on top of each other */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
-    /* Hidden by default */
     transition: opacity 0.8s ease-in-out;
     z-index: 1;
 }
 
 .hero-slide.active {
     opacity: 1 !important;
-    /* Show active */
     z-index: 2;
 }
 
@@ -139,7 +141,7 @@ h4,
 
 /* Ensure content is readable */
 .hero-overlay {
-    background: linear-gradient(to top, #141414 5%, transparent 60%);
+    background: linear-gradient(to top, #141414 10%, transparent 60%);
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -147,17 +149,7 @@ h4,
     z-index: 2;
 }
 
-.hero-content {
-    position: absolute;
-    bottom: 18%;
-    left: var(--header-padding);
-    /* Align with header padding */
-    z-index: 10;
-    max-width: 50%;
-    text-align: left;
-}
-
-/* 6. Fix Header Content Alignment */
+/* 6. Alignment Fixes & Header Icons */
 .headerLeft {
     display: flex !important;
     align-items: center !important;
@@ -168,11 +160,70 @@ h4,
     padding: 0 !important;
 }
 
-/* Force header right to the far right */
 .headerRight {
     margin-left: auto !important;
     z-index: 1001;
     padding-right: 0 !important;
+}
+
+/* Hide specific header icons (Cast, Sync/Dice, etc.) 
+   Keep Search (.headerSearchButton) and User (.headerUserButton) */
+.headerRight .paper-icon-button-light:not(.headerSearchButton):not(.headerUserButton) {
+    display: none !important;
+}
+
+/* --- USER PREFERENCES MENU REDESIGN (Grid) --- */
+#myPreferencesMenuPage .scrollSlider {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 20px !important;
+    padding: 40px !important;
+    align-items: stretch !important;
+}
+
+#myPreferencesMenuPage .listItem {
+    background-color: var(--theme-card-bg) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transition: transform 0.2s, background-color 0.2s !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    margin: 0 !important;
+    /* Reset margin */
+}
+
+#myPreferencesMenuPage .listItem:hover {
+    background-color: #2a2a2a !important;
+    transform: translateY(-5px) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+#myPreferencesMenuPage .listItemIcon {
+    margin: 0 0 15px 0 !important;
+    width: auto !important;
+    font-size: 2rem !important;
+    height: auto !important;
+    background: transparent !important;
+    color: var(--theme-primary) !important;
+}
+
+#myPreferencesMenuPage .listItemBody {
+    padding: 0 !important;
+    min-height: auto !important;
+}
+
+#myPreferencesMenuPage .listItemBodyText {
+    font-weight: 600 !important;
+    color: #fff !important;
+    margin: 0 !important;
+}
+
+#myPreferencesMenuPage .listItemBodyText-secondary {
+    display: none !important;
+    /* Hide secondary text for cleaner look */
 }
 
 /* DEBUG: Un-comment the line below. If you see a thick red border, CSS IS WORKING. */

@@ -252,11 +252,10 @@ async function injectCustomNav() {
         return `<a href="#!/list?parentId=${v.Id}&serverId=${auth.ServerId}" class="nav-link">${v.Name}</a>`;
     }).join('');
 
-    const dashLink = `<a href="#!/home" class="nav-link">Dashboard</a>`;
+    // Removed Dashboard link as per request (Logo is enough)
 
     const finalHtml = `
         <div class="legit-nav-links">
-            ${dashLink}
             ${linksHtml}
         </div>
     `;
