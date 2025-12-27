@@ -457,6 +457,11 @@ async function injectFeaturedPrefs() {
                 <a class="profile-tab" onclick="location.href='${playbackHref}'">Playback</a>
                 <a class="profile-tab" onclick="location.href='${subtitleHref}'">Subtitles</a>
                 <a class="profile-tab" onclick="location.href='${quickConnectHref}'">Quick Connect</a>
+                
+                <!-- Sign Out (Icon) -->
+                <a class="profile-tab logout-tab" onclick="document.querySelector('.btnLogout').click()" title="Sign Out">
+                    <span class="material-icons">exit_to_app</span>
+                </a>
             </div>
 
             <div class="profile-banner ${bannerClass}" style="${bannerStyle}">
@@ -481,9 +486,27 @@ async function injectFeaturedPrefs() {
     // 4. Insert at TOP of content
     contentContainer.insertAdjacentHTML('afterbegin', headerHtml);
 
-    // 5. Cleanup Redundant Titles
+    // 5. Cleanup Redundant Titles & Buttons
     const oldTitle = contentContainer.querySelector('.headerUsername');
     if (oldTitle) oldTitle.style.display = 'none';
+
+    // Move Sign Out button into Nav (Hide original)
+    const oldLogout = contentContainer.querySelector('.btnLogout');
+    if (oldLogout) oldLogout.style.display = 'none';
+
+    // 6. Style Password Section as a Card
+    // Find the section containing password fields
+    const passwordInput = contentContainer.querySelector('#fldCurrentPassword');
+    if (passwordInput) {
+        // The detailed section is likely the parent or grandparent
+        const passwordSection = passwordInput.closest('.detailSection');
+        if (passwordSection) {
+            passwordSection.classList.add('profile-settings-card');
+            // Ensure instructions/titles inside it are visible/clean
+            const sectionTitle = passwordSection.querySelector('h2');
+            if (sectionTitle) sectionTitle.style.marginBottom = '20px';
+        }
+    }
 }
 
 // --- POPUP HELPERS ---
@@ -627,19 +650,27 @@ window.triggerAvatarsPlugin = function () {
 };
 
 // Helper to upload backdrop to Jellyfin Server
+// Helper to upload backdrop to Jellyfin Server
 window.uploadUserBackdrop = async function (imageUrl) {
     try {
+        console.log('LegitFlix: Starting upload for', imageUrl);
         const userId = await window.ApiClient.getCurrentUserId();
         const serverId = window.ApiClient.serverId();
         const accessToken = window.ApiClient.accessToken();
 
-        // 1. Fetch the image content (Proxy via client to avoid CORS if cross-origin, but these are local)
+        // 1. Fetch the image content
+        // Note: imageUrl is relative e.g. /Items/..., fetch handles it.
         const res = await fetch(imageUrl);
+        if (!res.ok) throw new Error(`Failed to fetch source image: ${res.status}`);
+
         const blob = await res.blob();
+        console.log('LegitFlix: Image blob fetched.', blob.type, blob.size);
+
+        if (blob.size === 0) throw new Error('Fetched blob is empty.');
 
         // 2. Prepare Upload
         // Endpoint: POST /Users/{userId}/Images/Backdrop
-        // We send the blob directly.
+        // Note: Jellyfin API usually expects the raw bytes in body
         const uploadUrl = window.ApiClient.getUrl(`/Users/${userId}/Images/Backdrop`);
 
         console.log('LegitFlix: Uploading backdrop to', uploadUrl);
@@ -648,7 +679,7 @@ window.uploadUserBackdrop = async function (imageUrl) {
             method: 'POST',
             headers: {
                 'Authorization': `MediaBrowser Client="Jellyfin Web", Device="ValidDevice", DeviceId="ValidId", Version="10.8.0", Token="${accessToken}"`,
-                'Content-Type': blob.type || 'image/png' // Attempt to guess or default
+                'Content-Type': blob.type || 'image/png' // Strict type
             },
             body: blob
         });
@@ -658,6 +689,8 @@ window.uploadUserBackdrop = async function (imageUrl) {
             return true;
         } else {
             console.error('LegitFlix: Upload failed', uploadRes.status, uploadRes.statusText);
+            const errText = await uploadRes.text(); // Read server error if any
+            console.error('LegitFlix: Server response:', errText);
             return false;
         }
     } catch (e) {
@@ -666,29 +699,7 @@ window.uploadUserBackdrop = async function (imageUrl) {
     }
 };
 
-window.triggerAvatarsPlugin = function () {
-    const findAndClickValue = () => {
-        const pluginBtn = document.getElementById('jf-avatars-btn-show-modal') || document.getElementById('show-modal');
-        if (pluginBtn) {
-            pluginBtn.click();
-            document.querySelector('.legit-popup-overlay').remove();
-            return true;
-        }
-        return false;
-    };
 
-    if (!findAndClickValue()) {
-        // Retry for 500ms in case the script is initializing
-        let retries = 5;
-        const interval = setInterval(() => {
-            if (findAndClickValue() || retries <= 0) {
-                clearInterval(interval);
-                if (retries <= 0) alert('Avatars Plugin busy or not loaded.');
-            }
-            retries--;
-        }, 100);
-    }
-};
 
 
 // --- INIT & ROBUSTNESS ---
