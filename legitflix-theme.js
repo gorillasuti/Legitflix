@@ -2024,16 +2024,21 @@ function init() {
     // Run initially and on mutation
     renameMyList();
     fixMixedCards();
-
     // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
     let _promoInjectionInProgress = false; // Guard for race conditions
 
     async function injectPromoBanner() {
-        // 1. Check if already injected
-        if (document.querySelector('.legitflix-promo-container')) return;
+        if (_promoInjectionInProgress || _injectedBanner) return;
 
-        // Guard against concurrent runs, but MUST unlock if we fail/return early
-        if (_promoInjectionInProgress) return;
+        // Strict Home Page Check
+        const hash = window.location.hash.toLowerCase();
+        if (!hash.includes('home') && !hash.endsWith('/web/index.html')) {
+            return;
+        }
+
+        const homeSections = document.querySelector('.homeSectionsContainer');
+        if (!homeSections && !document.querySelector('.verticalSection')) return;
+
         _promoInjectionInProgress = true;
 
         try {
@@ -2077,23 +2082,13 @@ function init() {
             const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
             const nextUpJson = await nextUpRes.json();
 
-            const excludeIds = new Set([
-                ...(resumeJson.Items || []).map(i => i.Id),
-                ...(nextUpJson.Items || []).map(i => i.Id)
-            ]);
-
             // B. Get Candidates (Latest Movies/Series)
-            const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=50&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
+            // Limit to 3 strictly. Sort by DateCreated Descending.
+            const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
             const candidatesJson = await candidatesRes.json();
 
-            // C. Select 3 Unique Items not in History
-            const selected = [];
-            for (const item of (candidatesJson.Items || [])) {
-                if (!excludeIds.has(item.Id)) {
-                    selected.push(item);
-                    if (selected.length >= 3) break;
-                }
-            }
+            // C. Select Top 3
+            const selected = candidatesJson.Items || [];
 
             if (selected.length < 3) {
                 _promoInjectionInProgress = false;
@@ -2181,6 +2176,9 @@ function init() {
         document.body.addEventListener('mouseover', (e) => {
             // Disable on edit/admin pages
             if (window.location.href.includes('edititem') || window.location.href.includes('metadata')) return;
+
+            // Disable on Details Pages (Native Hover Mode)
+            if (document.body.classList.contains('native-hover-mode')) return;
 
             const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
             // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
@@ -2376,9 +2374,11 @@ function init() {
             const newState = !currentState;
             const iconSpan = btn.querySelector('.material-icons');
 
-            // Optimistic UI Update
+            // Optimistic UI Update & Cache Sync
             if (type === 'fav') {
                 isFav = newState; // Update closure var
+                if (details.UserData) details.UserData.IsFavorite = isFav; // Update Cache
+
                 btn.classList.toggle('active', isFav);
                 iconSpan.textContent = isFav ? 'favorite' : 'favorite_border';
                 btn.title = isFav ? 'Unfavorite' : 'Favorite';
@@ -2388,6 +2388,8 @@ function init() {
 
             } else if (type === 'played') {
                 isPlayed = newState; // Update closure var
+                if (details.UserData) details.UserData.Played = isPlayed; // Update Cache
+
                 btn.classList.toggle('active', isPlayed);
                 iconSpan.textContent = isPlayed ? 'check_circle' : 'check';
                 btn.title = isPlayed ? 'Mark Unplayed' : 'Mark Played';
@@ -2446,12 +2448,12 @@ function init() {
         if (nativeMenu && customMoreBtn) {
             // Confirm it is NOT a play button
             if (!nativeMenu.classList.contains('cardOverlayFab') && !nativeMenu.getAttribute('data-action')?.includes('play')) {
-                // Move it into the container REPLACING the custom button
-                const container = customMoreBtn.parentNode;
-                container.replaceChild(nativeMenu, customMoreBtn);
-
-                // Add class for styling match
-                nativeMenu.classList.add('hover-icon-btn');
+                // PROXY CLICK: Don't move the button (it breaks events). Click it remotely.
+                customMoreBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    nativeMenu.click();
+                });
             }
         }
 
@@ -2500,12 +2502,24 @@ function init() {
         });
     }
 
+    // Helper to detect Page Type (Details vs Home)
+    function checkPageMode() {
+        const hash = window.location.hash.toLowerCase();
+        // If on details page, enable native hover mode globally
+        if (hash.includes('details')) {
+            document.body.classList.add('native-hover-mode');
+        } else {
+            document.body.classList.remove('native-hover-mode');
+        }
+    }
+
     const observer = new MutationObserver((mutations) => {
+        checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
         renameMyList();
         fixMixedCards();
         injectPromoBanner();
-        tagNativeSections(); // Ensure sections are tagged
+        tagNativeSections();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }

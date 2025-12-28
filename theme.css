@@ -40,6 +40,28 @@
     --skin-bg: var(--clr-bg-main) !important;
 }
 
+/* --- DYNAMIC NAV BLUR --- */
+.skinHeader {
+    transition: background 0.4s ease, backdrop-filter 0.4s ease, mask-image 0.4s ease;
+    -webkit-transition: background 0.4s ease, -webkit-backdrop-filter 0.4s ease, -webkit-mask-image 0.4s ease;
+    background: transparent !important;
+    /* Default transparent */
+}
+
+/* When Scrolled > 10vh */
+.legitflix-nav-scrolled {
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+
+    /* Fade out bottom: use mask image to feather the bottom edge */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    /* Subtle border */
+}
+
 /* =========================================================================
    PRELOADER / SPLASH SCREEN LOGO OVERRIDE
    ========================================================================= */
@@ -2153,6 +2175,16 @@ header,
 .native-hover-section .cardOverlayButton {
     opacity: 1 !important;
     pointer-events: auto !important;
+}
+
+/* RESTORE Buttons in Image Editor & Dialogs */
+.imageEditorCard button,
+.dialog .cardOverlayButton,
+.formDialog button,
+.native-hover-mode .cardOverlayButton {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: flex !important;
 }
 
 /* Hijacked Menu Button in Footer */
