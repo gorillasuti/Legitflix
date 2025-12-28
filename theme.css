@@ -40,6 +40,12 @@
     --skin-bg: var(--clr-bg-main) !important;
 }
 
+/* Hide admin/user sections on preferences menu (we have custom drawer) */
+.adminSection.verticalSection,
+.userSection.verticalSection {
+    display: none !important;
+}
+
 /* --- DYNAMIC NAV BLUR --- */
 .skinHeader {
     transition: background 0.4s ease, backdrop-filter 0.4s ease, mask-image 0.4s ease;
@@ -998,10 +1004,82 @@ header,
     z-index: 10001 !important;
 }
 
-/* Ensure action sheet content is properly sized */
+/* =========== CONTEXT POPUP / ACTION SHEET (Match Nav Drawer Style) =========== */
+.actionSheet.centeredDialog {
+    background: rgba(20, 20, 20, 100) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden !important;
+    padding: 8px !important;
+}
+
 .actionSheetContent {
-    max-width: 300px;
-    min-width: 250px;
+    max-width: 280px;
+    min-width: 220px;
+    background: transparent !important;
+}
+
+.actionSheetScroller {
+    padding: 4px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Action Sheet Menu Items - Match drawer buttons */
+.actionSheetMenuItem {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.actionSheetMenuItem:hover {
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.actionSheetMenuItem:hover .listItemIcon,
+.actionSheetMenuItem:hover .actionsheetMenuItemIcon,
+.actionSheetMenuItem:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+.actionSheetMenuItem:hover .listItemBody,
+.actionSheetMenuItem:hover .listItemBodyText,
+.actionSheetMenuItem:hover .actionSheetItemText {
+    color: white !important;
+}
+
+/* Icon styling */
+.actionSheetMenuItem .listItemIcon,
+.actionSheetMenuItem .actionsheetMenuItemIcon {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 20px !important;
+    transition: color 0.2s ease !important;
+}
+
+/* Text styling */
+.actionSheetMenuItem .listItemBodyText,
+.actionSheetMenuItem .actionSheetItemText {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: color 0.2s ease !important;
+}
+
+/* Divider styling */
+.actionsheetDivider {
+    height: 1px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    margin: 6px 0 !important;
 }
 
 /* =========================================================================
