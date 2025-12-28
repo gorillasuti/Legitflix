@@ -1680,26 +1680,11 @@ header,
     transition: transform 0.2s ease-in-out;
 }
 
+
 /* --- TARGETED PORTRAIT ASPECT RATIO ("Mixed Section" Only) --- */
-/* User wants Series/Movies in mixed lists (like "Latest Anime") to look like Posters (1x2), 
-   but keep "Next Up" (Episodes) and Categories (CollectionFolder) as Wide (2x1). */
-.overflowBackdropCard[data-type="Series"] .cardPadder,
-.overflowBackdropCard[data-type="Movie"] .cardPadder {
-    padding-bottom: 150% !important;
-    /* Poster Ratio */
-}
+/* Obsolete: Handled by JS fixMixedCards() in legitflix-theme.js now
+   This ensures we use real Primary images provided by the server hack. */
 
-/* Force Width for enforced portrait cards */
-.overflowBackdropCard[data-type="Series"],
-.overflowBackdropCard[data-type="Movie"] {
-    width: 16.6666% !important;
-}
-
-.overflowBackdropCard[data-type="Series"] .cardImageContainer,
-.overflowBackdropCard[data-type="Movie"] .cardImageContainer {
-    background-size: cover !important;
-    background-position: center top !important;
-}
 
 
 .cardScalable,

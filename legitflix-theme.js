@@ -1957,9 +1957,52 @@ function init() {
     // Run initially and on mutation
     renameMyList();
 
+    // --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
+    function fixMixedCards() {
+        // Find Backdrops that should be Posters (Movies/Series)
+        const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
+        const cards = document.querySelectorAll(selector);
+
+        cards.forEach(card => {
+            // 1. Swap Card Class (Backdrop -> Portrait)
+            // This fixes dimensions and grid layout
+            card.classList.remove('overflowBackdropCard');
+            card.classList.add('overflowPortraitCard');
+
+            // 2. Swap Padder Class
+            const padder = card.querySelector('.cardPadder-overflowBackdrop');
+            if (padder) {
+                padder.classList.remove('cardPadder-overflowBackdrop');
+                padder.classList.add('cardPadder-overflowPortrait');
+            }
+
+            // 3. Swap Image URL (Thumb -> Primary)
+            // This gets the correct Poster image from server
+            const imgContainer = card.querySelector('.cardImageContainer');
+            if (imgContainer) {
+                const style = imgContainer.getAttribute('style') || '';
+                // Only replace if it contains Images/Thumb
+                if (style.includes('Images/Thumb')) {
+                    // Use standard regex to be safe
+                    const newStyle = style.replace(/Images\/Thumb/g, 'Images/Primary');
+                    imgContainer.setAttribute('style', newStyle);
+
+                    // Also update dimensions in URL if present (fillWidth/fillHeight)
+                    // Thumb usually asks for ~300x170, Primary needs ~200x300
+                    // We let Jellyfin handle basic resizing but the tag swap is key.
+                }
+            }
+        });
+    }
+
+    // Run initially and on mutation
+    renameMyList();
+    fixMixedCards();
+
     const observer = new MutationObserver((mutations) => {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
         renameMyList();
+        fixMixedCards();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
