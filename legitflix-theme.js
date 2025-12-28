@@ -1939,8 +1939,27 @@ function init() {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
     });
 
+    // --- RENAME "MY LIST" / "MY MEDIA" TO "CATEGORIES" ---
+    function renameMyList() {
+        document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
+            const text = el.innerText.trim().toLowerCase();
+            if (text === 'my list' || text === 'my media' || text === 'mes médias') {
+                el.innerText = 'Categories';
+                // Also update the link if it exists (for "My Media >")
+                const parent = el.closest('.sectionHeader');
+                if (parent) {
+                    const link = parent.querySelector('a');
+                    if (link) link.setAttribute('title', 'Categories');
+                }
+            }
+        });
+    }
+    // Run initially and on mutation
+    renameMyList();
+
     const observer = new MutationObserver((mutations) => {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+        renameMyList();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
