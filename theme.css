@@ -925,11 +925,11 @@ h4,
 
 /* Checkbox Accent Color */
 .userPreferencesPage .emby-checkbox:checked+.checkboxOutline .checkboxIcon-checked {
-    color: var(--theme-primary-color, #00A4DC);
+    color: var(--theme-primary-color) !important;
 }
 
 .userPreferencesPage .emby-checkbox:checked+.checkboxOutline {
-    border-color: var(--theme-primary-color, #00A4DC);
+    border-color: var(--theme-primary-color) !important;
 }
 
 /* Save Buttons - Use legit-btn-secondary style */
@@ -953,4 +953,54 @@ h4,
     background: rgba(255, 255, 255, 0.15) !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
     color: white !important;
+}
+
+/* Center and constrain form width */
+.userPreferencesPage form {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* =========== NAVIGATION DRAWER STYLES =========== */
+
+/* Drawer Toggle Button */
+.legit-nav-drawer-toggle {
+    margin-right: 8px;
+}
+
+/* Drawer Container - Slides in from right */
+.legit-nav-drawer {
+    position: fixed;
+    top: 60px;
+    right: -300px;
+    width: 250px;
+    background: rgba(20, 20, 20, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Open State - Slide in */
+.legit-nav-drawer.open {
+    right: 80px;
+}
+
+/* Drawer Buttons */
+.legit-nav-drawer button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.legit-nav-drawer button:hover {
+    background: rgba(255, 255, 255, 0.1);
 }

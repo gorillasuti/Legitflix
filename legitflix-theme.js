@@ -1257,6 +1257,62 @@ let _injectedNav = false;
 let _injectedHero = false;
 let _injectedJelly = false;
 
+// Navigation Drawer for Right Side Icons
+async function injectCustomNav() {
+    const headerRight = document.querySelector('.headerRight');
+    if (!headerRight) return;
+
+    // Check if already modified
+    if (headerRight.querySelector('.legit-nav-drawer')) return;
+
+    // Find all buttons except the user profile button
+    const buttons = Array.from(headerRight.querySelectorAll('button'));
+    const profileButton = buttons.find(btn => btn.classList.contains('headerUserButton'));
+
+    // Get the 4 icon buttons (everything except profile)
+    const iconButtons = buttons.filter(btn => btn !== profileButton);
+
+    if (iconButtons.length === 0) return;
+
+    // Create drawer toggle button (hamburger menu)
+    const drawerToggle = document.createElement('button');
+    drawerToggle.className = 'legit-nav-drawer-toggle paper-icon-button-light';
+    drawerToggle.innerHTML = '<span class="material-icons">menu</span>';
+    drawerToggle.setAttribute('title', 'Menu');
+
+    // Create drawer container
+    const drawer = document.createElement('div');
+    drawer.className = 'legit-nav-drawer';
+
+    // Move icon buttons into drawer
+    iconButtons.forEach(btn => {
+        drawer.appendChild(btn);
+    });
+
+    // Insert drawer toggle before profile button
+    if (profileButton) {
+        profileButton.parentNode.insertBefore(drawerToggle, profileButton);
+    } else {
+        headerRight.appendChild(drawerToggle);
+    }
+
+    // Add drawer to header
+    headerRight.appendChild(drawer);
+
+    // Toggle functionality
+    drawerToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        drawer.classList.toggle('open');
+    });
+
+    // Close drawer when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!drawer.contains(e.target) && e.target !== drawerToggle) {
+            drawer.classList.remove('open');
+        }
+    });
+}
+
 async function pollForUI() {
     const isReady = window.ApiClient && document.body;
     if (!isReady) return;
