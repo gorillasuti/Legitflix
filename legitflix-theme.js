@@ -262,9 +262,11 @@ async function injectMediaBar() {
             wrapper.innerHTML = createMediaBarHTML(items);
 
             container.insertBefore(wrapper, container.firstChild);
+            container.classList.add('has-legit-hero'); // Enable CSS spacing
 
             logger.log('injectMediaBar: Injected successfully');
             startCarousel();
+
         }
     }, 1000);
 

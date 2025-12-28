@@ -1441,21 +1441,28 @@ header,
    ========================================================================= */
 
 .hero-carousel-container {
-    position: relative;
+    position: fixed !important;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 90vh;
-    /* Even Taller */
-    max-height: 1000px;
-    min-height: 600px;
-    overflow: hidden;
-    margin-bottom: -100px;
-    /* Reduced overlap to prevent covering text */
-    border-radius: 0;
+    height: 100vh;
     z-index: 0;
+    /* Behind content but clickable */
+    overflow: hidden;
+    margin-bottom: 0;
+    border-radius: 0;
 
     /* Fade out bottom */
-    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+/* Push content down so it starts below the hero area */
+.has-legit-hero {
+    padding-top: 65vh !important;
+    background: transparent !important;
+    position: relative;
+    z-index: 5;
 }
 
 /* Ensure content below carousel sits on top */
