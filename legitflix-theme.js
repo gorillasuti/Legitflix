@@ -213,7 +213,7 @@ window.legitFlixPlay = async function (id) {
         } catch (e) { console.warn('Force load failed', e); }
     }
 
-    const waitForGlobals = async (retries = 20, delay = 100) => {
+    const waitForGlobals = async (retries = 100, delay = 100) => {
         for (let i = 0; i < retries; i++) {
             if (window.PlaybackManager && window.ApiClient) return true;
             await new Promise(r => setTimeout(r, delay));
