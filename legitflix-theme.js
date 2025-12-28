@@ -2344,28 +2344,31 @@ function init() {
             });
         });
 
-        // 3-Dot (More) -> Trigger Native Context Menu (Right Click simulation)
-        const moreBtn = overlay.querySelector('.action-more');
-        if (moreBtn) {
-            moreBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Find and click the native menu button which is now hidden but present
-                const nativeMenu = card.querySelector('.cardOverlayButton');
-                if (nativeMenu) {
+        // 3. Hijack Native Menu Button (The "More" action)
+        const customMoreBtn = overlay.querySelector('.action-more');
+        const nativeMenu = card.querySelector('.cardOverlayButton'); // Usually the BR button
+
+        if (nativeMenu && customMoreBtn) {
+            // Check if it's the right one (has 'more_vert' or similar)
+            if (nativeMenu.innerHTML.includes('more_vert') || nativeMenu.innerHTML.includes('dots-vertical')) {
+                // Move it into the container REPLACING the custom button
+                const container = customMoreBtn.parentNode;
+                container.replaceChild(nativeMenu, customMoreBtn);
+
+                // Add class for styling match
+                nativeMenu.classList.add('hover-icon-btn');
+                // We don't remove existing classes, just add ours for overriding styles in CSS
+            } else {
+                // Fallback if not found: keep custom button and use legacy click
+                customMoreBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Try finding any button if specific check failed
                     nativeMenu.click();
-                } else {
-                    // Fallback to right click event if button not found
-                    const event = new MouseEvent('contextmenu', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window,
-                        clientX: e.clientX,
-                        clientY: e.clientY
-                    });
-                    card.dispatchEvent(event);
-                }
-            });
+                });
+            }
         }
+
+        // Info -> Do Nothing (as requested "YET")
 
         // Info -> Do Nothing (as requested "YET")
         // Check/Fav -> Can implement later or leave as no-op for now.

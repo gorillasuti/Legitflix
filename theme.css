@@ -2129,6 +2129,8 @@ header,
     overflow: visible !important;
     contain: none !important;
     /* Ensure painting doesn't clip */
+    position: relative !important;
+    /* Ensure absolute overlay is relative to CARD, not body */
 }
 
 /* Keep Native Elements visible on Card itself until hijacked */
@@ -2138,10 +2140,44 @@ header,
     z-index: 2;
 }
 
-/* Hide other native buttons (Menu) - Keep in DOM for proxy clicking */
+/* Hide other native buttons (Menu) - Keep in DOM for hijack/proxy */
 .cardOverlayButton {
     opacity: 0 !important;
     pointer-events: none !important;
     display: flex !important;
-    /* Ensure it exists for positioning logic */
+}
+
+/* Hijacked Menu Button in Footer */
+.hover-footer .cardOverlayButton {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    position: static !important;
+    margin: 0 !important;
+
+    /* Match .hover-icon-btn styles */
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white !important;
+    /* Force white icon */
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.hover-footer .cardOverlayButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white !important;
+    transform: scale(1.1);
+}
+
+.hover-footer .cardOverlayButton .material-icons {
+    font-size: 20px !important;
+    /* Match other icons */
+    color: white !important;
 }
