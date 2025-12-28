@@ -78,8 +78,8 @@ async function fetchMediaBarItems() {
     const auth = await getAuth();
     if (!auth) return [];
 
-    const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary`;
+    const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
         const response = await fetch(url, {
@@ -112,7 +112,8 @@ function createMediaBarHTML(items) {
         if (item.RunTimeTicks && item.Type !== 'Series') {
             const ms = item.RunTimeTicks / 10000;
             const endTime = new Date(Date.now() + ms);
-            const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
             endsAtHtml = `<span class="ends-at">Ends at ${timeStr}</span>`;
         } else if (item.Type === 'Series') {
             endsAtHtml = `<span class="ends-at">${item.ChildCount ? item.ChildCount + ' Seasons' : 'Series'}</span>`;
@@ -123,12 +124,18 @@ function createMediaBarHTML(items) {
         const playOnClick = `window.legitFlixPlay('${item.Id}')`;
         const infoOnClick = `window.legitFlixShowItem('${item.Id}')`;
 
+        // Logo vs Text Logic
+        const hasLogo = item.ImageTags && item.ImageTags.Logo;
+        const titleHtml = hasLogo
+            ? `<img src="/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90" class="hero-logo" alt="${title}" />`
+            : `<h1 class="hero-title">${title}</h1>`;
+
         return `
             <div class="hero-slide ${activeClass}" data-index="${index}">
                 <div class="hero-backdrop" style="background-image: url('${backdropUrl}')"></div>
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
-                    <h1 class="hero-title">${title}</h1>
+                    ${titleHtml}
                     <div class="hero-meta">
                         ${ratingHtml}
                         <span class="year">${item.ProductionYear || ''}</span>
@@ -224,64 +231,7 @@ window.legitFlixPlay = async function (id) {
     }
 };
 
-// --- CUSTOM NAVIGATION (Dynamic) ---
-async function injectCustomNav() {
-    logger.log('injectCustomNav: Checking...');
-    if (document.querySelector('.legit-nav-links')) return;
-
-    const headerLeft = document.querySelector('.headerLeft');
-    if (!headerLeft) {
-        logger.log('injectCustomNav: headerLeft not found yet.');
-        return;
-    }
-
-    logger.log('injectCustomNav: Fetching views...');
-    // We need Auth to get the ServerId
-    const auth = await getAuth();
-    if (!auth) return;
-
-    const views = await fetchUserViews();
-    if (!views || views.length === 0) {
-        logger.warn('injectCustomNav: No views found.');
-        return;
-    }
-
-    // Map views to HTML links with CORRECT standard Jellyfin URL
-    // USER CONFIRMED: #/list?parentId=...&serverId=... works.
-    const linksHtml = views.map(v => {
-        return `<a href="#!/list?parentId=${v.Id}&serverId=${auth.ServerId}" class="nav-link">${v.Name}</a>`;
-    }).join('');
-
-    // Removed Dashboard link as per request (Logo is enough)
-
-    const finalHtml = `
-        <div class="legit-nav-links">
-            ${linksHtml}
-        </div>
-    `;
-
-    logger.log('injectCustomNav: Injecting HTML');
-    if (!document.querySelector('.legit-nav-links')) {
-        headerLeft.insertAdjacentHTML('beforeend', finalHtml);
-
-        // Mark active link & Add Click Listener for Instant Feedback
-        const currentHash = window.location.hash;
-        document.querySelectorAll('.legit-nav-links .nav-link').forEach(link => {
-            // Initial Active Check
-            if (currentHash.includes(link.getAttribute('href'))) {
-                link.classList.add('active');
-            }
-
-            // Click Listener - Instant Feedback
-            link.addEventListener('click', (e) => {
-                // Remove active from all
-                document.querySelectorAll('.legit-nav-links .nav-link').forEach(l => l.classList.remove('active'));
-                // Add to this
-                e.currentTarget.classList.add('active');
-            });
-        });
-    }
-}
+// --- [REMOVED] Duplicate legacy navigation logic ---
 
 // --- INJECTION & INIT ---
 async function injectMediaBar() {
@@ -1297,15 +1247,30 @@ function createSearchModal() {
         _searchDebounce = setTimeout(() => performSearch(query), 300);
     };
 
-    // Close Button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'legit-search-close';
-    closeBtn.innerHTML = '<span class="material-icons">close</span>';
-    closeBtn.onclick = closeSearchModal;
+    // ESC Hint + Close Area
+    const closeContainer = document.createElement('div');
+    closeContainer.className = 'legit-search-actions';
+    closeContainer.onclick = closeSearchModal; // Click area closes too
+
+    const escBadge = document.createElement('span');
+    escBadge.className = 'legit-search-esc';
+    escBadge.textContent = 'esc';
+
+    const closeText = document.createElement('span');
+    closeText.className = 'legit-search-close-text';
+    closeText.textContent = 'Close';
+
+    closeContainer.appendChild(escBadge);
+    closeContainer.appendChild(closeText);
 
     header.appendChild(icon);
     header.appendChild(input);
-    header.appendChild(closeBtn);
+    header.appendChild(closeContainer);
+
+    // Quick Access Categories
+    const categories = document.createElement('div');
+    categories.className = 'legit-search-categories';
+    categories.id = 'legit-search-categories';
 
     // Results container
     const results = document.createElement('div');
@@ -1314,6 +1279,7 @@ function createSearchModal() {
     results.innerHTML = '<div class="legit-no-results">Type to search...</div>';
 
     modal.appendChild(header);
+    modal.appendChild(categories);
     modal.appendChild(results);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
@@ -1341,6 +1307,37 @@ function openSearchModal() {
 
     // Add ESC listener
     document.addEventListener('keydown', handleSearchEsc);
+
+    // Load categories
+    populateSearchCategories();
+}
+
+async function populateSearchCategories() {
+    const container = document.getElementById('legit-search-categories');
+    // Allow refreshing if empty, but don't duplicate
+    if (!container || container.childElementCount > 0) return;
+
+    try {
+        if (!window.ApiClient) return;
+        const userId = window.ApiClient.getCurrentUserId();
+        const views = await window.ApiClient.getUserViews({}, userId);
+
+        if (views && views.Items) {
+            views.Items.forEach(view => {
+                const pill = document.createElement('button');
+                pill.className = 'legit-search-category-pill';
+                pill.textContent = view.Name;
+                pill.onclick = () => {
+                    const serverId = view.ServerId || window.ApiClient.serverId();
+                    window.location.hash = `#!/list?parentId=${view.Id}&serverId=${serverId}`;
+                    closeSearchModal();
+                };
+                container.appendChild(pill);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading search categories', e);
+    }
 }
 
 function closeSearchModal() {
@@ -1498,7 +1495,10 @@ async function injectCustomNav() {
                     views.Items.forEach(view => {
                         const link = document.createElement('a');
                         link.className = 'nav-link';
-                        link.href = `#/${view.CollectionType || 'library'}?topParentId=${view.Id}`;
+
+                        const serverId = view.ServerId || window.ApiClient.serverId();
+                        // User requested #/list format
+                        link.href = `#!/list?parentId=${view.Id}&serverId=${serverId}`;
 
                         // Map collection types to icons
                         const iconMap = {
@@ -1510,7 +1510,7 @@ async function injectCustomNav() {
                             'livetv': 'live_tv',
                             'homevideos': 'video_library',
                             'musicvideos': 'music_video',
-                            'mixed': 'folder'
+                            'mixed': 'video_library'
                         };
 
                         const iconName = iconMap[view.CollectionType?.toLowerCase()] || 'folder';
@@ -1558,6 +1558,18 @@ async function injectCustomNav() {
     const drawer = document.createElement('div');
     drawer.className = 'legit-nav-drawer';
 
+    // Sort buttons: Search, Cast, SyncPlay, Player, Others
+    const getOrder = (btn) => {
+        const txt = (btn.getAttribute('title') || btn.getAttribute('aria-label') || btn.className || '').toLowerCase();
+        if (txt.includes('search')) return 1;
+        if (txt.includes('cast') || txt.includes('play on')) return 2;
+        if (txt.includes('syncplay') || txt.includes('group')) return 3;
+        if (txt.includes('player') || txt.includes('remote') || txt.includes('queue')) return 4;
+        return 10;
+    };
+
+    iconButtons.sort((a, b) => getOrder(a) - getOrder(b));
+
     // Move icon buttons into drawer and add text labels
     iconButtons.forEach(btn => {
         // Get button title or aria-label for text
@@ -1589,6 +1601,32 @@ async function injectCustomNav() {
 
         drawer.appendChild(btn);
     });
+
+    // Inject Dashboard Link for Admins
+    if (window.ApiClient) {
+        try {
+            const user = await window.ApiClient.getCurrentUser();
+            if (user && user.Policy && user.Policy.IsAdministrator) {
+                const dashBtn = document.createElement('button');
+                dashBtn.className = 'paper-icon-button-light headerButton';
+                dashBtn.setAttribute('title', 'Dashboard');
+
+                dashBtn.onclick = () => {
+                    window.location.hash = '#/dashboard';
+                    document.querySelector('.legit-nav-drawer')?.classList.remove('open');
+                };
+
+                dashBtn.innerHTML = `
+                    <span class="material-icons">dashboard</span>
+                    <span class="drawer-btn-text">Dashboard</span>
+                `;
+
+                drawer.appendChild(dashBtn);
+            }
+        } catch (e) {
+            console.error('[LegitFlix] Admin check failed:', e);
+        }
+    }
 
     // Insert drawer toggle before profile button
     if (profileButton) {
@@ -1833,7 +1871,7 @@ window.ensurePasswordForm = function () {
 };
 
 function init() {
-    console.log('LegitFlix: V4.5 Robust Init');
+    console.log('LegitFlix: V5.6 Robust Init');
 
     // Start Polling Loop (Runs every 1s)
     setInterval(pollForUI, 1000);

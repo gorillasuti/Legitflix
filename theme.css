@@ -8,7 +8,9 @@
 
 :root {
     /* --- COLOR PALETTE --- */
-    --clr-accent: #FF6B00 !important;
+    --clr-accent: #ff6a00 !important;
+    --clr-accent-rgb: rgb(255, 107, 0) !important;
+    /* Required for transparency */
     /* Brand Orange - Matches Play Button */
     --clr-accent-hover: #FF8C00 !important;
     --clr-bg-main: #141414 !important;
@@ -149,8 +151,8 @@ h4,
 .legit-nav-links {
     display: flex !important;
     flex-direction: row !important;
-    gap: 15px !important;
-    margin-left: 10px !important;
+    gap: 6px !important;
+    margin-left: 1rem !important;
     z-index: 1001 !important;
     align-items: center;
 }
@@ -177,9 +179,6 @@ h4,
 .nav-link.active {
     background: var(--clr-accent) !important;
     color: white !important;
-    box-shadow: 0 4px 15px rgba(98, 0, 234, 0.4);
-    /* Purple glow */
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* =========================================================================
@@ -774,7 +773,7 @@ h4,
 }
 
 .banner-add-text {
-    margin-top: 10px;
+    margin-block: 4px;
     font-size: 1rem;
     font-weight: 500;
 }
@@ -790,14 +789,16 @@ h4,
     transform: translate(-50%, -50%) scale(0.9);
 
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50px;
-    padding: 10px 25px;
+    border-radius: var(--radius-pill);
+    padding: 12px 24px;
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-direction: row;
     /* Icon + Text side by side */
-    gap: 10px;
+    gap: 8px;
 
     opacity: 0;
     /* Hidden by default */
@@ -994,11 +995,12 @@ h4,
 /* Hamburger Menu (Far Left) */
 .legit-hamburger-menu {
     margin-right: 4px;
+    display: none !important;
 }
 
 .legit-hamburger-menu:hover {
-    background: rgba(255, 107, 0, 0.15) !important;
-    color: #FF6B00 !important;
+    background: rgba(var(--clr-accent-rgb), 0.15) !important;
+    color: var(--clr-accent) !important;
 }
 
 /* LEGITFLIX Logo */
@@ -1023,7 +1025,7 @@ h4,
 /* Nav Links Container */
 .legit-nav-links {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
 }
 
@@ -1051,8 +1053,8 @@ h4,
 }
 
 .legit-nav-links .nav-link.active {
-    background: rgba(255, 107, 0, 0.15);
-    color: #FF6B00;
+    background: rgba(var(--clr-accent-rgb), 0.15);
+    color: var(--clr-accent);
 }
 
 /* =========== NAVIGATION DRAWER STYLES =========== */
@@ -1072,8 +1074,8 @@ header,
 }
 
 .legit-nav-drawer-toggle:hover {
-    background: rgba(255, 107, 0, 0.15) !important;
-    color: #FF6B00 !important;
+    background: rgba(var(--clr-accent-rgb), 0.15) !important;
+    color: var(--clr-accent) !important;
 }
 
 /* Drawer Container - Slides in from right */
@@ -1118,12 +1120,12 @@ header,
 }
 
 .legit-nav-drawer button:hover {
-    background: rgba(255, 107, 0, 0.15) !important;
+    background: rgba(var(--clr-accent-rgb), 0.15) !important;
 }
 
 .legit-nav-drawer button:active,
 .legit-nav-drawer button.active {
-    background: rgba(255, 107, 0, 0.25) !important;
+    background: rgba(var(--clr-accent-rgb), 0.25) !important;
 }
 
 /* Drawer button text labels */
@@ -1231,20 +1233,71 @@ header,
     color: rgba(255, 255, 255, 0.3);
 }
 
-.legit-search-close {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
+/* ESC Hint + Close Area */
+.legit-search-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
 }
 
-.legit-search-close:hover {
-    background: rgba(255, 255, 255, 0.1);
+.legit-search-actions:hover {
+    opacity: 1;
+}
+
+.legit-search-esc {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: inherit;
+    line-height: normal;
+}
+
+.legit-search-close-text {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Categories Bar (Chips) */
+.legit-search-categories {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    overflow-x: auto;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.legit-search-categories::-webkit-scrollbar {
+    display: none;
+}
+
+.legit-search-category-pill {
+    background: rgba(255, 255, 255, 0.08);
+    /* Slight background */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    /* Rounded rect like Notion files, or pills? Image looks like pills/rounded. I'll use 6px standard */
+    padding: 6px 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: var(--font-primary);
+    display: flex;
+    align-items: center;
+}
+
+.legit-search-category-pill:hover {
+    background: rgba(255, 255, 255, 0.15);
     color: white;
 }
 
@@ -1347,4 +1400,177 @@ header,
     padding: 40px;
     text-align: center;
     color: rgba(255, 255, 255, 0.4);
+}
+
+/* =========================================================================
+   HERO CAROUSEL STYLES
+   ========================================================================= */
+
+.hero-carousel-container {
+    position: relative;
+    width: 100%;
+    height: 85vh;
+    /* Taller */
+    max-height: 800px;
+    min-height: 500px;
+    overflow: hidden;
+    margin-bottom: -160px;
+    /* Pull content up */
+    border-radius: 0;
+
+    /* Fade out bottom */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* Ensure content below carousel sits on top */
+.homeSectionsContainer,
+.verticalSection {
+    position: relative;
+    z-index: 5;
+}
+
+.hero-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    visibility: hidden;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+}
+
+.hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    /* USER REQUEST: Offset image to the right */
+    background-position: 80% center;
+    transition: transform 10s ease;
+    /* Subtle zoom effect? */
+}
+
+.hero-slide.active .hero-backdrop {
+    transform: scale(1.05);
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    /* USER REQUEST: Strong gradient from left (background color) to transparent */
+    /* Adjust usage of local variables if needed, or hardcode dark theme color */
+    background: linear-gradient(90deg,
+            rgba(16, 16, 16, 1) 0%,
+            rgba(16, 16, 16, 0.95) 25%,
+            rgba(16, 16, 16, 0.6) 50%,
+            rgba(16, 16, 16, 0) 100%);
+    z-index: 2;
+}
+
+.hero-content {
+    position: absolute;
+    top: 35%;
+    /* Moved up closer to nav */
+    left: 4%;
+
+    transform: translateY(-50%);
+    width: 45%;
+    max-width: 600px;
+    z-index: 3;
+    padding-right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    color: white;
+    font-family: var(--font-primary);
+}
+
+.hero-logo {
+    max-width: 100%;
+    width: auto;
+    max-height: 160px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.btn-play {
+    background: var(--clr-accent);
+    color: white;
+    border: none !important;
+    /* Override native styles */
+    padding: 12px 32px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer !important;
+    transition: all 0.2s;
+}
+
+.btn-play:hover {
+    background: white;
+    color: black;
+    cursor: pointer !important;
+}
+
+.hero-button-info {
+    background: rgba(255, 255, 255, 0.2);
+    border: none !important;
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    /* Square/Icon shape */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer !important;
+    transition: background 0.2s;
+}
+
+
+.hero-button-info:hover {
+    background: rgba(255, 255, 255, 0.4);
 }
