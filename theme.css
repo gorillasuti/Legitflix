@@ -1060,25 +1060,28 @@ h4,
 /* =========== NAVIGATION DRAWER STYLES =========== */
 
 /* Fix header overflow more aggressively */
+/* FORCE HEADER TRANSPARENCY & OVERLAY */
 .skinHeader,
 .skinHeader-withBackground,
 header,
-.headerTop {
-    overflow: visible !important;
-    contain: none !important;
+.headerTop,
+.mainDrawer-header {
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
-    position: absolute !important;
+    background-color: transparent !important;
+    position: fixed !important;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 1000 !important;
     box-shadow: none !important;
+    border-bottom: none !important;
 }
 
 /* Remove default padding so carousel sits at top */
 .mainAnimatedPages.skinBody,
 .pageContent,
-.homeSectionsContainer {
+.homeSectionsContainer,
+.mainDrawer {
     padding-top: 0 !important;
     margin-top: 0 !important;
 }
@@ -1445,9 +1448,10 @@ header,
     max-height: 1000px;
     min-height: 600px;
     overflow: hidden;
-    margin-bottom: -220px;
-    /* Stronger pull up for My List */
+    margin-bottom: -100px;
+    /* Reduced overlap to prevent covering text */
     border-radius: 0;
+    z-index: 0;
 
     /* Fade out bottom */
     mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
