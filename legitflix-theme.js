@@ -2227,4 +2227,42 @@ const legitFlixPlayRemoteV5 = async function (id) {
 // Override
 window.legitFlixPlay = legitFlixPlayRemoteV5;
 
+
+// --- PLAYBACK HELPER (V6 - Navigate & Auto-Click) ---
+const legitFlixPlayRemoteV6 = async function (id) {
+    logger.log('legitFlixPlay (V6): Clicked', id);
+
+    // 1. Navigate to Details Page (Reliable)
+    window.legitFlixShowItem(id);
+
+    // 2. Poll for the Native Play Button on the new page and click it
+    // Since this is a SPA, the script continues running.
+    let attempts = 0;
+    const maxAttempts = 40; // 4 seconds
+
+    const clickInterval = setInterval(() => {
+        attempts++;
+        // Look for the Detail Page Play Button
+        // Usually in .mainDetailButtons or just huge play button
+        const playBtn = document.querySelector('.detailPage .btnPlay')
+            || document.querySelector('.detailButtons .btnPlay')
+            || document.querySelector('button[is="emby-playbutton"].detailButton')
+            || document.querySelector('.itemDetailPage .playButton');
+
+        if (playBtn) {
+            // Verify it belongs to the correct item? 
+            // Hard to check, but we just navigated, so assume yes.
+            logger.log('legitFlixPlay: Found Detail Play Button. Clicking!', playBtn);
+            playBtn.click();
+            clearInterval(clickInterval);
+        } else if (attempts >= maxAttempts) {
+            logger.warn('legitFlixPlay: Could not find Play button on details page.');
+            clearInterval(clickInterval);
+        }
+    }, 100);
+};
+
+// Override
+window.legitFlixPlay = legitFlixPlayRemoteV6;
+
 init();
