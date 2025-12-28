@@ -50,16 +50,12 @@
 
 /* When Scrolled > 10vh */
 .legitflix-nav-scrolled {
-    background: rgba(0, 0, 0, 0.7) !important;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 
-    /* Fade out bottom: use mask image to feather the bottom edge */
-    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    /* Subtle border */
+    /* Use box-shadow for soft bottom edge instead of mask (mask clips child content!) */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================================================
@@ -813,7 +809,7 @@ h4,
 }
 
 .legit-nav-logo .logo-img {
-    height: 32px;
+    height: 1.75rem;
     width: auto;
     object-fit: contain;
 }
@@ -890,7 +886,7 @@ header,
     flex-direction: row !important;
     align-items: center !important;
     padding: 0 3rem !important;
-    height: 6rem !important;
+    height: 4rem !important;
     box-sizing: border-box !important;
 }
 
@@ -914,25 +910,35 @@ header,
     color: var(--clr-accent) !important;
 }
 
-/* Drawer Container - Slides in from right */
+/* Drawer Container - Fades in */
 .legit-nav-drawer {
     position: fixed;
-    top: 60px;
-    right: -300px;
+    top: 50px;
+    right: 80px;
+    /* Already in position */
     width: 250px;
-    background: rgba(20, 20, 20, 100);
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: var(--radius-md);
     padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10000;
+
+    /* Fade animation instead of slide */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
-/* Open State - Slide in */
+/* Open State - Fade in */
 .legit-nav-drawer.open {
-    right: 80px;
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
 }
 
 /* Drawer Buttons - Add labels and styling */
