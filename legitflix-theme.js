@@ -1639,11 +1639,22 @@ async function injectCustomNav() {
         }
     });
 
-    // Inject Dashboard Link for Admins
-    if (window.ApiClient) {
+    // Inject Dashboard Link for Admins (with retry since user may not be ready)
+    const addDashboardButton = async (retries = 5) => {
+        if (!window.ApiClient) return;
+
         try {
             const user = await window.ApiClient.getCurrentUser();
+            if (!user && retries > 0) {
+                // User not ready yet, retry after delay
+                setTimeout(() => addDashboardButton(retries - 1), 500);
+                return;
+            }
+
             if (user && user.Policy && user.Policy.IsAdministrator) {
+                // Check if button already exists
+                if (drawer.querySelector('[title="Dashboard"]')) return;
+
                 const dashBtn = document.createElement('button');
                 dashBtn.className = 'paper-icon-button-light headerButton';
                 dashBtn.setAttribute('title', 'Dashboard');
@@ -1659,11 +1670,18 @@ async function injectCustomNav() {
                 `;
 
                 drawer.appendChild(dashBtn);
+                console.log('[LegitFlix] Dashboard button added for admin');
             }
         } catch (e) {
-            console.error('[LegitFlix] Admin check failed:', e);
+            if (retries > 0) {
+                setTimeout(() => addDashboardButton(retries - 1), 500);
+            } else {
+                console.error('[LegitFlix] Admin check failed after retries:', e);
+            }
         }
-    }
+    };
+
+    addDashboardButton();
 
     // Insert drawer toggle before profile button
     if (profileButton) {
@@ -2531,8 +2549,10 @@ function init() {
         // For now they just stop propagation so they don't trigger nav.
 
         if (document.body.contains(card)) {
+            console.log('[LegitFlix] createHoverCard: Appending overlay to card...');
             card.appendChild(overlay);
             _activeOverlay = overlay;
+            console.log('[LegitFlix] createHoverCard: Overlay appended. In DOM?', document.body.contains(overlay));
 
             // Move Native Play Button
             const nativeFab = card.querySelector('.cardOverlayFab-primary');
@@ -2548,7 +2568,10 @@ function init() {
 
             requestAnimationFrame(() => {
                 overlay.classList.add('is-loaded');
+                console.log('[LegitFlix] createHoverCard: is-loaded class added. Overlay classes:', overlay.className);
             });
+        } else {
+            console.log('[LegitFlix] createHoverCard: Card not in body, cannot append overlay');
         }
     }
 

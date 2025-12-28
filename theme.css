@@ -1941,7 +1941,11 @@ header,
 /* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
 .legitflix-hover-overlay {
     position: absolute;
-    /* Position is set by JavaScript - don't override here */
+    /* Cover the card - position set by JS */
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
     z-index: 9999 !important;
     /* Above everything */
 
@@ -1956,7 +1960,7 @@ header,
     transition: opacity 0.2s ease, transform 0.2s ease;
     padding: 0;
     transform: scale(0.95);
-    /* Start slightly smaller - NO translate */
+    /* Start slightly smaller */
 
     /* Rounding from card - Enforce overflow to clip content */
     border-radius: var(--rounding, 10px) !important;
@@ -1967,7 +1971,7 @@ header,
     flex-direction: column;
     pointer-events: auto;
     /* Always interactive */
-    transform-origin: top left;
+    transform-origin: center center;
 
     /* Border stroke for definition */
     border: 1px solid rgba(255, 255, 255, 0.1);
