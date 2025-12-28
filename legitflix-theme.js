@@ -2053,36 +2053,33 @@ function init() {
 
         if (!historySection) return;
 
-        // 3. Fetch Data
+        // 3. Fetch Data (Using raw fetch via getAuth)
         try {
-            const userId = ApiClient.getCurrentUserId();
+            const auth = await getAuth();
+            if (!auth) return;
+            const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
+
             // A. Get Resume/History Items to Exclude
-            // We fetch both Resume and NextUp to be safe
-            const [resumeItems, nextUpItems] = await Promise.all([
-                ApiClient.getUserItems(userId, { Limit: 20, Recursive: true, Filters: 'IsResumable', SortBy: 'DatePlayed', SortOrder: 'Descending' }),
-                ApiClient.getNextUpEpisodes({ Limit: 20, UserId: userId })
-            ]);
+            // Resume
+            const resumeRes = await fetch(`/Users/${auth.UserId}/Items?Limit=20&Recursive=true&Filters=IsResumable&SortBy=DatePlayed&SortOrder=Descending`, { headers });
+            const resumeJson = await resumeRes.json();
+
+            // Next Up
+            const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
+            const nextUpJson = await nextUpRes.json();
 
             const excludeIds = new Set([
-                ...resumeItems.Items.map(i => i.Id),
-                ...nextUpItems.Items.map(i => i.Id)
+                ...(resumeJson.Items || []).map(i => i.Id),
+                ...(nextUpJson.Items || []).map(i => i.Id)
             ]);
 
             // B. Get Candidates (Latest Movies/Series)
-            // Use 'Latest' or generalized query
-            const candidates = await ApiClient.getUserItems(userId, {
-                Limit: 50,
-                Recursive: true,
-                IncludeItemTypes: 'Movie,Series',
-                SortBy: 'DateCreated',
-                SortOrder: 'Descending',
-                ImageTypeLimit: 1,
-                EnableImageTypes: "Primary,Backdrop,Thumb"
-            });
+            const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=50&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
+            const candidatesJson = await candidatesRes.json();
 
             // C. Select 3 Unique Items not in History
             const selected = [];
-            for (const item of candidates.Items) {
+            for (const item of (candidatesJson.Items || [])) {
                 if (!excludeIds.has(item.Id)) {
                     selected.push(item);
                     if (selected.length >= 3) break;
@@ -2096,16 +2093,14 @@ function init() {
             const item2 = selected[1]; // Sub 1
             const item3 = selected[2]; // Sub 2
 
-            // ApiClient URL helpers
-            const getBackdrop = (item) => ApiClient.getImageUrl(item.Id, { type: "Backdrop", maxWidth: 2000 }) || ApiClient.getImageUrl(item.Id, { type: "Primary", maxWidth: 2000 });
-            // User requested Backdrops or Thumbs for bottom cards
-            const getThumb = (item) => ApiClient.getImageUrl(item.Id, { type: "Thumb", maxWidth: 800 }) || ApiClient.getImageUrl(item.Id, { type: "Backdrop", maxWidth: 800 });
-            const getLogo = (item) => ApiClient.getImageUrl(item.Id, { type: "Logo", maxWidth: 400 });
+            console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2.Name, item3.Name);
 
-            // Nav link
-            const getLink = (item) => `#/details?id=${item.Id}&serverId=${item.ServerId}`;
-            // Play link (optional, or just nav)
-            const playAction = (id) => `window.legitFlixShowItem('${id}')`; // Use our helper
+            // Helpers for images
+            const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
+            const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
+            const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
+
+            const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
 
             const html = `
             <div class="legitflix-promo-container">
@@ -2113,7 +2108,7 @@ function init() {
                 <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
                     <img src="${getBackdrop(item1)}" class="promo-bg">
                     <div class="promo-content">
-                         ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo">` : `<h2 class="promo-title">${item1.Name}</h2>`}
+                         ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
                          <button class="btn-watch">WATCH NOW</button>
                     </div>
                 </div>
@@ -2129,7 +2124,7 @@ function init() {
                                  <p class="desc">${item2.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getThumb(item2)}" class="promo-poster">
+                             <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}' /* Fallback */">
                          </div>
                     </div>
                     <!-- Item 3 -->
@@ -2141,7 +2136,7 @@ function init() {
                                  <p class="desc">${item3.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getThumb(item3)}" class="promo-poster">
+                             <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}' /* Fallback */">
                          </div>
                     </div>
                 </div>
@@ -2150,6 +2145,7 @@ function init() {
 
             // 5. Inject
             historySection.insertAdjacentHTML('afterend', html);
+            console.log('[LegitFlix] Promo Banner Injected Successfully');
 
         } catch (e) {
             console.error('[LegitFlix] Error building promo banner:', e);
