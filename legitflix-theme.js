@@ -1257,39 +1257,279 @@ let _injectedNav = false;
 let _injectedHero = false;
 let _injectedJelly = false;
 
-// Navigation: Logo + Links (Left) + Drawer Menu (Right)
-async function injectCustomNav() {
-    // === LEFT SIDE: Logo + Nav Links ===
-    const headerLeft = document.querySelector('.headerLeft');
-    if (headerLeft && !headerLeft.querySelector('.legit-nav-logo')) {
-        // Replace home button with LEGITFLIX logo
-        const homeBtn = headerLeft.querySelector('.headerButton');
-        if (homeBtn) {
-            const logo = document.createElement('a');
-            logo.className = 'legit-nav-logo';
-            logo.href = '#/home';
-            logo.innerHTML = '<img src="https://i.imgur.com/9tbXBxu.png" alt="LEGITFLIX" class="logo-img">';
-            homeBtn.replaceWith(logo);
+// =========================================================================
+// MODERN SEARCH MODAL LOGIC
+// =========================================================================
+
+let _searchDebounce = null;
+
+function createSearchModal() {
+    if (document.querySelector('.legit-search-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'legit-search-overlay';
+
+    // Close on overlay click
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeSearchModal();
+    };
+
+    const modal = document.createElement('div');
+    modal.className = 'legit-search-modal';
+
+    // Header / Input
+    const header = document.createElement('div');
+    header.className = 'legit-search-header';
+
+    const icon = document.createElement('span');
+    icon.className = 'material-icons legit-search-icon';
+    icon.textContent = 'search';
+
+    const input = document.createElement('input');
+    input.className = 'legit-search-input';
+    input.type = 'text';
+    input.placeholder = 'Search movies, shows, people...';
+    input.autocomplete = 'off';
+
+    input.oninput = (e) => {
+        const query = e.target.value;
+        if (_searchDebounce) clearTimeout(_searchDebounce);
+        _searchDebounce = setTimeout(() => performSearch(query), 300);
+    };
+
+    // Close Button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'legit-search-close';
+    closeBtn.innerHTML = '<span class="material-icons">close</span>';
+    closeBtn.onclick = closeSearchModal;
+
+    header.appendChild(icon);
+    header.appendChild(input);
+    header.appendChild(closeBtn);
+
+    // Results container
+    const results = document.createElement('div');
+    results.className = 'legit-search-results';
+    results.id = 'legit-search-results';
+    results.innerHTML = '<div class="legit-no-results">Type to search...</div>';
+
+    modal.appendChild(header);
+    modal.appendChild(results);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    return { overlay, input, results };
+}
+
+function openSearchModal() {
+    let elements = createSearchModal();
+    if (!elements) {
+        // Already exists
+        const overlay = document.querySelector('.legit-search-overlay');
+        const input = document.querySelector('.legit-search-input');
+        const results = document.querySelector('#legit-search-results');
+        elements = { overlay, input, results };
+    }
+
+    // Force reflow
+    elements.overlay.offsetHeight;
+    elements.overlay.classList.add('visible');
+
+    setTimeout(() => {
+        elements.input.focus();
+    }, 50);
+
+    // Add ESC listener
+    document.addEventListener('keydown', handleSearchEsc);
+}
+
+function closeSearchModal() {
+    const overlay = document.querySelector('.legit-search-overlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+        setTimeout(() => {
+            overlay.remove();
+        }, 200);
+    }
+    document.removeEventListener('keydown', handleSearchEsc);
+}
+
+function handleSearchEsc(e) {
+    if (e.key === 'Escape') closeSearchModal();
+}
+
+async function performSearch(query) {
+    const resultsContainer = document.querySelector('#legit-search-results');
+    if (!resultsContainer) return;
+
+    if (!query || query.length < 2) {
+        resultsContainer.innerHTML = '<div class="legit-no-results">Type to search...</div>';
+        return;
+    }
+
+    if (!window.ApiClient) {
+        resultsContainer.innerHTML = '<div class="legit-no-results">Error: API not ready</div>';
+        return;
+    }
+
+    try {
+        const userId = window.ApiClient.getCurrentUserId();
+        // Use Search/Hints for quick results or Items for full
+        const result = await window.ApiClient.getSearchHints({
+            userId: userId,
+            searchTerm: query,
+            limit: 20,
+            includeItemTypes: "Movie,Series,BoxSet,MusicAlbum,MusicArtist,Person",
+            mediaTypes: "Video,Audio"
+        });
+
+        renderSearchResults(result.SearchHints || []);
+
+    } catch (e) {
+        console.error('Search failed:', e);
+        resultsContainer.innerHTML = '<div class="legit-no-results">Search failed.</div>';
+    }
+}
+
+function renderSearchResults(items) {
+    const container = document.querySelector('#legit-search-results');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div class="legit-no-results">No results found</div>';
+        return;
+    }
+
+    items.forEach(item => {
+        const el = document.createElement('a');
+        el.className = 'legit-search-result-item';
+        // Go to item
+        if (item.ItemId) {
+            el.href = `#!/item?id=${item.ItemId}&serverId=${item.ServerId || window.ApiClient.serverId()}`;
+            el.onclick = () => closeSearchModal();
         }
 
-        // Add nav links after logo
+        // Image
+        const thumb = document.createElement('div');
+        if (item.PrimaryImageAspectRatio) {
+            const imgUrl = window.ApiClient.getUrl(`/Items/${item.ItemId}/Images/Primary?maxHeight=60&maxWidth=40&quality=90`);
+            thumb.className = 'legit-result-thumb';
+            thumb.style.backgroundImage = `url('${imgUrl}')`;
+        } else {
+            thumb.className = 'legit-result-icon';
+            thumb.innerHTML = '<span class="material-icons">movie</span>';
+        }
+
+        // Info
+        const info = document.createElement('div');
+        info.className = 'legit-result-info';
+
+        const title = document.createElement('div');
+        title.className = 'legit-result-title';
+        title.textContent = item.Name;
+
+        const meta = document.createElement('div');
+        meta.className = 'legit-result-meta';
+
+        // Type Tag
+        const typeEl = document.createElement('span');
+        typeEl.className = 'legit-result-tag';
+        typeEl.textContent = item.Type;
+        meta.appendChild(typeEl);
+
+        // Year
+        if (item.ProductionYear) {
+            const yearEl = document.createElement('span');
+            yearEl.textContent = item.ProductionYear;
+            meta.appendChild(yearEl);
+        }
+
+        info.appendChild(title);
+        info.appendChild(meta);
+
+        el.appendChild(thumb);
+        el.appendChild(info);
+        container.appendChild(el);
+    });
+}
+
+// Navigation: Hamburger + Logo + Dynamic Links (Left) + Drawer Menu (Right)
+async function injectCustomNav() {
+    // === LEFT SIDE: Hamburger + Logo + Dynamic Nav Links ===
+    const headerLeft = document.querySelector('.headerLeft');
+    if (headerLeft && !headerLeft.querySelector('.legit-nav-container')) {
+        // Clear existing content
+        headerLeft.innerHTML = '';
+
+        // Create container for our nav
+        const navContainer = document.createElement('div');
+        navContainer.className = 'legit-nav-container';
+
+        // 1. Hamburger menu button (far left)
+        const hamburger = document.createElement('button');
+        hamburger.className = 'legit-hamburger-menu paper-icon-button-light';
+        hamburger.innerHTML = '<span class="material-icons">menu</span>';
+        hamburger.setAttribute('title', 'Menu');
+        hamburger.onclick = () => {
+            document.querySelector('.mainDrawer')?.classList.toggle('is-visible');
+        };
+        navContainer.appendChild(hamburger);
+
+        // 2. LEGITFLIX logo
+        const logo = document.createElement('a');
+        logo.className = 'legit-nav-logo';
+        logo.href = '#/home';
+        logo.innerHTML = '<img src="https://i.imgur.com/9tbXBxu.png" alt="LEGITFLIX" class="logo-img">';
+        navContainer.appendChild(logo);
+
+        // 3. Dynamic nav links from API
         const navLinks = document.createElement('div');
         navLinks.className = 'legit-nav-links';
-        navLinks.innerHTML = `
-            <a href="#/movies" class="nav-link">
-                <span class="material-icons">movie</span>
-                <span>Movies</span>
-            </a>
-            <a href="#/tvshows" class="nav-link">
-                <span class="material-icons">tv</span>
-                <span>Shows</span>
-            </a>
-            <a href="#/livetv" class="nav-link">
-                <span class="material-icons">live_tv</span>
-                <span>Live TV</span>
-            </a>
-        `;
-        headerLeft.appendChild(navLinks);
+
+        try {
+            if (window.ApiClient) {
+                const userId = window.ApiClient.getCurrentUserId();
+                const views = await window.ApiClient.getUserViews({}, userId);
+
+                // Create link for each library
+                if (views && views.Items) {
+                    views.Items.forEach(view => {
+                        const link = document.createElement('a');
+                        link.className = 'nav-link';
+                        link.href = `#/${view.CollectionType || 'library'}?topParentId=${view.Id}`;
+
+                        // Map collection types to icons
+                        const iconMap = {
+                            'movies': 'movie',
+                            'tvshows': 'tv',
+                            'music': 'library_music',
+                            'books': 'book',
+                            'photos': 'photo_library',
+                            'livetv': 'live_tv',
+                            'homevideos': 'video_library',
+                            'musicvideos': 'music_video',
+                            'mixed': 'folder'
+                        };
+
+                        const iconName = iconMap[view.CollectionType?.toLowerCase()] || 'folder';
+
+                        link.innerHTML = `
+                            <span class="material-icons">${iconName}</span>
+                            <span>${view.Name}</span>
+                        `;
+
+                        navLinks.appendChild(link);
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('[LegitFlix] Failed to load nav links:', e);
+        }
+
+        navContainer.appendChild(navLinks);
+        headerLeft.appendChild(navContainer);
     }
 
     // === RIGHT SIDE: Drawer Menu ===
@@ -1311,8 +1551,8 @@ async function injectCustomNav() {
     // Create drawer toggle button (hamburger menu)
     const drawerToggle = document.createElement('button');
     drawerToggle.className = 'legit-nav-drawer-toggle paper-icon-button-light';
-    drawerToggle.innerHTML = '<span class="material-icons">menu</span>';
-    drawerToggle.setAttribute('title', 'Menu');
+    drawerToggle.innerHTML = '<span class="material-icons">more_vert</span>';
+    drawerToggle.setAttribute('title', 'More');
 
     // Create drawer container
     const drawer = document.createElement('div');
@@ -1329,6 +1569,22 @@ async function injectCustomNav() {
             textSpan.className = 'drawer-btn-text';
             textSpan.textContent = label;
             btn.appendChild(textSpan);
+        }
+
+        // INTERCEPT SEARCH: Check if this is the search button
+        const isSearch = btn.classList.contains('headerSearchButton') ||
+            btn.querySelector('.search') ||
+            (btn.getAttribute('data-id') === 'search') ||
+            (label && label.toLowerCase().includes('search'));
+
+        if (isSearch) {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openSearchModal();
+                // Close drawer if open
+                document.querySelector('.legit-nav-drawer')?.classList.remove('open');
+            };
         }
 
         drawer.appendChild(btn);
