@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined');
 
@@ -79,25 +79,6 @@ h4,
     outline: none !important;
 }
 
-.skinHeader {
-    background-color: transparent !important;
-    contain: none !important;
-    position: absolute !important;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 6rem !important;
-    z-index: 1000 !important;
-    box-shadow: none !important;
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    align-items: center !important;
-    padding: 0 3rem !important;
-    /* Fixed spacing */
-    box-sizing: border-box !important;
-    /* Fixes overflow */
-}
 
 /* Layout Fixers */
 .headerLeft {
@@ -147,209 +128,6 @@ h4,
     display: none !important;
 }
 
-/* CUSTOM NAV LINKS */
-.legit-nav-links {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 6px !important;
-    margin-left: 1rem !important;
-    z-index: 1001 !important;
-    align-items: center;
-}
-
-.nav-link {
-    position: relative;
-    padding: 8px 24px;
-    border-radius: var(--radius-pill);
-    color: var(--clr-text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-    text-decoration: none;
-    transition: all 0.2s ease-out;
-    border: 1px solid transparent;
-}
-
-.nav-link:hover {
-    color: var(--clr-text-main);
-    background: var(--clr-bg-glass);
-}
-
-.nav-link.active {
-    background: var(--clr-accent) !important;
-    color: white !important;
-}
-
-/* =========================================================================
-   HERO CAROUSEL
-   ========================================================================= */
-.hero-carousel-container {
-    position: absolute !important;
-    width: 100%;
-    height: 90vh !important;
-    top: 0;
-    left: 0;
-    z-index: 0 !important;
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
-    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%) !important;
-    overflow: hidden;
-    font-family: var(--font-display) !important;
-}
-
-.hero-slide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 0.8s ease-in-out;
-    z-index: 0;
-}
-
-.hero-slide.active {
-    opacity: 1;
-    z-index: 1;
-}
-
-.hero-backdrop {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center top;
-}
-
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom,
-            rgba(20, 20, 20, 0.3) 0%, rgba(20, 20, 20, 0.1) 50%, rgba(20, 20, 20, 1) 100%),
-        linear-gradient(to right, rgba(20, 20, 20, 0.9) 0%, transparent 100%);
-}
-
-.hero-content {
-    position: absolute;
-    bottom: 25%;
-    left: 4rem;
-    max-width: 50%;
-    color: white;
-    z-index: 2;
-}
-
-.hero-title {
-    font-size: 4rem;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-}
-
-.hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 1.1rem;
-    color: var(--clr-text-muted);
-    margin-bottom: 1.5rem;
-}
-
-.hero-desc {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #d1d1d1;
-    margin-bottom: 2rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* Hero Buttons Fix */
-.hero-actions {
-    display: flex;
-    gap: 15px;
-}
-
-.btn-play {
-    padding: 0.8rem 2.8rem;
-    border-radius: var(--radius-pill);
-    background-color: var(--clr-accent);
-    color: white;
-    font-weight: 700;
-    font-size: 1.1rem;
-    position: relative;
-    overflow: hidden;
-    gap: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Shine Effect */
-.btn-play::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transform: skewX(-20deg);
-    transition: none;
-}
-
-.btn-play:hover {
-    background-color: var(--clr-accent-hover);
-}
-
-.btn-play:hover::after {
-    left: 150%;
-    transition: 0.7s ease-in-out;
-}
-
-.hero-button-info {
-    width: 54px;
-    height: 54px;
-    border-radius: var(--radius-round);
-    background-color: var(--clr-bg-glass);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.hero-button-info:hover {
-    background-color: var(--clr-bg-glass-hover);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Material Icons Centering */
-.hero-button-info i,
-.hero-button-info span {
-    font-size: 24px;
-    line-height: 1;
-    display: block;
-}
-
-.btn-play i,
-.btn-play span {
-    font-size: 24px;
-    line-height: 1;
-    display: block;
-}
-
-/* CONTENT PUSH */
-/* CONTENT PUSH - Scoped only to Home/Library views typically, avoiding Settings */
-.homeSectionsContainer,
-.mainAnimatedPages:not(.userPreferencesPage) {
-    margin-top: 0 !important;
-    padding-top: 85vh !important;
-    min-height: 100vh;
-}
 
 /* Force standard spacing for Settings/Preferences pages to fix "Huge Space" */
 #myPreferencesMenuPage .pageContent,
@@ -992,16 +770,6 @@ h4,
     gap: 12px;
 }
 
-/* Hamburger Menu (Far Left) */
-.legit-hamburger-menu {
-    margin-right: 4px;
-    display: none !important;
-}
-
-.legit-hamburger-menu:hover {
-    background: rgba(var(--clr-accent-rgb), 0.15) !important;
-    color: var(--clr-accent) !important;
-}
 
 /* LEGITFLIX Logo */
 .legit-nav-logo {
@@ -1441,7 +1209,7 @@ header,
    ========================================================================= */
 
 .hero-carousel-container {
-    position: fixed !important;
+    position: absolute !important;
     top: 0;
     left: 0;
     width: 100%;
@@ -1459,7 +1227,7 @@ header,
 
 /* Push content down so it starts below the hero area */
 .has-legit-hero {
-    padding-top: 65vh !important;
+    padding-top: 70vh !important;
     background: transparent !important;
     position: relative;
     z-index: 5;
