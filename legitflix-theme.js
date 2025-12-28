@@ -1183,6 +1183,41 @@ window.LegitFlixAvatarPicker = {
             container.insertAdjacentHTML('beforeend', '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">(Only showing first 500 results. Use search to filter.)</div>');
         }
 
+        // Dynamic Header Blur Logic
+        function initNavScroll() {
+            const header = document.querySelector('.skinHeader');
+            if (!header) return;
+
+            const onScroll = (e) => {
+                // In SPAs, scroll might be on body, html, or a specific div (.view)
+                // We check the target if available, or fallback to window
+                let scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+
+                // If event target is a valid element (and not document/window), check its scroll
+                if (e && e.target && e.target.scrollTop !== undefined) {
+                    // Ignore small internal scrolls (like horizontal lists)
+                    // We want the MAIN vertical scroll. Usually body or .page
+                    if (e.target.classList && (e.target.classList.contains('active') || e.target.tagName === 'BODY' || e.target.classList.contains('page'))) {
+                        scrollTop = e.target.scrollTop;
+                    }
+                }
+
+                const threshold = window.innerHeight * 0.1; // 10vh
+
+                if (scrollTop > threshold) {
+                    header.classList.add('legitflix-nav-scrolled');
+                } else {
+                    header.classList.remove('legitflix-nav-scrolled');
+                }
+            };
+
+            // Capture true is crucial for nested scrolling divs
+            window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+            // Run once
+            onScroll({});
+        }
+        initNavScroll();
+
         // Add Selection Logic
         const items = container.querySelectorAll('.lf-picker-item');
         items.forEach(item => {
@@ -2065,6 +2100,13 @@ function init() {
                 return;
             }
 
+            // Strict Home Page Check (Relaxed for root)
+            const hash = window.location.hash.toLowerCase();
+            // Allow 'home', 'index', or empty/root '#!/'
+            if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '') {
+                return;
+            }
+
             // 3. Fetch Data
             const auth = await getAuth();
             if (!auth) {
@@ -2087,20 +2129,20 @@ function init() {
             const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
             const candidatesJson = await candidatesRes.json();
 
-            // C. Select Top 3
+            // C. Select Top 3 (or less)
             const selected = candidatesJson.Items || [];
 
-            if (selected.length < 3) {
+            if (selected.length === 0) {
                 _promoInjectionInProgress = false;
                 return;
             }
 
             // 4. Build HTML
             const item1 = selected[0]; // Hero
-            const item2 = selected[1]; // Sub 1
-            const item3 = selected[2]; // Sub 2
+            const item2 = selected[1]; // Sub 1 (Optional)
+            const item3 = selected[2]; // Sub 2 (Optional)
 
-            console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2.Name, item3.Name);
+            console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2?.Name, item3?.Name);
 
             // Helpers for images
             const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
@@ -2122,8 +2164,9 @@ function init() {
                 </div>
                 
                 <!-- Bottom Grid (Items 2 & 3) -->
+                ${(item2 || item3) ? `
                 <div class="promo-grid-row">
-                    <!-- Item 2 -->
+                    ${item2 ? `
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
@@ -2134,8 +2177,8 @@ function init() {
                              </div>
                              <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}'">
                          </div>
-                    </div>
-                    <!-- Item 3 -->
+                    </div>` : ''}
+                    ${item3 ? `
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
@@ -2146,8 +2189,8 @@ function init() {
                              </div>
                              <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}'">
                          </div>
-                    </div>
-                </div>
+                    </div>` : ''}
+                </div>` : ''}
             </div>
             `;
 
@@ -2299,18 +2342,43 @@ function init() {
         if (!details) return;
 
         // Position Logic
-        const rect = card.getBoundingClientRect();
-        // Scale up 115%
-        const width = rect.width * 1.15;
-        // Centered
-        const left = rect.left - ((width - rect.width) / 2);
-        const top = rect.top - 20; // Slightly higher
+        // Use .cardBox for visual alignment (ignores outer padding/margins of .card)
+        const visualTarget = card.querySelector('.cardBox') || card;
+        const rect = visualTarget.getBoundingClientRect();
 
+        // Scale Factor (Reduced from 1.15 to 1.05 as requested "larger than needed")
+        const scale = 1.05;
+        const width = rect.width * scale;
+        // const height = rect.height * scale; // Let height be auto/content based
+
+        // Create Overlay
         const overlay = document.createElement('div');
-        overlay.className = 'legitflix-hover-overlay';
-        overlay.dataset.sourceId = id;
+        overlay.className = 'legitflix-hover-overlay'; // Base class
+        overlay.dataset.sourceId = id; // Track source
 
-        // Content
+        // Calculate Centered Position relative to Viewport + Scroll
+        // Center logic:
+        // Left = RectLeft + (RectWidth - NewWidth)/2
+        // But we want it centered on the VISUAL card.
+        const leftPos = rect.left + window.scrollX - ((width - rect.width) / 2);
+        // Top: A bit higher to allow expanding down? Or center vertically?
+        // Let's Center Vertically on the original image for now, but allow content to expand down.
+        // Actually, usually hover cards expand OUTWARDS from center.
+        // We will set Top/Left and Width. Height is auto.
+
+        // FIX: Ensure it doesn't go off-screen right/left
+        // (Simple clamp if needed, but centering usually ok)
+
+        overlay.style.width = width + 'px';
+        overlay.style.left = leftPos + 'px';
+
+        // Vertical: Start centered on the card's visual top?
+        // If we want it to cover the card, we match top minus offset.
+        // rect.top + scrollY - (newHeight - oldHeight)/2 is hard since height is auto.
+        // Let's anchor it slightly above the current top to account for scale.
+        // If scale 1.05, we shift up by 2.5% of height.
+        const topOffset = (rect.height * (scale - 1)) / 2;
+        overlay.style.top = (rect.top + window.scrollY - topOffset) + 'px';
         const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
         const year = details.ProductionYear || '';
         const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
