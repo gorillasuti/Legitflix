@@ -2031,17 +2031,26 @@ function init() {
         if (document.querySelector('.legitflix-promo-container')) return;
 
         // 2. Find Injection Point: After "History" section
-        // We look for a section title containing "History" (or "Next Up" if rename failed) case-insensitive
+        // Strategy A: Find by Title (History/Next Up)
         const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
-        const historyTitle = titles.find(t => {
+        let historyTitle = titles.find(t => {
             const txt = t.innerText.toLowerCase();
             return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
         });
 
-        if (!historyTitle) return; // History section not found yet
+        let historySection = null;
+        if (historyTitle) {
+            historySection = historyTitle.closest('.verticalSection');
+        }
 
-        // Use the outermost container of the section
-        const historySection = historyTitle.closest('.verticalSection');
+        // Strategy B: Fallback to known class positions (Section 5 is usually Next Up/History)
+        if (!historySection) {
+            historySection = document.querySelector('.verticalSection.section5');
+        }
+
+        // Debug
+        // console.log('[LegitFlix] Injection Target Found:', historySection);
+
         if (!historySection) return;
 
         // 3. Fetch Data
