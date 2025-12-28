@@ -1257,8 +1257,42 @@ let _injectedNav = false;
 let _injectedHero = false;
 let _injectedJelly = false;
 
-// Navigation Drawer for Right Side Icons
+// Navigation: Logo + Links (Left) + Drawer Menu (Right)
 async function injectCustomNav() {
+    // === LEFT SIDE: Logo + Nav Links ===
+    const headerLeft = document.querySelector('.headerLeft');
+    if (headerLeft && !headerLeft.querySelector('.legit-nav-logo')) {
+        // Replace home button with LEGITFLIX logo
+        const homeBtn = headerLeft.querySelector('.headerButton');
+        if (homeBtn) {
+            const logo = document.createElement('a');
+            logo.className = 'legit-nav-logo';
+            logo.href = '#/home';
+            logo.innerHTML = '<img src="https://i.imgur.com/9tbXBxu.png" alt="LEGITFLIX" class="logo-img">';
+            homeBtn.replaceWith(logo);
+        }
+
+        // Add nav links after logo
+        const navLinks = document.createElement('div');
+        navLinks.className = 'legit-nav-links';
+        navLinks.innerHTML = `
+            <a href="#/movies" class="nav-link">
+                <span class="material-icons">movie</span>
+                <span>Movies</span>
+            </a>
+            <a href="#/tvshows" class="nav-link">
+                <span class="material-icons">tv</span>
+                <span>Shows</span>
+            </a>
+            <a href="#/livetv" class="nav-link">
+                <span class="material-icons">live_tv</span>
+                <span>Live TV</span>
+            </a>
+        `;
+        headerLeft.appendChild(navLinks);
+    }
+
+    // === RIGHT SIDE: Drawer Menu ===
     const headerRight = document.querySelector('.headerRight');
     if (!headerRight) return;
 
@@ -1284,8 +1318,19 @@ async function injectCustomNav() {
     const drawer = document.createElement('div');
     drawer.className = 'legit-nav-drawer';
 
-    // Move icon buttons into drawer
+    // Move icon buttons into drawer and add text labels
     iconButtons.forEach(btn => {
+        // Get button title or aria-label for text
+        const label = btn.getAttribute('title') || btn.getAttribute('aria-label') || 'Menu';
+
+        // Add text label if not already present
+        if (!btn.querySelector('.drawer-btn-text')) {
+            const textSpan = document.createElement('span');
+            textSpan.className = 'drawer-btn-text';
+            textSpan.textContent = label;
+            btn.appendChild(textSpan);
+        }
+
         drawer.appendChild(btn);
     });
 
