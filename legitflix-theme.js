@@ -2559,18 +2559,24 @@ function init() {
         const header = document.querySelector('.skinHeader');
         if (!header) return;
 
-        const onScroll = (e) => {
-            // In SPAs, scroll might be on body, html, or a specific div (.view)
-            // We check the target if available, or fallback to window
-            let scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+        const onScroll = () => {
+            // Try multiple scroll sources (Jellyfin uses different containers)
+            let scrollTop = 0;
 
-            // If event target is a valid element (and not document/window), check its scroll
-            if (e && e.target && e.target.scrollTop !== undefined) {
-                // Ignore small internal scrolls (like horizontal lists)
-                // We want the MAIN vertical scroll. Usually body or .page
-                if (e.target.classList && (e.target.classList.contains('page') || e.target.classList.contains('mainAnimatedPages'))) {
-                    scrollTop = e.target.scrollTop;
-                }
+            // Check common scroll containers in Jellyfin
+            const scrollContainer = document.querySelector('.mainAnimatedPages')
+                || document.querySelector('.page.type-interior')
+                || document.querySelector('[data-role="page"].active')
+                || document.scrollingElement
+                || document.body;
+
+            if (scrollContainer) {
+                scrollTop = scrollContainer.scrollTop;
+            }
+
+            // Also check window scroll as fallback
+            if (scrollTop === 0) {
+                scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
             }
 
             const threshold = window.innerHeight * 0.1; // 10vh
@@ -2582,10 +2588,24 @@ function init() {
             }
         };
 
-        // Capture true is crucial for nested scrolling divs
+        // Attach to window with capture to catch all scrolls
         window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+
+        // Also attach to known scroll containers directly
+        const containers = document.querySelectorAll('.mainAnimatedPages, .page, [data-role="page"]');
+        containers.forEach(c => c.addEventListener('scroll', onScroll, { passive: true }));
+
+        // MutationObserver to attach to new pages
+        const pageObserver = new MutationObserver(() => {
+            document.querySelectorAll('.page:not([data-scroll-listener])').forEach(page => {
+                page.setAttribute('data-scroll-listener', 'true');
+                page.addEventListener('scroll', onScroll, { passive: true });
+            });
+        });
+        pageObserver.observe(document.body, { childList: true, subtree: true });
+
         // Run once
-        onScroll({});
+        onScroll();
     }
 
     initNavScroll(); // Start scroll listener
