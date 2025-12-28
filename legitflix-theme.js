@@ -2529,7 +2529,12 @@ function init() {
     }
 
     // Call setup
-    setupHoverCards();
+    try {
+        setupHoverCards();
+        console.log('[LegitFlix] setupHoverCards: Call completed successfully');
+    } catch (err) {
+        console.error('[LegitFlix] setupHoverCards FAILED:', err);
+    }
 
     // Helper to tag sections where we want native hover
     function tagNativeSections() {
