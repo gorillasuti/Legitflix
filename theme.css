@@ -827,6 +827,12 @@ h4,
 
 /* =========== NAVIGATION DRAWER STYLES =========== */
 
+/* Hide Legacy Left Hamburger (Restored) */
+.legit-hamburger-menu,
+.headerButton.headerButtonLeft {
+    display: none !important;
+}
+
 /* Fix header overflow more aggressively */
 /* FORCE HEADER TRANSPARENCY & OVERLAY */
 .skinHeader,
@@ -837,14 +843,13 @@ header,
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
     background-color: transparent !important;
     position: fixed !important;
+    contain: none !important;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 1000 !important;
     box-shadow: none !important;
     border-bottom: none !important;
-
-    /* RESTORED LAYOUT */
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
@@ -1249,6 +1254,12 @@ header,
     z-index: 5;
 }
 
+/* Override native Jellyfin padding */
+.libraryPage:not(.noSecondaryNavPage),
+.libraryPage {
+    padding-top: 0 !important;
+}
+
 .hero-slide {
     position: absolute;
     inset: 0;
@@ -1345,9 +1356,9 @@ header,
     text-shadow: none;
     /* No shadow */
     display: -webkit-box;
-    -webkit-line-clamp: 6;
-    /* More text */
-    line-clamp: 6;
+    -webkit-line-clamp: 3;
+    /* Limit to 3 lines */
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin: 0;
@@ -1393,8 +1404,6 @@ header,
     background: var(--clr-accent);
     /* Keep accent */
     color: white;
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(var(--clr-accent-rgb), 0.6);
 }
 
 .btn-play:hover::after {
@@ -1429,7 +1438,7 @@ header,
     color: white;
     width: 48px;
     height: 48px;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     /* Square/Icon shape */
     display: flex;
     align-items: center;
