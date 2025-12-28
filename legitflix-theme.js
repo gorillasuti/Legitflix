@@ -2557,6 +2557,42 @@ function init() {
         tagNativeSections();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    // Dynamic Header Blur Logic
+    function initNavScroll() {
+        const header = document.querySelector('.skinHeader');
+        if (!header) return;
+
+        const onScroll = (e) => {
+            // In SPAs, scroll might be on body, html, or a specific div (.view)
+            // We check the target if available, or fallback to window
+            let scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+
+            // If event target is a valid element (and not document/window), check its scroll
+            if (e && e.target && e.target.scrollTop !== undefined) {
+                // Ignore small internal scrolls (like horizontal lists)
+                // We want the MAIN vertical scroll. Usually body or .page
+                if (e.target.classList && (e.target.classList.contains('page') || e.target.classList.contains('mainAnimatedPages'))) {
+                    scrollTop = e.target.scrollTop;
+                }
+            }
+
+            const threshold = window.innerHeight * 0.1; // 10vh
+
+            if (scrollTop > threshold) {
+                header.classList.add('legitflix-nav-scrolled');
+            } else {
+                header.classList.remove('legitflix-nav-scrolled');
+            }
+        };
+
+        // Capture true is crucial for nested scrolling divs
+        window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+        // Run once
+        onScroll({});
+    }
+
+    initNavScroll(); // Start scroll listener
+
 }
 
 init();
