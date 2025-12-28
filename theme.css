@@ -757,6 +757,16 @@ h4,
     color: white !important;
 }
 
+/* User Requested Global Accent Overrides */
+.emby-checkbox:checked+span+.checkboxOutline,
+.itemProgressBarForeground {
+    background-color: var(--clr-accent) !important;
+}
+
+.emby-checkbox:checked+span+.checkboxOutline {
+    border-color: var(--clr-accent) !important;
+}
+
 /* Center and constrain form width */
 .userPreferencesPage form {
     margin: 0 auto;

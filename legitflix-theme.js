@@ -147,7 +147,7 @@ function createMediaBarHTML(items) {
                         <button class="btn-play" onclick="${playOnClick}">
                             <i class="material-icons">play_arrow</i> PLAY
                         </button>
-                        <button class="hero-button-info" onclick="window.appRouter.showItem('${item.Id}')" title="More Info">
+                        <button class="hero-button-info" onclick="window.legitFlixShowItem('${item.Id}')" title="More Info">
                             <span class="material-icons-outlined">info</span>
                         </button>
                     </div>
@@ -194,6 +194,12 @@ function startCarousel() {
     carouselInterval = setInterval(rotate, 8000); // 8 seconds per slide
 }
 
+// --- NAV HELPER (Fixes appRouter crash) ---
+window.legitFlixShowItem = function (itemId) {
+    // Match Plugin: Use /#!/details route
+    window.top.location.href = `/#!/details?id=${itemId}`;
+};
+
 // --- PLAYBACK HELPER (Retry Logic) ---
 window.legitFlixPlay = async function (id) {
     logger.log('legitFlixPlay: Clicked', id);
@@ -224,6 +230,8 @@ window.legitFlixPlay = async function (id) {
         window.PlaybackManager.play({
             items: [item],
             startPositionTicks: 0,
+            isMuted: false,
+            isPaused: false,
             serverId: apiClient.serverId()
         });
     } catch (error) {
@@ -1406,9 +1414,14 @@ function renderSearchResults(items) {
         const el = document.createElement('a');
         el.className = 'legit-search-result-item';
         // Go to item
+        // Go to item
         if (item.ItemId) {
-            el.href = `#!/item?id=${item.ItemId}&serverId=${item.ServerId || window.ApiClient.serverId()}`;
-            el.onclick = () => closeSearchModal();
+            // Match Plugin: Use /#!/details route via helper
+            el.onclick = (e) => {
+                e.preventDefault();
+                closeSearchModal();
+                window.legitFlixShowItem(item.ItemId);
+            };
         }
 
         // Image
@@ -1593,16 +1606,19 @@ async function injectCustomNav() {
             (label && label.toLowerCase().includes('search'));
 
         if (isSearch) {
-            btn.onclick = (e) => {
+            // CLONE BUTTON to strip existing Jellyfin event listeners (fixes double navigation)
+            const clone = btn.cloneNode(true);
+            clone.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 openSearchModal();
                 // Close drawer if open
                 document.querySelector('.legit-nav-drawer')?.classList.remove('open');
             };
+            drawer.appendChild(clone);
+        } else {
+            drawer.appendChild(btn);
         }
-
-        drawer.appendChild(btn);
     });
 
     // Inject Dashboard Link for Admins
