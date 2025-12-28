@@ -101,8 +101,9 @@ function createMediaBarHTML(items) {
     if (!items || items.length === 0) return '';
 
     const slides = items.map((item, index) => {
-        const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=80`;
+        const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=96`; // Improved quality
         const activeClass = index === 0 ? 'active' : '';
+
 
         // IMDb Rating
         let ratingHtml = item.CommunityRating ? `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
@@ -1513,7 +1514,7 @@ async function injectCustomNav() {
                             'mixed': 'video_library'
                         };
 
-                        const iconName = iconMap[view.CollectionType?.toLowerCase()] || 'folder';
+                        const iconName = iconMap[view.CollectionType?.toLowerCase()] || 'video_library';
 
                         link.innerHTML = `
                             <span class="material-icons">${iconName}</span>

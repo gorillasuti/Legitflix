@@ -1066,6 +1066,21 @@ header,
 .headerTop {
     overflow: visible !important;
     contain: none !important;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000 !important;
+    box-shadow: none !important;
+}
+
+/* Remove default padding so carousel sits at top */
+.mainAnimatedPages.skinBody,
+.pageContent,
+.homeSectionsContainer {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
 }
 
 /* Drawer Toggle Button */
@@ -1104,11 +1119,14 @@ header,
 
 /* Drawer Buttons - Add labels and styling */
 .legit-nav-drawer button {
-    width: 100%;
+    width: calc(100% - 16px);
+    /* Smaller width for hover effect */
+    margin: 0 8px;
+    /* Center it */
     justify-content: flex-start;
-    padding: 12px;
-    border-radius: 6px;
-    transition: background 0.2s;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.2s;
     display: flex !important;
     align-items: center;
     gap: 12px;
@@ -1120,12 +1138,19 @@ header,
 }
 
 .legit-nav-drawer button:hover {
-    background: rgba(var(--clr-accent-rgb), 0.15) !important;
+    background: rgba(var(--clr-accent-rgb), 0.1) !important;
+    /* Subtle hue */
+}
+
+/* Fix icon color on hover */
+.legit-nav-drawer button:hover .material-icons,
+.legit-nav-drawer button:hover i {
+    color: var(--clr-accent) !important;
 }
 
 .legit-nav-drawer button:active,
 .legit-nav-drawer button.active {
-    background: rgba(var(--clr-accent-rgb), 0.25) !important;
+    background: rgba(var(--clr-accent-rgb), 0.2) !important;
 }
 
 /* Drawer button text labels */
@@ -1133,7 +1158,13 @@ header,
     font-size: 0.9rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.9);
+    transition: color 0.2s;
 }
+
+.legit-nav-drawer button:hover .drawer-btn-text {
+    color: white;
+}
+
 
 /* =========== DIALOG AND ACTION SHEET FIXES =========== */
 
@@ -1409,13 +1440,13 @@ header,
 .hero-carousel-container {
     position: relative;
     width: 100%;
-    height: 85vh;
-    /* Taller */
-    max-height: 800px;
-    min-height: 500px;
+    height: 90vh;
+    /* Even Taller */
+    max-height: 1000px;
+    min-height: 600px;
     overflow: hidden;
-    margin-bottom: -160px;
-    /* Pull content up */
+    margin-bottom: -220px;
+    /* Stronger pull up for My List */
     border-radius: 0;
 
     /* Fade out bottom */
@@ -1484,8 +1515,10 @@ header,
     padding-right: 20px;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    /* Ensure left alignment */
     gap: 16px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    /* Removed global text-shadow to fix desc/meta */
 }
 
 .hero-title {
@@ -1513,15 +1546,20 @@ header,
     gap: 12px;
     font-size: 0.95rem;
     color: rgba(255, 255, 255, 0.8);
+    text-shadow: none;
+    /* No shadow */
 }
 
 .hero-desc {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: none;
+    /* No shadow */
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 6;
+    /* More text */
+    line-clamp: 6;
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin: 0;
@@ -1537,25 +1575,67 @@ header,
     background: var(--clr-accent);
     color: white;
     border: none !important;
-    /* Override native styles */
-    padding: 12px 32px;
-    border-radius: 4px;
+    /* Pill shape */
+    border-radius: 50px !important;
+    padding: 14px 40px;
     font-weight: bold;
-    font-size: 1rem;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer !important;
-    transition: all 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.btn-play::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: none;
 }
 
 .btn-play:hover {
-    background: white;
-    color: black;
-    cursor: pointer !important;
+    background: var(--clr-accent);
+    /* Keep accent */
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(var(--clr-accent-rgb), 0.6);
+}
+
+.btn-play:hover::after {
+    animation: btn-shine 1s ease-in-out;
+}
+
+@keyframes btn-shine {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* Allow clicks to pass through header background */
+.skinHeader,
+.headerTop {
+    pointer-events: none;
+}
+
+.skinHeader>*,
+.headerTop>* {
+    pointer-events: auto;
 }
 
 .hero-button-info {
+
     background: rgba(255, 255, 255, 0.2);
     border: none !important;
     color: white;
@@ -1573,4 +1653,17 @@ header,
 
 .hero-button-info:hover {
     background: rgba(255, 255, 255, 0.4);
+}
+
+/* Fix Random Button & Other Header Buttons Hover Color */
+.headerButton:hover,
+#randomItemButton:hover,
+.paper-icon-button-light:hover:not(:disabled) {
+    color: var(--clr-accent) !important;
+}
+
+.headerButton:hover i,
+#randomItemButton:hover i,
+.paper-icon-button-light:hover:not(:disabled) i {
+    color: var(--clr-accent) !important;
 }
