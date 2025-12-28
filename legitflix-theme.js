@@ -684,18 +684,18 @@ window.legitFlixOpenAvatarPicker = function () {
 
     // REDESIGN: Horizontal, Compact, "Options next to each other"
     popup.innerHTML = `
-        <div class="legit-popup-content small" style="text-align:center; padding: 30px; width: auto; min-width: 400px;">
-            <h2 style="margin-bottom: 25px; font-size: 1.4rem; font-weight: 600;">Change Avatar</h2>
+        <div class="legit-popup-content small" style="text-align:center; padding: 2rem; width: auto; min-width: 400px;">
+            <h2 style="margin-bottom: 2rem; font-size: 1.4rem; font-weight: 500;">Change Avatar</h2>
             
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button class="legit-btn-primary" id="btnOpenGallery" style="flex: 1; padding: 20px; flex-direction: column; gap: 8px; border-radius: 8px;">
-                    <span class="material-icons" style="font-size: 32px; display:block;">grid_view</span>
-                    <span style="font-size: 0.9rem;">Choose from Gallery</span>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="legit-btn-primary" id="btnOpenGallery" style="flex: 1; padding: 0.5rem !important; flex-direction: row; gap: 8px; border-radius: 8px !important;">
+                    <span class="material-icons" style="font-size: 1.75rem; display:block;">grid_view</span>
+                    <span style="font-size: 0.9rem !important;">Choose Avatar</span>
                 </button>
                 
-                <button class="legit-btn-accent" id="btnUploadLocal" style="flex: 1; padding: 20px; flex-direction: column; gap: 8px; border-radius: 8px;">
-                    <span class="material-icons" style="font-size: 32px; display:block;">upload_file</span>
-                    <span style="font-size: 0.9rem;">Upload Image</span>
+                <button class="legit-btn-accent" id="btnUploadLocal" style="flex: 1; padding: 0.5rem !important; flex-direction: row; gap: 8px; border-radius: 8px !important;">
+                    <span class="material-icons" style="font-size: 1.75rem; display:block;">upload_file</span>
+                    <span style="font-size: 0.9rem !important;">Upload Image</span>
                 </button>
             </div>
             
@@ -1052,7 +1052,7 @@ window.LegitFlixAvatarPicker = {
             
             /* Footer Buttons */
             .lf-btn {
-                padding: 10px 24px; border-radius: 4px; 
+                padding: 8px 12px; border-radius: 6px; 
                 font-weight: 600; font-size: 1rem; cursor: pointer; border: none;
                 transition: all 0.2s;
             }
@@ -1060,11 +1060,11 @@ window.LegitFlixAvatarPicker = {
             .lf-btn-cancel:hover { color: white; border-color: white; }
             
             .lf-btn-save { 
-                background: #141b21; color: white; 
+                background: var(--clr-accent); color: white; 
                 opacity: 0.5; pointer-events: none; /* Disabled by default */
             }
             .lf-btn-save.active { opacity: 1; pointer-events: auto; }
-            .lf-btn-save:hover { background: #182737; }
+            .lf-btn-save:hover { background: var(--clr-accent-hover); }
 
             @media (max-width: 768px) {
                 .lf-picker-header { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }

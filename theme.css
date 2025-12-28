@@ -143,8 +143,11 @@ h4,
 .gaming-profile-header {
     width: 100%;
     max-width: 1200px;
-    margin: 0 auto 100px auto;
     font-family: var(--font-primary);
+    margin-top: 10rem;
+    margin-bottom: 6rem;
+    margin-right: auto;
+    margin-left: auto;
 }
 
 .profile-page-title {
@@ -179,7 +182,7 @@ h4,
 
 /* Subtle Primary Button (Flat Blue) */
 .legit-btn-primary {
-    background: #141b21 !important;
+    background: var(--clr-accent) !important;
     /* Standard flat blue */
     color: white !important;
     border: none !important;
@@ -199,7 +202,7 @@ h4,
 }
 
 .legit-btn-primary:hover {
-    background: #182737 !important;
+    background: var(--clr-accent-hover) !important;
 }
 
 /* Accent Button (for differentiation, e.g. Upload) - Darker/Different */
@@ -426,13 +429,11 @@ h4,
 .legit-popup-content {
     background: #1f1f1f !important;
     border-radius: var(--radius-lg) !important;
-    padding: 30px !important;
+    padding: 2rem !important;
     width: 90% !important;
     max-width: 800px !important;
     max-height: 80vh !important;
     overflow-y: auto !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
     position: relative !important;
 }
 
@@ -460,7 +461,7 @@ h4,
     /* Red accent */
     display: flex !important;
     align-items: center;
-    padding: 0.5rem 1rem !important;
+    padding: 0.5rem 0.5rem !important;
     /* Smaller text padding adjustment for icon */
 }
 
@@ -485,8 +486,8 @@ h4,
 }
 
 .banner-option.selected {
-    border-color: var(--theme-primary-color, #00A4DC) !important;
-    box-shadow: 0 0 15px rgba(0, 164, 220, 0.4);
+    border-color: var(--clr-accent) !important;
+    box-shadow: 0 0 15px var(--clr-accent-hover) !important;
     transform: scale(1.05);
 }
 
@@ -624,9 +625,9 @@ h4,
 
 .legit-form-input:focus {
     background: rgba(255, 255, 255, 0.1);
-    border-color: var(--theme-primary-color, #00A4DC);
+    border-color: var(--clr-accent);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2);
+    box-shadow: 0 0 0 2px var(--clr-accent-hover);
 }
 
 /* --- USER SETTINGS PAGE STYLING (Global for type-UserView) --- */
@@ -667,8 +668,8 @@ h4,
 .userPreferencesPage .emby-textarea:focus,
 .userPreferencesPage .emby-select-withcolor:focus {
     background: rgba(255, 255, 255, 0.1);
-    border-color: var(--theme-primary-color, #00A4DC);
-    box-shadow: 0 0 0 2px rgba(0, 164, 220, 0.2) !important;
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 2px var(--clr-accent-hover) !important;
 }
 
 /* Checkboxes */
@@ -726,11 +727,11 @@ h4,
 
 /* Checkbox Accent Color */
 .userPreferencesPage .emby-checkbox:checked+.checkboxOutline .checkboxIcon-checked {
-    color: var(--theme-primary-color) !important;
+    color: var(--clr-accent) !important;
 }
 
 .userPreferencesPage .emby-checkbox:checked+.checkboxOutline {
-    border-color: var(--theme-primary-color) !important;
+    border-color: var(--clr-accent) !important;
 }
 
 /* Save Buttons - Use legit-btn-secondary style */
@@ -812,7 +813,11 @@ h4,
 }
 
 .legit-nav-links .nav-link .material-icons {
-    font-size: 20px;
+    font-size: 1.25rem;
+}
+
+.material-icons {
+    font-size: 1.25rem !important;
 }
 
 .legit-nav-links .nav-link:hover {
@@ -840,7 +845,6 @@ h4,
 header,
 .headerTop,
 .mainDrawer-header {
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%) !important;
     background-color: transparent !important;
     position: fixed !important;
     contain: none !important;
@@ -884,17 +888,14 @@ header,
     top: 60px;
     right: -300px;
     width: 250px;
-    background: rgba(20, 20, 20, 0.98);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    background: rgba(20, 20, 20, 100);
+    border-radius: var(--radius-md);
     padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10000;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* Open State - Slide in */
@@ -1294,30 +1295,27 @@ header,
     /* USER REQUEST: Strong gradient from left (background color) to transparent */
     /* Adjust usage of local variables if needed, or hardcode dark theme color */
     background: linear-gradient(90deg,
-            rgba(16, 16, 16, 1) 0%,
-            rgba(16, 16, 16, 0.95) 25%,
-            rgba(16, 16, 16, 0.6) 50%,
-            rgba(16, 16, 16, 0) 100%);
+            rgba(16, 16, 16, 1) -10%,
+            rgba(16, 16, 16, 0.95) 27.5%,
+            rgba(16, 16, 16, 0.6) 60%,
+            rgba(16, 16, 16, 0) 110%);
     z-index: 2;
 }
 
 .hero-content {
     position: absolute;
-    top: 35%;
+    top: 37.5%;
     /* Moved up closer to nav */
     left: 4%;
-
     transform: translateY(-50%);
-    width: 45%;
+    width: 40%;
     max-width: 600px;
     z-index: 3;
     padding-right: 20px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    /* Ensure left alignment */
-    gap: 16px;
-    /* Removed global text-shadow to fix desc/meta */
+    gap: 1.25rem;
 }
 
 .hero-title {
@@ -1332,26 +1330,25 @@ header,
 .hero-logo {
     max-width: 100%;
     width: auto;
-    max-height: 160px;
+    max-height: 10rem;
     object-fit: contain;
     display: block;
-    margin-bottom: 10px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 .hero-meta {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 0.95rem;
+    gap: 1rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.8);
     text-shadow: none;
     /* No shadow */
 }
 
 .hero-desc {
-    font-size: 1.1rem;
-    line-height: 1.5;
+    font-size: 1.125rem;
+    line-height: 1.25;
+    font-weight: 400;
     color: rgba(255, 255, 255, 0.8);
     text-shadow: none;
     /* No shadow */
@@ -1374,14 +1371,13 @@ header,
     background: var(--clr-accent);
     color: white;
     border: none !important;
-    /* Pill shape */
-    border-radius: 50px !important;
-    padding: 14px 40px;
+    border-radius: var(--radius-pill) !important;
+    padding: 0.5rem 2.5rem;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.125rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
     cursor: pointer !important;
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
@@ -1457,10 +1453,12 @@ header,
 #randomItemButton:hover,
 .paper-icon-button-light:hover:not(:disabled) {
     color: var(--clr-accent) !important;
+    background-color: var(--clr-bg-glass) !important;
 }
 
 .headerButton:hover i,
 #randomItemButton:hover i,
 .paper-icon-button-light:hover:not(:disabled) i {
     color: var(--clr-accent) !important;
+    background-color: var(--clr-bg-glass) !important;
 }
