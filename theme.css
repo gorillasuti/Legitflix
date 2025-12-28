@@ -843,7 +843,16 @@ header,
     z-index: 1000 !important;
     box-shadow: none !important;
     border-bottom: none !important;
+
+    /* RESTORED LAYOUT */
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 0 3rem !important;
+    height: 6rem !important;
+    box-sizing: border-box !important;
 }
+
 
 /* Remove default padding so carousel sits at top */
 .mainAnimatedPages.skinBody,
