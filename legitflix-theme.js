@@ -2087,4 +2087,84 @@ const legitFlixPlayRemoteV3 = async function (id) {
 // Override the previous definitions
 window.legitFlixPlay = legitFlixPlayRemoteV3;
 
+
+// --- API REMOTE PLAYBACK (Override v4 - Hybrid) ---
+const legitFlixPlayRemoteV4 = async function (id) {
+    logger.log('legitFlixPlay (Remote v4): Clicked', id);
+    const client = window.ApiClient;
+
+    // 1. Try Standard PlaybackManager (if available)
+    if (window.PlaybackManager && window.PlaybackManager.play) {
+        try {
+            logger.log('legitFlixPlay: Using PlaybackManager');
+            const item = await client.getItem(client.getCurrentUserId(), id);
+            window.PlaybackManager.play({
+                items: [item],
+                startPositionTicks: 0,
+                isMuted: false,
+                isPaused: false,
+                serverId: client.serverId()
+            });
+            return;
+        } catch (e) { console.error('Standard play failed', e); }
+    }
+
+    // 2. DOM "Ghost Click" (Quickest if item is on screen)
+    try {
+        const card = document.querySelector(`[data-id="${id}"]`);
+        if (card) {
+            const playBtn = card.querySelector('.playButton') || card.querySelector('.cardOverlayButton-play') || card.querySelector('.btnPlay');
+            if (playBtn) {
+                logger.log('legitFlixPlay: Using DOM Ghost Click');
+                playBtn.click();
+                return;
+            }
+        }
+    } catch (e) { /* Ignore */ }
+
+    // 3. Fallback: API "Remote" Control (Specific /Playing Endpoint)
+    if (client) {
+        logger.log('legitFlixPlay: Attempting API Control (/Playing)...');
+        try {
+            const deviceId = client.deviceId();
+            const sessions = await client.getSessions();
+            const mySession = sessions.find(s => s.DeviceId === deviceId);
+
+            if (mySession) {
+                logger.log('legitFlixPlay: Found local session', mySession.Id);
+
+                const item = await client.getItem(client.getCurrentUserId(), id);
+                const mediaSourceId = item.MediaSources && item.MediaSources[0] ? item.MediaSources[0].Id : id;
+
+                // Use the dedicated Playback Control Endpoint (Sends 'Play', not GeneralCommand)
+                const url = client.getUrl(`/Sessions/${mySession.Id}/Playing`);
+                await client.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: JSON.stringify({
+                        ItemIds: [id],
+                        PlayCommand: 'PlayNow',
+                        ControllingUserId: client.getCurrentUserId(),
+                        MediaSourceId: mediaSourceId,
+                        StartPositionTicks: 0
+                    }),
+                    contentType: 'application/json'
+                });
+                return;
+            } else {
+                console.warn('legitFlixPlay: Local session not found in API list.');
+            }
+        } catch (e) {
+            logger.error('legitFlixPlay: API Control failed', e);
+        }
+    }
+
+    // 4. Last Resort: Navigation
+    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
+    window.legitFlixShowItem(id);
+};
+
+// Override the previous definitions
+window.legitFlixPlay = legitFlixPlayRemoteV4;
+
 init();
