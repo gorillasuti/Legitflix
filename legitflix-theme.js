@@ -201,38 +201,51 @@ window.legitFlixShowItem = function (itemId) {
 };
 
 // --- PLAYBACK HELPER (Retry Logic & Force Load) ---
+// --- PLAYBACK HELPER (Debug Mode) ---
 window.legitFlixPlay = async function (id) {
     logger.log('legitFlixPlay: Clicked', id);
 
-    // Attempt to force load if missing (Jellyfin 10.8+ via require)
+    // DEBUG: Check globals
+    console.log('[LegitFlix Debug] Window Globals:', {
+        PlaybackManager: window.PlaybackManager,
+        playbackManager: window.playbackManager,
+        ApiClient: window.ApiClient,
+        appRouter: window.appRouter,
+        Jellyfin: window.Jellyfin
+    });
+
     if (!window.PlaybackManager && typeof window.require === 'function') {
         try {
+            console.log('[LegitFlix Debug] Requiring playbackManager module...');
             window.require(['playbackManager'], (pm) => {
+                console.log('[LegitFlix Debug] Require Result:', pm);
                 if (pm) {
-                    // Handle ES Modules or Named Exports
-                    if (pm.play) window.PlaybackManager = pm;
-                    else if (pm.default && pm.default.play) window.PlaybackManager = pm.default;
-                    else if (pm.PlaybackManager) window.PlaybackManager = pm.PlaybackManager;
+                    const keys = Object.keys(pm);
+                    console.log('[LegitFlix Debug] Module Keys:', keys);
+                    if (pm.default) console.log('[LegitFlix Debug] Module Default Keys:', Object.keys(pm.default));
+
+                    // Try to auto-fix based on inspection
+                    if (pm.play) {
+                        window.PlaybackManager = pm;
+                        console.log('[LegitFlix Debug] Found instance on module root');
+                    } else if (pm.default && pm.default.play) {
+                        window.PlaybackManager = pm.default;
+                        console.log('[LegitFlix Debug] Found instance on module.default');
+                    } else if (pm.PlaybackManager) {
+                        console.log('[LegitFlix Debug] Found .PlaybackManager property (Class?)', pm.PlaybackManager);
+                    }
                 }
             });
-        } catch (e) { console.warn('Force load failed', e); }
+        } catch (e) { console.error('[LegitFlix Debug] Require failed', e); }
     }
 
-    const waitForGlobals = async (retries = 150, delay = 100) => {
-        for (let i = 0; i < retries; i++) {
-            if (window.PlaybackManager && window.ApiClient) return true;
-            await new Promise(r => setTimeout(r, delay));
-        }
-        return false;
-    };
+    // Short wait to allow require to resolve
+    await new Promise(r => setTimeout(r, 1000));
 
-    if (!window.PlaybackManager || !window.ApiClient) {
-        // Silent wait, just log
-        const ready = await waitForGlobals();
-        if (!ready) {
-            console.error('[LegitFlix] PlaybackManager not ready after wait. Play request aborted.');
-            return;
-        }
+    if (!window.PlaybackManager) {
+        console.error('[LegitFlix Debug] PlaybackManager is STILL missing. Cannot play.');
+        alert("Playback Debug: Manager not found. Check console logs.");
+        return;
     }
 
     const apiClient = window.ApiClient;
