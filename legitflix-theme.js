@@ -1939,17 +1939,35 @@ function init() {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
     });
 
-    // --- RENAME "MY LIST" / "MY MEDIA" TO "CATEGORIES" ---
+    // --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
     function renameMyList() {
         document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
-            const text = el.innerText.trim().toLowerCase();
-            if (text === 'my list' || text === 'my media' || text === 'mes médias') {
-                el.innerText = 'Categories';
-                // Also update the link if it exists (for "My Media >")
-                const parent = el.closest('.sectionHeader');
+            let text = el.innerText.trim();
+            const lowerText = text.toLowerCase();
+            let newText = null;
+
+            // 1. My List / My Media -> Categories
+            if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
+                newText = 'Categories';
+            }
+            // 2. Next Up -> History
+            else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
+                newText = 'History';
+            }
+            // 3. Recently Added in [Type] -> Latest [Type]
+            else if (lowerText.startsWith('recently added in ')) {
+                // "Recently Added in " is 18 chars
+                const type = text.substring(18);
+                newText = `Latest ${type}`;
+            }
+
+            if (newText) {
+                el.innerText = newText;
+                // Also update the link if it exists for tooltip/accessibility
+                const parent = el.closest('.sectionHeader, .sectionTitleContainer');
                 if (parent) {
                     const link = parent.querySelector('a');
-                    if (link) link.setAttribute('title', 'Categories');
+                    if (link) link.setAttribute('title', newText);
                 }
             }
         });
@@ -2007,10 +2025,133 @@ function init() {
     renameMyList();
     fixMixedCards();
 
+    // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
+    async function injectPromoBanner() {
+        // 1. Check if already injected
+        if (document.querySelector('.legitflix-promo-container')) return;
+
+        // 2. Find Injection Point: After "History" section
+        // We look for a section title containing "History" (or "Next Up" if rename failed) case-insensitive
+        const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
+        const historyTitle = titles.find(t => {
+            const txt = t.innerText.toLowerCase();
+            return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
+        });
+
+        if (!historyTitle) return; // History section not found yet
+
+        // Use the outermost container of the section
+        const historySection = historyTitle.closest('.verticalSection');
+        if (!historySection) return;
+
+        // 3. Fetch Data
+        try {
+            const userId = ApiClient.getCurrentUserId();
+            // A. Get Resume/History Items to Exclude
+            // We fetch both Resume and NextUp to be safe
+            const [resumeItems, nextUpItems] = await Promise.all([
+                ApiClient.getUserItems(userId, { Limit: 20, Recursive: true, Filters: 'IsResumable', SortBy: 'DatePlayed', SortOrder: 'Descending' }),
+                ApiClient.getNextUpEpisodes({ Limit: 20, UserId: userId })
+            ]);
+
+            const excludeIds = new Set([
+                ...resumeItems.Items.map(i => i.Id),
+                ...nextUpItems.Items.map(i => i.Id)
+            ]);
+
+            // B. Get Candidates (Latest Movies/Series)
+            // Use 'Latest' or generalized query
+            const candidates = await ApiClient.getUserItems(userId, {
+                Limit: 50,
+                Recursive: true,
+                IncludeItemTypes: 'Movie,Series',
+                SortBy: 'DateCreated',
+                SortOrder: 'Descending',
+                ImageTypeLimit: 1,
+                EnableImageTypes: "Primary,Backdrop,Thumb"
+            });
+
+            // C. Select 3 Unique Items not in History
+            const selected = [];
+            for (const item of candidates.Items) {
+                if (!excludeIds.has(item.Id)) {
+                    selected.push(item);
+                    if (selected.length >= 3) break;
+                }
+            }
+
+            if (selected.length < 3) return; // Not enough items
+
+            // 4. Build HTML
+            const item1 = selected[0]; // Hero
+            const item2 = selected[1]; // Sub 1
+            const item3 = selected[2]; // Sub 2
+
+            // ApiClient URL helpers
+            const getBackdrop = (item) => ApiClient.getImageUrl(item.Id, { type: "Backdrop", maxWidth: 2000 }) || ApiClient.getImageUrl(item.Id, { type: "Primary", maxWidth: 2000 });
+            // User requested Backdrops or Thumbs for bottom cards
+            const getThumb = (item) => ApiClient.getImageUrl(item.Id, { type: "Thumb", maxWidth: 800 }) || ApiClient.getImageUrl(item.Id, { type: "Backdrop", maxWidth: 800 });
+            const getLogo = (item) => ApiClient.getImageUrl(item.Id, { type: "Logo", maxWidth: 400 });
+
+            // Nav link
+            const getLink = (item) => `#/details?id=${item.Id}&serverId=${item.ServerId}`;
+            // Play link (optional, or just nav)
+            const playAction = (id) => `window.legitFlixShowItem('${id}')`; // Use our helper
+
+            const html = `
+            <div class="legitflix-promo-container">
+                <!-- Top Banner (Item 1) -->
+                <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
+                    <img src="${getBackdrop(item1)}" class="promo-bg">
+                    <div class="promo-content">
+                         ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo">` : `<h2 class="promo-title">${item1.Name}</h2>`}
+                         <button class="btn-watch">WATCH NOW</button>
+                    </div>
+                </div>
+                
+                <!-- Bottom Grid (Items 2 & 3) -->
+                <div class="promo-grid-row">
+                    <!-- Item 2 -->
+                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
+                         <div class="promo-split">
+                             <div class="promo-text">
+                                 <h3>${item2.Name}</h3>
+                                 <p>${item2.ProductionYear || ''}</p>
+                                 <p class="desc">${item2.Overview || ''}</p>
+                                 <button class="btn-orange">START WATCHING</button>
+                             </div>
+                             <img src="${getThumb(item2)}" class="promo-poster">
+                         </div>
+                    </div>
+                    <!-- Item 3 -->
+                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
+                         <div class="promo-split">
+                             <div class="promo-text">
+                                 <h3>${item3.Name}</h3>
+                                 <p>${item3.ProductionYear || ''}</p>
+                                 <p class="desc">${item3.Overview || ''}</p>
+                                 <button class="btn-orange">START WATCHING</button>
+                             </div>
+                             <img src="${getThumb(item3)}" class="promo-poster">
+                         </div>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            // 5. Inject
+            historySection.insertAdjacentHTML('afterend', html);
+
+        } catch (e) {
+            console.error('[LegitFlix] Error building promo banner:', e);
+        }
+    }
+
     const observer = new MutationObserver((mutations) => {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
         renameMyList();
         fixMixedCards();
+        injectPromoBanner();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }

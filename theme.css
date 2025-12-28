@@ -827,7 +827,7 @@ h4,
 }
 
 .material-icons {
-    font-size: 1.25rem !important;
+    font-size: 1.125rem !important;
 }
 
 .legit-nav-links .nav-link:hover {
@@ -1252,7 +1252,7 @@ header,
 
 /* Push content down so it starts below the hero area */
 .has-legit-hero {
-    padding-top: 70vh !important;
+    padding-top: 80vh !important;
     background: transparent !important;
     position: relative;
     z-index: 5;
@@ -1340,7 +1340,7 @@ header,
 .hero-logo {
     max-width: 100%;
     width: auto;
-    max-height: 10rem;
+    max-height: 20rem;
     object-fit: contain;
     display: block;
 }
@@ -1383,7 +1383,7 @@ header,
     border: none !important;
     border-radius: var(--radius-pill) !important;
     padding: 0.5rem 2.5rem;
-    font-weight: bold;
+    font-weight: 500;
     font-size: 1.125rem;
     display: flex;
     align-items: center;
@@ -1758,3 +1758,159 @@ header,
     text-transform: capitalize;
     margin-bottom: 0.5em;
 }
+/* --- PROMO BANNER COMPONENT (Crunchyroll Style) --- */
+
+.legitflix-promo-container {
+    width: 75%;
+    max-width: 1600px;
+    margin: 3rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Items */
+.promo-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--rounding, 12px);
+    width: 100%;
+}
+
+.promo-item-large {
+    /* 21:7 aspect ratio approx or fixed height */
+    aspect-ratio: 21/7;
+    background: #000;
+}
+
+.promo-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.promo-item-small {
+    /* Side by side */
+    background: #191919; /* Dark card bg */
+    display: flex;
+}
+
+.promo-split {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+}
+
+.promo-text {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.promo-poster {
+    width: 40%;
+    object-fit: cover;
+    mask-image: linear-gradient(to left, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to left, black 80%, transparent 100%);
+}
+
+/* Backgrounds & Images */
+.promo-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 10s ease;
+}
+
+.promo-item-large:hover .promo-bg {
+    transform: scale(1.05);
+}
+
+/* Content Overlay (Large) */
+.promo-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding-left: 5%;
+    background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
+}
+
+.promo-logo {
+    max-width: 40%;
+    max-height: 100px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+}
+
+.promo-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Typography (Small) */
+.promo-text h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+.promo-text p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.promo-text .desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* Buttons */
+.btn-watch, .btn-orange {
+    background: #f47521; /* Crunchyroll Orange/Generic Promo Color */
+    color: black;
+    border: none;
+    border-radius: 4px; /* Slightly squarer than pill */
+    padding: 0.6rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.2s, transform 0.2s;
+    width: fit-content;
+}
+
+.btn-watch:hover, .btn-orange:hover {
+    background: white;
+    transform: scale(1.02);
+}
+
+.btn-watch {
+    background: #333;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-watch:hover {
+    background: white;
+    color: black;
+}
+
