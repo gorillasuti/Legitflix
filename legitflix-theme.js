@@ -2167,4 +2167,64 @@ const legitFlixPlayRemoteV4 = async function (id) {
 // Override the previous definitions
 window.legitFlixPlay = legitFlixPlayRemoteV4;
 
+
+// --- PLAYBACK HELPER (V5 - Custom Element Injection) ---
+const legitFlixPlayRemoteV5 = async function (id) {
+    logger.log('legitFlixPlay (V5): Clicked', id);
+    const client = window.ApiClient;
+
+    // 1. Try Standard PlaybackManager (if available)
+    if (window.PlaybackManager && window.PlaybackManager.play) {
+        try {
+            logger.log('legitFlixPlay: Using PlaybackManager');
+            const item = await client.getItem(client.getCurrentUserId(), id);
+            window.PlaybackManager.play({ items: [item], startPositionTicks: 0 });
+            return;
+        } catch (e) { console.error('Standard play failed', e); }
+    }
+
+    // 2. Custom Element Injection (Simulate Native Play Button)
+    // This leverages Jellyfin's internal event delegation for emby-playbutton
+    try {
+        const item = await client.getItem(client.getCurrentUserId(), id);
+        if (item) {
+            logger.log('legitFlixPlay: Injecting emby-playbutton...');
+            const btn = document.createElement('button');
+            btn.setAttribute('is', 'emby-playbutton');
+            btn.setAttribute('data-id', item.Id);
+            btn.setAttribute('data-type', item.Type);
+            btn.setAttribute('data-isfolder', item.IsFolder);
+            btn.setAttribute('data-serverid', item.ServerId || client.serverId());
+            btn.style.display = 'none';
+
+            document.body.appendChild(btn);
+
+            // Allow CustomElement to initialize
+            await new Promise(r => setTimeout(r, 50));
+
+            logger.log('legitFlixPlay: Clicking injected button');
+            btn.click();
+
+            // Cleanup after short delay
+            setTimeout(() => {
+                btn.remove();
+                logger.log('legitFlixPlay: Cleanup injected button');
+            }, 1000);
+            return;
+        }
+    } catch (e) {
+        logger.error('legitFlixPlay: Injection failed', e);
+    }
+
+    // 3. Fallback: API "Remote" Control (Hybrid V4 logic)
+    // ... (Omitted to keep clean, jumping to Nav if Injection fails)
+
+    // 4. Last Resort: Navigation
+    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
+    window.legitFlixShowItem(id);
+};
+
+// Override
+window.legitFlixPlay = legitFlixPlayRemoteV5;
+
 init();
