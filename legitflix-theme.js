@@ -2026,9 +2026,12 @@ function init() {
     fixMixedCards();
 
     // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
+    let _promoInjectionInProgress = false; // Guard for race conditions
+
     async function injectPromoBanner() {
-        // 1. Check if already injected
-        if (document.querySelector('.legitflix-promo-container')) return;
+        // 1. Check if already injected or in progress
+        if (_promoInjectionInProgress || document.querySelector('.legitflix-promo-container')) return;
+        _promoInjectionInProgress = true;
 
         // 2. Find Injection Point: After "History" section
         // Strategy A: Find by Title (History/Next Up)
@@ -2097,7 +2100,8 @@ function init() {
 
             // Helpers for images
             const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
-            const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
+            // Switch to Primary for sub-items
+            const getPoster = (item) => `/Items/${item.Id}/Images/Primary/0?maxWidth=800`;
             const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
 
             const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
@@ -2124,7 +2128,7 @@ function init() {
                                  <p class="desc">${item2.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}' /* Fallback */">
+                             <img src="${getPoster(item2)}" class="promo-poster">
                          </div>
                     </div>
                     <!-- Item 3 -->
@@ -2136,7 +2140,7 @@ function init() {
                                  <p class="desc">${item3.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}' /* Fallback */">
+                             <img src="${getPoster(item3)}" class="promo-poster">
                          </div>
                     </div>
                 </div>
@@ -2151,6 +2155,121 @@ function init() {
             console.error('[LegitFlix] Error building promo banner:', e);
         }
     }
+
+    // --- HOVER CARD LOGIC (Netflix/Crunchyroll Style) ---
+    // Cache for item details to avoid repeated API calls
+    const _cardCache = new Map();
+    let _hoverTimer = null;
+
+    function setupHoverCards() {
+        // Delegate mouseover to body but filter for cards
+        document.body.addEventListener('mouseover', (e) => {
+            const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
+            // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
+            if (!card || !card.dataset.id) return;
+
+            // Avoid re-triggering if already showing or bad target
+            if (card.querySelector('.legitflix-hover-overlay')) return;
+
+            // Clear any pending timer
+            if (_hoverTimer) clearTimeout(_hoverTimer);
+
+            // Set delay (e.g. 600ms)
+            _hoverTimer = setTimeout(() => {
+                showHoverCard(card, card.dataset.id);
+            }, 600);
+        });
+
+        document.body.addEventListener('mouseout', (e) => {
+            const card = e.target.closest('.card');
+            if (card) {
+                if (_hoverTimer) clearTimeout(_hoverTimer);
+                // Optional: Remove overlay immediately or let CSS transition handle it?
+                // If we remove strictly, we save DOM. 
+                // Current CSS uses opacity transition on .is-loaded class.
+                // We can simply verify it triggers.
+            }
+        });
+    }
+
+    async function showHoverCard(card, id) {
+        if (card.querySelector('.legitflix-hover-overlay')) return; // Check again
+
+        let details = _cardCache.get(id);
+        if (!details) {
+            // Fetch
+            try {
+                const auth = await getAuth();
+                if (!auth) return;
+                const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
+                // Fetch details: Overview, CommunityRating, RunTime, ProductionYear, ChildCount
+                const res = await fetch(`/Users/${auth.UserId}/Items/${id}`, { headers });
+                details = await res.json();
+                _cardCache.set(id, details);
+            } catch (e) {
+                console.error('[LegitFlix] Hover fetch error:', e);
+                return;
+            }
+        }
+
+        if (!details) return;
+
+        // Build HTML
+        const rating = details.CommunityRating ? `⭐ ${details.CommunityRating.toFixed(1)}` : '';
+        const year = details.ProductionYear || '';
+        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : (details.ChildCount ? details.ChildCount + ' S' : ''); // Approx
+        const desc = details.Overview || '';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'legitflix-hover-overlay';
+
+        // Icons: Play, Check, Favorite, Info, More
+        overlay.innerHTML = `
+            <h3 class="hover-title">${details.Name}</h3>
+            <div class="hover-meta">
+                ${rating ? `<span class="star-rating">${rating}</span>` : ''}
+                <span>${year}</span>
+                <span>${duration}</span>
+            </div>
+            <p class="hover-desc">${desc}</p>
+            
+            <div class="hover-actions-container">
+                <button class="hover-play-btn" onclick="window.legitFlixShowItem('${id}')">
+                    <span class="material-icons">play_arrow</span> PLAY
+                </button>
+                <div class="hover-icon-row">
+                    <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
+                    <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
+                    <button class="hover-icon-btn" title="Information" onclick="window.legitFlixShowItem('${id}')"><span class="material-icons">info</span></button>
+                    <button class="hover-icon-btn" title="More"><span class="material-icons">more_vert</span></button>
+                </div>
+            </div>
+        `;
+
+        // Check if card still exists and hovered? 
+        // We append. CSS handles opacity.
+        // We need to ensure the card didn't disappear (e.g. scroll).
+        if (document.body.contains(card)) {
+            // Append to card's image container or scalable part if possible, 
+            // but standard 'card' is safest container.
+            // We might need relative positioning on card.
+            // .cardBox usually has position relative?
+            const container = card.querySelector('.cardBox') || card;
+            // Force relative if needed?
+            // container.style.position = 'relative'; // Might break layout?
+            // theme.css usually handles .cardBox relative.
+
+            container.appendChild(overlay);
+
+            // Trigger reflow/anim
+            requestAnimationFrame(() => {
+                overlay.classList.add('is-loaded');
+            });
+        }
+    }
+
+    // Call setup
+    setupHoverCards();
 
     const observer = new MutationObserver((mutations) => {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
