@@ -2349,68 +2349,60 @@ function init() {
         if (moreBtn) {
             moreBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const rect = moreBtn.getBoundingClientRect();
-                const event = new MouseEvent('contextmenu', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                    clientX: rect.left + (rect.width / 2),
-                    clientY: rect.top + (rect.height / 2),
-                    screenX: rect.left + (rect.width / 2),
-                    screenY: rect.top + (rect.height / 2),
-                    button: 2,
-                    buttons: 2
-                });
-                card.dispatchEvent(event);
+                // Find and click the native menu button which is now hidden but present
+                const nativeMenu = card.querySelector('.cardOverlayButton');
+                if (nativeMenu) {
+                    nativeMenu.click();
+                } else {
+                    // Fallback to right click event if button not found
+                    const event = new MouseEvent('contextmenu', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        clientX: e.clientX,
+                        clientY: e.clientY
+                    });
+                    card.dispatchEvent(event);
+                }
             });
         }
 
-        // Info button - No Action
-        const infoBtn = overlay.querySelector('.action-info');
-        if (infoBtn) {
-            infoBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+        // Info -> Do Nothing (as requested "YET")
+        // Check/Fav -> Can implement later or leave as no-op for now.
+        // For now they just stop propagation so they don't trigger nav.
+
+        if (document.body.contains(card)) {
+            card.appendChild(overlay);
+            _activeOverlay = overlay;
+
+            // Move Native Play Button
+            const nativeFab = card.querySelector('.cardOverlayFab-primary');
+            // If we are attaching to card, nativeFab is inside card.
+            // But we want to move it INSIDE the overlay (child of card).
+            if (nativeFab) {
+                _borrowedButton = nativeFab;
+                _originalParent = nativeFab.parentNode;
+
+                const slot = overlay.querySelector('.hover-native-btn-slot');
+                slot.appendChild(nativeFab);
+            }
+
+            requestAnimationFrame(() => {
+                overlay.classList.add('is-loaded');
             });
         }
     }
 
-    // Info -> Do Nothing (as requested "YET")
-    // Check/Fav -> Can implement later or leave as no-op for now.
-    // For now they just stop propagation so they don't trigger nav.
+    // Call setup
+    setupHoverCards();
 
-    if (document.body.contains(card)) {
-        card.appendChild(overlay);
-        _activeOverlay = overlay;
-
-        // Move Native Play Button
-        const nativeFab = card.querySelector('.cardOverlayFab-primary');
-        // If we are attaching to card, nativeFab is inside card.
-        // But we want to move it INSIDE the overlay (child of card).
-        if (nativeFab) {
-            _borrowedButton = nativeFab;
-            _originalParent = nativeFab.parentNode;
-
-            const slot = overlay.querySelector('.hover-native-btn-slot');
-            slot.appendChild(nativeFab);
-        }
-
-        requestAnimationFrame(() => {
-            overlay.classList.add('is-loaded');
-        });
-    }
-}
-
-// Call setup
-setupHoverCards();
-
-const observer = new MutationObserver((mutations) => {
-    if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
-    renameMyList();
-    fixMixedCards();
-    injectPromoBanner();
-});
-observer.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver((mutations) => {
+        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+        renameMyList();
+        fixMixedCards();
+        injectPromoBanner();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 

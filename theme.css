@@ -1992,6 +1992,7 @@ header,
     height: auto;
     max-height: none;
     -webkit-line-clamp: unset;
+    line-clamp: unset;
 }
 
 /* Rows */
@@ -2137,7 +2138,10 @@ header,
     z-index: 2;
 }
 
-/* Hide other native buttons */
+/* Hide other native buttons (Menu) - Keep in DOM for proxy clicking */
 .cardOverlayButton {
-    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    /* Ensure it exists for positioning logic */
 }
