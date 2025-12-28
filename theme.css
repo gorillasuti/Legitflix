@@ -970,15 +970,6 @@ header,
     z-index: 10001 !important;
 }
 
-/* Override fixed positioning for action sheets - let them flow naturally */
-.actionSheet.centeredDialog.opened {
-    position: absolute !important;
-    left: auto !important;
-    right: 16px !important;
-    top: 60px !important;
-    margin: 0 !important;
-}
-
 /* Ensure action sheet content is properly sized */
 .actionSheetContent {
     max-width: 300px;
@@ -1919,8 +1910,8 @@ header,
 .legitflix-hover-overlay {
     position: absolute;
     /* Center and Expand */
-    width: 110%;
-    min-height: 110%;
+    width: 105%;
+    min-height: 105%;
     height: auto;
     top: 50%;
     left: 50%;
@@ -2034,6 +2025,8 @@ header,
 
     /* Clamp to 5 Lines */
     display: -webkit-box;
+    height: auto;
+    max-height: none;
     -webkit-line-clamp: 5;
     line-clamp: 5;
     -webkit-box-orient: vertical;
@@ -2044,15 +2037,14 @@ header,
 /* Footer & Actions */
 .hover-footer {
     padding: 0 1rem 1rem 1rem;
-    /* Pad bottom, none top (body has padding) */
     background: transparent;
-    /* No BG color */
-    /* No margin-top auto needed if body is flex:1, but safe to keep */
     margin-top: auto;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
 }
+
+
 
 /* Slot for the hijacked Native Button */
 .hover-native-btn-slot {
@@ -2069,18 +2061,13 @@ header,
     display: flex !important;
     margin: 0 !important;
     transform: none !important;
-    /* JS handles this */
     background: transparent !important;
-    /* Ensure native play is clean if needed, usually it has its own SVG/Icon */
     box-shadow: none !important;
 }
 
-/* Native Play Button Icon is usually an SVG or Font Icon inside a wrapper. 
-   The wrapper might have the orange color. If user wants the orange play button, we keep it. */
 .hover-native-btn-slot .cardOverlayFab-primary .material-icons {
     font-size: 3rem !important;
     color: #f47521 !important;
-    /* Orange Play */
     transition: transform 0.2s;
 }
 
@@ -2089,12 +2076,9 @@ header,
     color: #ff9b5a !important;
 }
 
-
 /* Custom Action Buttons */
 .hover-icon-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    display: contents;
 }
 
 .hover-icon-btn {
@@ -2116,6 +2100,22 @@ header,
     background: rgba(255, 255, 255, 0.2);
     border-color: white;
     transform: scale(1.1);
+}
+
+/* Active States */
+.hover-icon-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.hover-icon-btn.active.action-fav .material-icons {
+    color: #ff4081;
+    /* Pink/Red Heart */
+}
+
+.hover-icon-btn.active.action-check .material-icons {
+    color: #4caf50;
+    /* Green Check */
 }
 
 .hover-icon-btn .material-icons {

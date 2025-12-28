@@ -2259,11 +2259,14 @@ function init() {
             }
 
             overlay.classList.remove('is-loaded');
-            setTimeout(() => overlay.remove(), 150);
+            setTimeout(() => overlay.remove(), 50); // Faster removal
         }
     }
 
     async function createHoverCard(card, id) {
+        // PRE-FETCH CHECK: If no longer hovering, abort immediately
+        if (!card.matches(':hover')) return;
+
         closeHoverCard(); // Close existing
 
         let details = _cardCache.get(id);
@@ -2271,12 +2274,18 @@ function init() {
             try {
                 const auth = await getAuth();
                 if (!auth) return;
-                const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
-                const res = await fetch(`/Users/${auth.UserId}/Items/${id}`, { headers });
+                const headers = { 'X-Emby-Token': auth.AccessToken || auth.token, 'Accept': 'application/json' };
+                // Use auth.user or auth.UserId if getAuth returns differently depending on version
+                const userId = auth.UserId || auth.user;
+                const res = await fetch(`${auth.server || ''}/Users/${userId}/Items/${id}`, { headers });
                 details = await res.json();
                 _cardCache.set(id, details);
             } catch (e) { return; }
         }
+
+        // POST-FETCH CHECK: Critical check to prevent "stuck" card if mouse left during await
+        if (!card.matches(':hover')) return;
+
         if (!details) return;
 
         // Position Logic
@@ -2300,6 +2309,16 @@ function init() {
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
         const desc = details.Overview || '';
 
+        // State
+        let isPlayed = details.UserData?.Played || false;
+        let isFav = details.UserData?.IsFavorite || false;
+
+        const iconPlayed = isPlayed ? 'check_circle' : 'check';
+        const classPlayed = isPlayed ? 'active' : '';
+
+        const iconFav = isFav ? 'favorite' : 'favorite_border';
+        const classFav = isFav ? 'active' : '';
+
         // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> (Flex Body) -> Footer (Bottom)
         overlay.innerHTML = `
             <div class="hover-body">
@@ -2317,8 +2336,12 @@ function init() {
             <div class="hover-footer">
                  <div class="hover-native-btn-slot"></div>
                  <div class="hover-icon-row">
-                    <button class="hover-icon-btn action-check" title="Mark Played"><span class="material-icons">check</span></button>
-                    <button class="hover-icon-btn action-fav" title="Favorite"><span class="material-icons">favorite_border</span></button>
+                    <button class="hover-icon-btn action-check ${classPlayed}" title="${isPlayed ? 'Mark Unplayed' : 'Mark Played'}">
+                        <span class="material-icons">${iconPlayed}</span>
+                    </button>
+                    <button class="hover-icon-btn action-fav ${classFav}" title="${isFav ? 'Unfavorite' : 'Favorite'}">
+                        <span class="material-icons">${iconFav}</span>
+                    </button>
                     <button class="hover-icon-btn action-info" title="Information"><span class="material-icons">info</span></button>
                     <button class="hover-icon-btn action-more" title="More"><span class="material-icons">more_vert</span></button>
                 </div>
@@ -2326,6 +2349,35 @@ function init() {
         `;
 
         // --- Click Handling ---
+
+        // API Helpers
+        const toggleState = async (type, currentState, btn) => {
+            const auth = await getAuth();
+            if (!auth.user || !auth.server) return;
+
+            const newState = !currentState;
+            const iconSpan = btn.querySelector('.material-icons');
+
+            // Optimistic UI Update
+            if (type === 'fav') {
+                isFav = newState;
+                btn.classList.toggle('active', isFav);
+                iconSpan.textContent = isFav ? 'favorite' : 'favorite_border';
+                btn.title = isFav ? 'Unfavorite' : 'Favorite';
+
+                const method = isFav ? 'POST' : 'DELETE';
+                fetch(`${auth.server}/Users/${auth.user}/FavoriteItems/${id}?api_key=${auth.token}`, { method });
+
+            } else if (type === 'played') {
+                isPlayed = newState;
+                btn.classList.toggle('active', isPlayed);
+                iconSpan.textContent = isPlayed ? 'check_circle' : 'check';
+                btn.title = isPlayed ? 'Mark Unplayed' : 'Mark Played';
+
+                const method = isPlayed ? 'POST' : 'DELETE';
+                fetch(`${auth.server}/Users/${auth.user}/PlayedItems/${id}?api_key=${auth.token}`, { method });
+            }
+        };
 
         // 1. Click Overlay -> Navigate (simulating left click on card)
         overlay.addEventListener('click', (e) => {
@@ -2335,36 +2387,53 @@ function init() {
         });
 
         // 2. Button Logic
-        const btns = overlay.querySelectorAll('.hover-icon-btn');
-        btns.forEach(b => {
-            b.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Button specific logic below
+        const btnCheck = overlay.querySelector('.action-check');
+        const btnFav = overlay.querySelector('.action-fav');
+        const btnInfo = overlay.querySelector('.action-info');
+
+        if (btnCheck) {
+            btnCheck.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                toggleState('played', isPlayed, btnCheck);
             });
-        });
+        }
+        if (btnFav) {
+            btnFav.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                toggleState('fav', isFav, btnFav);
+            });
+        }
+
+        if (btnInfo) {
+            btnInfo.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+        }
 
         // 3. Hijack Native Menu Button (The "More" action)
+        // 3. Hijack Native Menu Button (The "More" action)
         const customMoreBtn = overlay.querySelector('.action-more');
-        const nativeMenu = card.querySelector('.cardOverlayButton'); // Usually the BR button
+        // Strict Selector: Look for data-action="menu" OR iterate button contents
+        let nativeMenu = card.querySelector('.cardOverlayButton[data-action="menu"]');
+
+        if (!nativeMenu) {
+            // Fallback: Find button with more_vert icon if data-action absent
+            const buttons = card.querySelectorAll('.cardOverlayButton');
+            for (const btn of buttons) {
+                if (btn.innerHTML.includes('more_vert') || btn.innerHTML.includes('dots-vertical')) {
+                    nativeMenu = btn;
+                    break;
+                }
+            }
+        }
 
         if (nativeMenu && customMoreBtn) {
-            // Check if it's the right one (has 'more_vert' or similar)
-            if (nativeMenu.innerHTML.includes('more_vert') || nativeMenu.innerHTML.includes('dots-vertical')) {
+            // Confirm it is NOT a play button
+            if (!nativeMenu.classList.contains('cardOverlayFab') && !nativeMenu.getAttribute('data-action')?.includes('play')) {
                 // Move it into the container REPLACING the custom button
                 const container = customMoreBtn.parentNode;
                 container.replaceChild(nativeMenu, customMoreBtn);
 
                 // Add class for styling match
                 nativeMenu.classList.add('hover-icon-btn');
-                // We don't remove existing classes, just add ours for overriding styles in CSS
-            } else {
-                // Fallback if not found: keep custom button and use legacy click
-                customMoreBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    // Try finding any button if specific check failed
-                    nativeMenu.click();
-                });
             }
         }
 
