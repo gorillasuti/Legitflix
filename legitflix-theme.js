@@ -2032,9 +2032,10 @@ function init() {
     async function injectPromoBanner() {
         if (_promoInjectionInProgress || _injectedBanner) return;
 
-        // Strict Home Page Check
+        // Strict Home Page Check (Relaxed for root)
         const hash = window.location.hash.toLowerCase();
-        if (!hash.includes('home') && !hash.endsWith('/web/index.html')) {
+        // Allow 'home', 'index', or empty/root '#!/'
+        if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') {
             return;
         }
 
@@ -2067,12 +2068,6 @@ function init() {
                 return;
             }
 
-            // Strict Home Page Check (Relaxed for root)
-            const hash = window.location.hash.toLowerCase();
-            // Allow 'home', 'index', or empty/root '#!/'
-            if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '') {
-                return;
-            }
 
             // 3. Fetch Data
             const auth = await getAuth();
