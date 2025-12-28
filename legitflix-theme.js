@@ -2557,9 +2557,15 @@ function init() {
     // Dynamic Header Blur Logic
     function initNavScroll() {
         console.log('[LegitFlix] initNavScroll: Starting...');
-        const header = document.querySelector('.skinHeader');
+        let header = document.querySelector('.skinHeader');
         console.log('[LegitFlix] initNavScroll: Header found?', !!header);
-        if (!header) return;
+
+        // If header not found yet, wait for it
+        if (!header) {
+            console.log('[LegitFlix] initNavScroll: Header not ready, will retry...');
+            setTimeout(initNavScroll, 500); // Retry after 500ms
+            return;
+        }
 
         const onScroll = () => {
             // Try multiple scroll sources (Jellyfin uses different containers)
