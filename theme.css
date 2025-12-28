@@ -2021,12 +2021,14 @@ header,
     line-height: 1.4;
     color: #bbb;
     margin: 0.8rem 0 0 0;
-    /* More space before desc */
+
+    /* Ensure wrapping */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
 
     /* Clamp to 5 Lines */
     display: -webkit-box;
-    height: auto;
-    max-height: none;
     -webkit-line-clamp: 5;
     line-clamp: 5;
     -webkit-box-orient: vertical;
@@ -2145,6 +2147,12 @@ header,
     opacity: 0 !important;
     pointer-events: none !important;
     display: flex !important;
+}
+
+/* RESTORE Native Buttons in specific sections (History, Next Up) */
+.native-hover-section .cardOverlayButton {
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 /* Hijacked Menu Button in Footer */

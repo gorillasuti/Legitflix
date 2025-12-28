@@ -2179,6 +2179,9 @@ function init() {
     function setupHoverCards() {
         // Delegate mouseover to body but filter for cards
         document.body.addEventListener('mouseover', (e) => {
+            // Disable on edit/admin pages
+            if (window.location.href.includes('edititem') || window.location.href.includes('metadata')) return;
+
             const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
             // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
             if (!card || !card.dataset.id) return;
@@ -2197,6 +2200,15 @@ function init() {
                         return;
                     }
                 }
+            }
+
+            if (card.classList.contains('card-flat') || card.classList.contains('chapterCard') || card.closest('.visualCardBox')) {
+                return;
+            }
+
+            // EXCLUSION: Image Editor & Dialogs
+            if (card.classList.contains('imageEditorCard') || card.closest('.dialog') || card.closest('.formDialog')) {
+                return;
             }
 
             // Avoid re-triggering if already showing or bad target
@@ -2353,29 +2365,35 @@ function init() {
         // API Helpers
         const toggleState = async (type, currentState, btn) => {
             const auth = await getAuth();
-            if (!auth.user || !auth.server) return;
+            if (!auth) return;
+
+            const userId = auth.UserId || auth.user;
+            const token = auth.AccessToken || auth.token;
+            const server = auth.server || ''; // Relative path usually works if empty, but safer
+
+            if (!userId || !token) return;
 
             const newState = !currentState;
             const iconSpan = btn.querySelector('.material-icons');
 
             // Optimistic UI Update
             if (type === 'fav') {
-                isFav = newState;
+                isFav = newState; // Update closure var
                 btn.classList.toggle('active', isFav);
                 iconSpan.textContent = isFav ? 'favorite' : 'favorite_border';
                 btn.title = isFav ? 'Unfavorite' : 'Favorite';
 
                 const method = isFav ? 'POST' : 'DELETE';
-                fetch(`${auth.server}/Users/${auth.user}/FavoriteItems/${id}?api_key=${auth.token}`, { method });
+                fetch(`${server}/Users/${userId}/FavoriteItems/${id}?api_key=${token}`, { method });
 
             } else if (type === 'played') {
-                isPlayed = newState;
+                isPlayed = newState; // Update closure var
                 btn.classList.toggle('active', isPlayed);
                 iconSpan.textContent = isPlayed ? 'check_circle' : 'check';
                 btn.title = isPlayed ? 'Mark Unplayed' : 'Mark Played';
 
                 const method = isPlayed ? 'POST' : 'DELETE';
-                fetch(`${auth.server}/Users/${auth.user}/PlayedItems/${id}?api_key=${auth.token}`, { method });
+                fetch(`${server}/Users/${userId}/PlayedItems/${id}?api_key=${token}`, { method });
             }
         };
 
@@ -2468,15 +2486,28 @@ function init() {
     // Call setup
     setupHoverCards();
 
+    // Helper to tag sections where we want native hover
+    function tagNativeSections() {
+        const sections = document.querySelectorAll('.verticalSection');
+        sections.forEach(s => {
+            const titleEl = s.querySelector('.sectionTitle');
+            if (titleEl) {
+                const t = titleEl.innerText.toLowerCase();
+                if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
+                    s.classList.add('native-hover-section');
+                }
+            }
+        });
+    }
+
     const observer = new MutationObserver((mutations) => {
         if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
         renameMyList();
         fixMixedCards();
         injectPromoBanner();
+        tagNativeSections(); // Ensure sections are tagged
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
-
-
 
 init();
