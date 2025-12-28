@@ -73,6 +73,20 @@ async function fetchUserViews() {
     }
 }
 
+// =========================================================================
+// CAROUSEL COMPONENT DOCUMENTATION
+// 
+// Use this guide to locate key carousel functionality:
+// 1. Data Fetching: fetchMediaBarItems (Line ~76) - Gets items from API.
+// 2. HTML Generation: createMediaBarHTML (Line ~99) - Builds slides.
+// 3. Carousel Logic: injectMediaBar (Line ~270) - Handles injection & timer.
+// 4. Playback Logic: legitFlixPlay (See below) - Handles Play button click.
+// 
+// BUG REPORT: The "Play" button on the carousel has issues initiating playback
+// directly due to internal Jellyfin `PlaybackManager` being inaccessible in
+// theme context. The current solution (V6) uses a workaround:
+// -> Navigates to details page -> Auto-clicks the native Play button.
+// =========================================================================
 async function fetchMediaBarItems() {
     logger.log('fetchMediaBarItems: Fetching hero content...');
     const auth = await getAuth();
@@ -202,68 +216,41 @@ window.legitFlixShowItem = function (itemId) {
 
 // --- PLAYBACK HELPER (Retry Logic & Force Load) ---
 // --- PLAYBACK HELPER (Debug Mode) ---
+// --- PLAYBACK HELPER (V6 - Navigate & Auto-Click) ---
+// TODO: Fix Direct Playback. 
+// Current Issue: API commands (Play, PlayMediaSource) are rejected by client.
+// Workaround: Navigate to details page and simulate click on Native Play Button.
 window.legitFlixPlay = async function (id) {
-    logger.log('legitFlixPlay: Clicked', id);
+    logger.log('legitFlixPlay (V6 Auto-Click): Clicked', id);
 
-    // DEBUG: Check globals
-    console.log('[LegitFlix Debug] Window Globals:', {
-        PlaybackManager: window.PlaybackManager,
-        playbackManager: window.playbackManager,
-        ApiClient: window.ApiClient,
-        appRouter: window.appRouter,
-        Jellyfin: window.Jellyfin
-    });
+    // 1. Navigate to Details Page (Reliable)
+    window.legitFlixShowItem(id);
 
-    if (!window.PlaybackManager && typeof window.require === 'function') {
-        try {
-            console.log('[LegitFlix Debug] Requiring playbackManager module...');
-            window.require(['playbackManager'], (pm) => {
-                console.log('[LegitFlix Debug] Require Result:', pm);
-                if (pm) {
-                    const keys = Object.keys(pm);
-                    console.log('[LegitFlix Debug] Module Keys:', keys);
-                    if (pm.default) console.log('[LegitFlix Debug] Module Default Keys:', Object.keys(pm.default));
+    // 2. Poll for the Native Play Button on the new page and click it
+    // Since this is a SPA, the script continues running.
+    let attempts = 0;
+    const maxAttempts = 40; // 4 seconds
 
-                    // Try to auto-fix based on inspection
-                    if (pm.play) {
-                        window.PlaybackManager = pm;
-                        console.log('[LegitFlix Debug] Found instance on module root');
-                    } else if (pm.default && pm.default.play) {
-                        window.PlaybackManager = pm.default;
-                        console.log('[LegitFlix Debug] Found instance on module.default');
-                    } else if (pm.PlaybackManager) {
-                        console.log('[LegitFlix Debug] Found .PlaybackManager property (Class?)', pm.PlaybackManager);
-                    }
-                }
-            });
-        } catch (e) { console.error('[LegitFlix Debug] Require failed', e); }
-    }
+    const clickInterval = setInterval(() => {
+        attempts++;
+        // Look for the Detail Page Play Button
+        // Usually in .mainDetailButtons or just huge play button
+        const playBtn = document.querySelector('.detailPage .btnPlay')
+            || document.querySelector('.detailButtons .btnPlay')
+            || document.querySelector('button[is="emby-playbutton"].detailButton')
+            || document.querySelector('.itemDetailPage .playButton');
 
-    // Short wait to allow require to resolve
-    await new Promise(r => setTimeout(r, 1000));
-
-    if (!window.PlaybackManager) {
-        console.error('[LegitFlix Debug] PlaybackManager is STILL missing. Cannot play.');
-        alert("Playback Debug: Manager not found. Check console logs.");
-        return;
-    }
-
-    const apiClient = window.ApiClient;
-    try {
-        const item = await apiClient.getItem(apiClient.getCurrentUserId(), id);
-        if (!item) return;
-
-        logger.log('legitFlixPlay: Sending play command');
-        window.PlaybackManager.play({
-            items: [item],
-            startPositionTicks: 0,
-            isMuted: false,
-            isPaused: false,
-            serverId: apiClient.serverId()
-        });
-    } catch (error) {
-        logger.error('legitFlixPlay: Failed', error);
-    }
+        if (playBtn) {
+            // Verify it belongs to the correct item? 
+            // Hard to check, but we just navigated, so assume yes.
+            logger.log('legitFlixPlay: Found Detail Play Button. Clicking!', playBtn);
+            playBtn.click();
+            clearInterval(clickInterval);
+        } else if (attempts >= maxAttempts) {
+            logger.warn('legitFlixPlay: Could not find Play button on details page. User must click manually.');
+            clearInterval(clickInterval);
+        }
+    }, 100);
 };
 
 // --- [REMOVED] Duplicate legacy navigation logic ---
@@ -1959,310 +1946,5 @@ function init() {
 }
 
 
-// --- API REMOTE PLAYBACK (Override) ---
-const legitFlixPlayRemote = async function (id) {
-    logger.log('legitFlixPlay (Remote): Clicked', id);
-    const client = window.ApiClient;
-
-    // 1. Try Standard PlaybackManager (if available)
-    if (window.PlaybackManager && window.PlaybackManager.play) {
-        try {
-            logger.log('legitFlixPlay: Using PlaybackManager');
-            const item = await client.getItem(client.getCurrentUserId(), id);
-            window.PlaybackManager.play({
-                items: [item],
-                startPositionTicks: 0,
-                isMuted: false,
-                isPaused: false,
-                serverId: client.serverId()
-            });
-            return;
-        } catch (e) { console.error('Standard play failed', e); }
-    }
-
-    // 2. Fallback: API "Remote" Control (Control Local Session)
-    if (client) {
-        logger.log('legitFlixPlay: Attempting API Control...');
-        try {
-            const deviceId = client.deviceId();
-            const sessions = await client.getSessions();
-            const mySession = sessions.find(s => s.DeviceId === deviceId);
-
-            if (mySession) {
-                logger.log('legitFlixPlay: Found local session', mySession.Id);
-                // Correct Endpoint for Playback: /Sessions/{Id}/Playing
-                const url = client.getUrl(`/Sessions/${mySession.Id}/Playing`);
-                await client.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: JSON.stringify({
-                        ItemIds: [id],
-                        PlayCommand: 'PlayNow',
-                        StartPositionTicks: 0
-                    }),
-                    contentType: 'application/json'
-                });
-                return;
-            } else {
-                console.warn('legitFlixPlay: Local session not found in API list.');
-            }
-        } catch (e) {
-            logger.error('legitFlixPlay: API Control failed', e);
-        }
-    }
-
-    // 3. Last Resort: Navigation
-    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
-    window.legitFlixShowItem(id);
-};
-
-// Override the previous definition
-window.legitFlixPlay = legitFlixPlayRemote;
-
-
-// --- API REMOTE PLAYBACK (Override v3 - PlayMediaSource) ---
-const legitFlixPlayRemoteV3 = async function (id) {
-    logger.log('legitFlixPlay (Remote v3): Clicked', id);
-    const client = window.ApiClient;
-
-    // 1. Try Standard PlaybackManager (if available)
-    if (window.PlaybackManager && window.PlaybackManager.play) {
-        try {
-            logger.log('legitFlixPlay: Using PlaybackManager');
-            const item = await client.getItem(client.getCurrentUserId(), id);
-            window.PlaybackManager.play({
-                items: [item],
-                startPositionTicks: 0,
-                isMuted: false,
-                isPaused: false,
-                serverId: client.serverId()
-            });
-            return;
-        } catch (e) { console.error('Standard play failed', e); }
-    }
-
-    // 2. Fallback: API "Remote" Control (PlayMediaSource)
-    if (client) {
-        logger.log('legitFlixPlay: Attempting API Control (PlayMediaSource)...');
-        try {
-            const deviceId = client.deviceId();
-            const sessions = await client.getSessions();
-            const mySession = sessions.find(s => s.DeviceId === deviceId);
-
-            if (mySession) {
-                logger.log('legitFlixPlay: Found local session', mySession.Id);
-
-                // Fetch item to get MediaSourceId
-                const item = await client.getItem(client.getCurrentUserId(), id);
-                const mediaSourceId = item.MediaSources && item.MediaSources[0] ? item.MediaSources[0].Id : id;
-
-                // Use 'PlayMediaSource' which is supported by the client general command listener
-                const url = client.getUrl(`/Sessions/${mySession.Id}/Command/PlayMediaSource`);
-                await client.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: JSON.stringify({
-                        ItemId: id,
-                        MediaSourceId: mediaSourceId,
-                        StartPositionTicks: 0,
-                        AudioStreamIndex: null,
-                        SubtitleStreamIndex: null
-                    }),
-                    contentType: 'application/json'
-                });
-                return;
-            } else {
-                console.warn('legitFlixPlay: Local session not found in API list.');
-            }
-        } catch (e) {
-            logger.error('legitFlixPlay: API Control failed', e);
-        }
-    }
-
-    // 3. Last Resort: Navigation
-    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
-    window.legitFlixShowItem(id);
-};
-
-// Override the previous definitions
-window.legitFlixPlay = legitFlixPlayRemoteV3;
-
-
-// --- API REMOTE PLAYBACK (Override v4 - Hybrid) ---
-const legitFlixPlayRemoteV4 = async function (id) {
-    logger.log('legitFlixPlay (Remote v4): Clicked', id);
-    const client = window.ApiClient;
-
-    // 1. Try Standard PlaybackManager (if available)
-    if (window.PlaybackManager && window.PlaybackManager.play) {
-        try {
-            logger.log('legitFlixPlay: Using PlaybackManager');
-            const item = await client.getItem(client.getCurrentUserId(), id);
-            window.PlaybackManager.play({
-                items: [item],
-                startPositionTicks: 0,
-                isMuted: false,
-                isPaused: false,
-                serverId: client.serverId()
-            });
-            return;
-        } catch (e) { console.error('Standard play failed', e); }
-    }
-
-    // 2. DOM "Ghost Click" (Quickest if item is on screen)
-    try {
-        const card = document.querySelector(`[data-id="${id}"]`);
-        if (card) {
-            const playBtn = card.querySelector('.playButton') || card.querySelector('.cardOverlayButton-play') || card.querySelector('.btnPlay');
-            if (playBtn) {
-                logger.log('legitFlixPlay: Using DOM Ghost Click');
-                playBtn.click();
-                return;
-            }
-        }
-    } catch (e) { /* Ignore */ }
-
-    // 3. Fallback: API "Remote" Control (Specific /Playing Endpoint)
-    if (client) {
-        logger.log('legitFlixPlay: Attempting API Control (/Playing)...');
-        try {
-            const deviceId = client.deviceId();
-            const sessions = await client.getSessions();
-            const mySession = sessions.find(s => s.DeviceId === deviceId);
-
-            if (mySession) {
-                logger.log('legitFlixPlay: Found local session', mySession.Id);
-
-                const item = await client.getItem(client.getCurrentUserId(), id);
-                const mediaSourceId = item.MediaSources && item.MediaSources[0] ? item.MediaSources[0].Id : id;
-
-                // Use the dedicated Playback Control Endpoint (Sends 'Play', not GeneralCommand)
-                const url = client.getUrl(`/Sessions/${mySession.Id}/Playing`);
-                await client.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: JSON.stringify({
-                        ItemIds: [id],
-                        PlayCommand: 'PlayNow',
-                        ControllingUserId: client.getCurrentUserId(),
-                        MediaSourceId: mediaSourceId,
-                        StartPositionTicks: 0
-                    }),
-                    contentType: 'application/json'
-                });
-                return;
-            } else {
-                console.warn('legitFlixPlay: Local session not found in API list.');
-            }
-        } catch (e) {
-            logger.error('legitFlixPlay: API Control failed', e);
-        }
-    }
-
-    // 4. Last Resort: Navigation
-    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
-    window.legitFlixShowItem(id);
-};
-
-// Override the previous definitions
-window.legitFlixPlay = legitFlixPlayRemoteV4;
-
-
-// --- PLAYBACK HELPER (V5 - Custom Element Injection) ---
-const legitFlixPlayRemoteV5 = async function (id) {
-    logger.log('legitFlixPlay (V5): Clicked', id);
-    const client = window.ApiClient;
-
-    // 1. Try Standard PlaybackManager (if available)
-    if (window.PlaybackManager && window.PlaybackManager.play) {
-        try {
-            logger.log('legitFlixPlay: Using PlaybackManager');
-            const item = await client.getItem(client.getCurrentUserId(), id);
-            window.PlaybackManager.play({ items: [item], startPositionTicks: 0 });
-            return;
-        } catch (e) { console.error('Standard play failed', e); }
-    }
-
-    // 2. Custom Element Injection (Simulate Native Play Button)
-    // This leverages Jellyfin's internal event delegation for emby-playbutton
-    try {
-        const item = await client.getItem(client.getCurrentUserId(), id);
-        if (item) {
-            logger.log('legitFlixPlay: Injecting emby-playbutton...');
-            const btn = document.createElement('button');
-            btn.setAttribute('is', 'emby-playbutton');
-            btn.setAttribute('data-id', item.Id);
-            btn.setAttribute('data-type', item.Type);
-            btn.setAttribute('data-isfolder', item.IsFolder);
-            btn.setAttribute('data-serverid', item.ServerId || client.serverId());
-            btn.style.display = 'none';
-
-            document.body.appendChild(btn);
-
-            // Allow CustomElement to initialize
-            await new Promise(r => setTimeout(r, 50));
-
-            logger.log('legitFlixPlay: Clicking injected button');
-            btn.click();
-
-            // Cleanup after short delay
-            setTimeout(() => {
-                btn.remove();
-                logger.log('legitFlixPlay: Cleanup injected button');
-            }, 1000);
-            return;
-        }
-    } catch (e) {
-        logger.error('legitFlixPlay: Injection failed', e);
-    }
-
-    // 3. Fallback: API "Remote" Control (Hybrid V4 logic)
-    // ... (Omitted to keep clean, jumping to Nav if Injection fails)
-
-    // 4. Last Resort: Navigation
-    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
-    window.legitFlixShowItem(id);
-};
-
-// Override
-window.legitFlixPlay = legitFlixPlayRemoteV5;
-
-
-// --- PLAYBACK HELPER (V6 - Navigate & Auto-Click) ---
-const legitFlixPlayRemoteV6 = async function (id) {
-    logger.log('legitFlixPlay (V6): Clicked', id);
-
-    // 1. Navigate to Details Page (Reliable)
-    window.legitFlixShowItem(id);
-
-    // 2. Poll for the Native Play Button on the new page and click it
-    // Since this is a SPA, the script continues running.
-    let attempts = 0;
-    const maxAttempts = 40; // 4 seconds
-
-    const clickInterval = setInterval(() => {
-        attempts++;
-        // Look for the Detail Page Play Button
-        // Usually in .mainDetailButtons or just huge play button
-        const playBtn = document.querySelector('.detailPage .btnPlay')
-            || document.querySelector('.detailButtons .btnPlay')
-            || document.querySelector('button[is="emby-playbutton"].detailButton')
-            || document.querySelector('.itemDetailPage .playButton');
-
-        if (playBtn) {
-            // Verify it belongs to the correct item? 
-            // Hard to check, but we just navigated, so assume yes.
-            logger.log('legitFlixPlay: Found Detail Play Button. Clicking!', playBtn);
-            playBtn.click();
-            clearInterval(clickInterval);
-        } else if (attempts >= maxAttempts) {
-            logger.warn('legitFlixPlay: Could not find Play button on details page.');
-            clearInterval(clickInterval);
-        }
-    }, 100);
-};
-
-// Override
-window.legitFlixPlay = legitFlixPlayRemoteV6;
 
 init();
