@@ -2029,37 +2029,43 @@ function init() {
     let _promoInjectionInProgress = false; // Guard for race conditions
 
     async function injectPromoBanner() {
-        // 1. Check if already injected or in progress
-        if (_promoInjectionInProgress || document.querySelector('.legitflix-promo-container')) return;
+        // 1. Check if already injected
+        if (document.querySelector('.legitflix-promo-container')) return;
+
+        // Guard against concurrent runs, but MUST unlock if we fail/return early
+        if (_promoInjectionInProgress) return;
         _promoInjectionInProgress = true;
 
-        // 2. Find Injection Point: After "History" section
-        // Strategy A: Find by Title (History/Next Up)
-        const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
-        let historyTitle = titles.find(t => {
-            const txt = t.innerText.toLowerCase();
-            return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
-        });
-
-        let historySection = null;
-        if (historyTitle) {
-            historySection = historyTitle.closest('.verticalSection');
-        }
-
-        // Strategy B: Fallback to known class positions (Section 5 is usually Next Up/History)
-        if (!historySection) {
-            historySection = document.querySelector('.verticalSection.section5');
-        }
-
-        // Debug
-        // console.log('[LegitFlix] Injection Target Found:', historySection);
-
-        if (!historySection) return;
-
-        // 3. Fetch Data (Using raw fetch via getAuth)
         try {
+            // 2. Find Injection Point: After "History" section
+            // Strategy A: Find by Title
+            const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
+            let historyTitle = titles.find(t => {
+                const txt = t.innerText.toLowerCase();
+                return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
+            });
+
+            let historySection = null;
+            if (historyTitle) {
+                historySection = historyTitle.closest('.verticalSection');
+            }
+
+            // Strategy B: Fallback to known class
+            if (!historySection) {
+                historySection = document.querySelector('.verticalSection.section5');
+            }
+
+            if (!historySection) {
+                _promoInjectionInProgress = false; // Reset so we can try again later
+                return;
+            }
+
+            // 3. Fetch Data
             const auth = await getAuth();
-            if (!auth) return;
+            if (!auth) {
+                _promoInjectionInProgress = false;
+                return;
+            }
             const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
 
             // A. Get Resume/History Items to Exclude
@@ -2089,7 +2095,10 @@ function init() {
                 }
             }
 
-            if (selected.length < 3) return; // Not enough items
+            if (selected.length < 3) {
+                _promoInjectionInProgress = false;
+                return;
+            }
 
             // 4. Build HTML
             const item1 = selected[0]; // Hero
@@ -2150,9 +2159,12 @@ function init() {
             // 5. Inject
             historySection.insertAdjacentHTML('afterend', html);
             console.log('[LegitFlix] Promo Banner Injected Successfully');
+            // Done!
+            _promoInjectionInProgress = false; // Reset after successful injection
 
         } catch (e) {
             console.error('[LegitFlix] Error building promo banner:', e);
+            _promoInjectionInProgress = false; // Reset on error
         }
     }
 
