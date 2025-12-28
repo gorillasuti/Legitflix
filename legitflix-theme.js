@@ -2291,12 +2291,6 @@ function init() {
         overlay.className = 'legitflix-hover-overlay';
         overlay.dataset.sourceId = id;
 
-        // Set fixed position
-        overlay.style.position = 'fixed';
-        overlay.style.width = `${width}px`;
-        overlay.style.left = `${left}px`;
-        overlay.style.top = `${top}px`;
-
         // Content
         const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
         const year = details.ProductionYear || '';
@@ -2333,24 +2327,26 @@ function init() {
             </div>
         `;
 
-        document.body.appendChild(overlay);
-        _activeOverlay = overlay;
+        if (document.body.contains(card)) {
+            card.appendChild(overlay);
+            _activeOverlay = overlay;
 
-        // Move Native Play Button
-        const nativeFab = card.querySelector('.cardOverlayFab-primary');
-        if (nativeFab) {
-            _borrowedButton = nativeFab;
-            _originalParent = nativeFab.parentNode;
+            // Move Native Play Button
+            const nativeFab = card.querySelector('.cardOverlayFab-primary');
+            // If we are attaching to card, nativeFab is inside card.
+            // But we want to move it INSIDE the overlay (child of card).
+            if (nativeFab) {
+                _borrowedButton = nativeFab;
+                _originalParent = nativeFab.parentNode;
 
-            // Hijack
-            const slot = overlay.querySelector('.hover-native-btn-slot');
-            slot.appendChild(nativeFab);
-            // Styling reset handled by CSS under .hover-native-btn-slot
+                const slot = overlay.querySelector('.hover-native-btn-slot');
+                slot.appendChild(nativeFab);
+            }
+
+            requestAnimationFrame(() => {
+                overlay.classList.add('is-loaded');
+            });
         }
-
-        requestAnimationFrame(() => {
-            overlay.classList.add('is-loaded');
-        });
     }
 
     // Call setup

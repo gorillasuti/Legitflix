@@ -1916,8 +1916,16 @@ header,
 
 /* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
 .legitflix-hover-overlay {
-    position: fixed;
-    /* JS handles top/left/width */
+    position: absolute;
+    /* Center and Expand */
+    width: 110%;
+    min-height: 110%;
+    height: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    /* Start slightly smaller */
+
     z-index: 9999 !important;
     /* Above everything */
 
@@ -1941,8 +1949,6 @@ header,
     pointer-events: auto;
     /* Always interactive */
     transform-origin: center center;
-    transform: scale(0.95);
-    /* Start slightly smaller for pop effect */
 
     /* Border stroke for definition */
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1952,7 +1958,8 @@ header,
 .legitflix-hover-overlay.is-loaded {
     opacity: 1;
     visibility: visible;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
+    /* Reset to normal center */
 }
 
 /* Content Layout (5 Rows) */
