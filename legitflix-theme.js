@@ -2556,7 +2556,9 @@ function init() {
     observer.observe(document.body, { childList: true, subtree: true });
     // Dynamic Header Blur Logic
     function initNavScroll() {
+        console.log('[LegitFlix] initNavScroll: Starting...');
         const header = document.querySelector('.skinHeader');
+        console.log('[LegitFlix] initNavScroll: Header found?', !!header);
         if (!header) return;
 
         const onScroll = () => {
@@ -2581,6 +2583,11 @@ function init() {
 
             const threshold = window.innerHeight * 0.1; // 10vh
 
+            // DEBUG: Log every 10th scroll event to avoid spam
+            if (Math.random() < 0.1) {
+                console.log('[LegitFlix] Scroll: top=' + scrollTop + ', threshold=' + Math.round(threshold) + ', container=' + (scrollContainer?.className || 'window'));
+            }
+
             if (scrollTop > threshold) {
                 header.classList.add('legitflix-nav-scrolled');
             } else {
@@ -2593,6 +2600,7 @@ function init() {
 
         // Also attach to known scroll containers directly
         const containers = document.querySelectorAll('.mainAnimatedPages, .page, [data-role="page"]');
+        console.log('[LegitFlix] initNavScroll: Attaching to', containers.length, 'containers');
         containers.forEach(c => c.addEventListener('scroll', onScroll, { passive: true }));
 
         // MutationObserver to attach to new pages
@@ -2600,12 +2608,14 @@ function init() {
             document.querySelectorAll('.page:not([data-scroll-listener])').forEach(page => {
                 page.setAttribute('data-scroll-listener', 'true');
                 page.addEventListener('scroll', onScroll, { passive: true });
+                console.log('[LegitFlix] Attached scroll listener to new page');
             });
         });
         pageObserver.observe(document.body, { childList: true, subtree: true });
 
         // Run once
         onScroll();
+        console.log('[LegitFlix] initNavScroll: Complete');
     }
 
     initNavScroll(); // Start scroll listener
