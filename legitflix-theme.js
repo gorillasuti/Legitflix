@@ -2179,6 +2179,7 @@ function init() {
     let _originalParent = null;
 
     function setupHoverCards() {
+        console.log('[LegitFlix] setupHoverCards: Initialized');
         // Delegate mouseover to body but filter for cards
         document.body.addEventListener('mouseover', (e) => {
             // Disable on edit/admin pages
@@ -2191,9 +2192,15 @@ function init() {
             // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
             if (!card || !card.dataset.id) return;
 
+            // DEBUG: Log card detection
+            console.log('[LegitFlix] Hover: Card detected', card.dataset.id, card.dataset.type);
+
             // --- FILTERING LOGIC ---
             // 1. Exclude "Categories" (Folders)
-            if (card.dataset.type === 'CollectionFolder' || card.dataset.type === 'UserView') return;
+            if (card.dataset.type === 'CollectionFolder' || card.dataset.type === 'UserView') {
+                console.log('[LegitFlix] Hover: Excluded (folder)');
+                return;
+            }
 
             // 2. Exclude "Continue Watching", "History" (Next Up), "My Media"
             const section = card.closest('.verticalSection');
@@ -2202,17 +2209,20 @@ function init() {
                 if (titleEl) {
                     const t = titleEl.innerText.toLowerCase();
                     if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
+                        console.log('[LegitFlix] Hover: Excluded (section:', t, ')');
                         return;
                     }
                 }
             }
 
             if (card.classList.contains('card-flat') || card.classList.contains('chapterCard') || card.closest('.visualCardBox')) {
+                console.log('[LegitFlix] Hover: Excluded (card type)');
                 return;
             }
 
             // EXCLUSION: Image Editor & Dialogs
             if (card.classList.contains('imageEditorCard') || card.closest('.dialog') || card.closest('.formDialog')) {
+                console.log('[LegitFlix] Hover: Excluded (dialog)');
                 return;
             }
 
@@ -2222,6 +2232,7 @@ function init() {
             // Clear any pending timer
             if (_hoverTimer) clearTimeout(_hoverTimer);
 
+            console.log('[LegitFlix] Hover: Will create card for', card.dataset.id);
             // Set delay (Instant - 50ms to prevent accidental flickers)
             _hoverTimer = setTimeout(() => {
                 createHoverCard(card, card.dataset.id);
