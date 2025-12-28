@@ -1914,53 +1914,35 @@ header,
     color: black;
 }
 
-/* --- HOVER CARD OVERLAY (Crunchyroll Style) --- */
-.card {
-    overflow: visible !important;
-    /* Allow overlay to expand */
-    z-index: auto;
-    /* Allow stacking */
-}
-
-/* Ensure parents don't clip */
-.cardBox,
-.cardScalable {
-    overflow: visible !important;
-}
-
+/* --- HOVER CARD OVERLAY (Body Appended) --- */
 .legitflix-hover-overlay {
-    position: absolute;
-    /* Center and Expand */
-    width: 115%;
-    min-height: 110%;
-    height: auto;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1);
+    position: fixed;
+    /* JS handles top/left/width */
+    z-index: 9999 !important;
+    /* Above everything */
 
     background: #191919;
-    /* Solid dark background */
     color: white;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 1000;
-    /* Very high */
+    transition: opacity 0.2s ease, transform 0.2s ease;
     padding: 0;
-    /* Reset */
     border-radius: 6px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
     display: flex;
     flex-direction: column;
-    pointer-events: none;
+    pointer-events: auto;
+    /* Always interactive */
+    transform-origin: center center;
+    transform: scale(0.95);
+    /* Start slightly smaller for pop effect */
 }
 
-.card:hover .legitflix-hover-overlay.is-loaded {
+/* Open State */
+.legitflix-hover-overlay.is-loaded {
     opacity: 1;
     visibility: visible;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1.02);
-    /* Slight pulse */
+    transform: scale(1);
 }
 
 /* Content Layout */
@@ -2026,32 +2008,69 @@ header,
 .hover-footer {
     padding: 0.8rem 1rem;
     background: #232323;
-    /* Slightly lighter footer */
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
     margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Space native vs icons */
 }
+
+/* Slot for the hijacked Native Button */
+.hover-native-btn-slot {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Override native button styles when inside our slot */
+.hover-native-btn-slot .cardOverlayFab-primary {
+    position: static !important;
+    display: flex !important;
+    margin: 0 !important;
+    transform: none !important;
+    /* JS handles this */
+}
+
+.hover-native-btn-slot .cardOverlayFab-primary .material-icons {
+    font-size: 3rem !important;
+    color: #f47521 !important;
+    transition: transform 0.2s;
+}
+
+.hover-native-btn-slot .cardOverlayFab-primary:hover .material-icons {
+    transform: scale(1.1);
+    color: white !important;
+}
+
 
 .hover-icon-row {
     display: flex;
-    justify-content: flex-end;
-    /* Align icons right */
     gap: 0.5rem;
 }
 
-/* Native Play Button Positioning */
-.cardOverlayContainer {
-    z-index: 1100 !important;
-    /* Above overlay */
+/* Reset Card Overflow (No longer needed to be visible, but safe to keep) */
+.card {
+    overflow: hidden;
 }
 
+/* Ensure parents don't clip */
+.cardBox,
+.cardScalable {
+    overflow: hidden;
+}
+
+/* Keep Native Elements visible on Card itself until hijacked */
 .cardOverlayFab-primary {
-    bottom: 15px !important;
-    left: 15px !important;
-    /* Ensure it aligns with footer logic */
+    display: flex !important;
+    /* We don't force position here anymore, existing CSS handles card position */
+    z-index: 2;
 }
 
-/* Hide native overlay BG */
-.cardOverlayContainer {
-    background: transparent !important;
+/* Hide other native buttons */
+.cardOverlayButton {
+    display: none !important;
 }

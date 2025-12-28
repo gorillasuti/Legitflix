@@ -2168,10 +2168,13 @@ function init() {
         }
     }
 
-    // --- HOVER CARD LOGIC (Netflix/Crunchyroll Style) ---
+    // --- HOVER CARD LOGIC (Body Append + Native Button Move) ---
     // Cache for item details to avoid repeated API calls
     const _cardCache = new Map();
     let _hoverTimer = null;
+    let _activeOverlay = null;
+    let _borrowedButton = null; // Track moved button
+    let _originalParent = null;
 
     function setupHoverCards() {
         // Delegate mouseover to body but filter for cards
@@ -2181,37 +2184,71 @@ function init() {
             if (!card || !card.dataset.id) return;
 
             // Avoid re-triggering if already showing or bad target
-            if (card.querySelector('.legitflix-hover-overlay')) return;
+            if (_activeOverlay && _activeOverlay.dataset.sourceId === card.dataset.id) return;
 
             // Clear any pending timer
             if (_hoverTimer) clearTimeout(_hoverTimer);
 
             // Set delay (Instant - 50ms to prevent accidental flickers)
             _hoverTimer = setTimeout(() => {
-                showHoverCard(card, card.dataset.id);
-            }, 50);
+                createHoverCard(card, card.dataset.id);
+            }, 100);
         });
 
         document.body.addEventListener('mouseout', (e) => {
-            const card = e.target.closest('.card');
-            if (card) {
-                if (_hoverTimer) clearTimeout(_hoverTimer);
-                // We rely on CSS pointer-events to handle mouseout from overlay?
-                // Actually, if we make overlay bigger, mouse is still inside.
-                // But if we leave card area completely:
-                const overlay = card.querySelector('.legitflix-hover-overlay');
-                if (overlay) {
-                    overlay.classList.remove('is-loaded');
-                    setTimeout(() => overlay.remove(), 200); // Cleanup after fade
+            // Check if we left the card AND the overlay
+            // This is tricky with body append. we need a check.
+            // Simplified: If we hover mainly on the overlay, we keep it.
+            // If we leave overlay and card, we close.
+            const toElement = e.relatedTarget;
+            if (_activeOverlay && !toElement?.closest('.legitflix-hover-overlay') && !toElement?.closest('.card')) {
+                closeHoverCard();
+            }
+        });
+
+        // Also listen on overlay leave
+        document.body.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.legitflix-hover-overlay')) {
+                const toElement = e.relatedTarget;
+                // If moving back to origin card, technically ok, but usually we cover it.
+                if (!_activeOverlay) return;
+                // If left overlay and not going to origin card
+                const originId = _activeOverlay.dataset.sourceId;
+                const originCard = document.querySelector(`.card[data-id="${originId}"]`);
+
+                if (!toElement?.closest('.legitflix-hover-overlay') && toElement !== originCard && !originCard?.contains(toElement)) {
+                    closeHoverCard();
                 }
-                // If we strictly follow 'mouseout' bubble, entering child triggers mouseout.
-                // e.relatedTarget check needed.
             }
         });
     }
 
-    async function showHoverCard(card, id) {
-        if (card.querySelector('.legitflix-hover-overlay')) return;
+    function closeHoverCard() {
+        if (_hoverTimer) clearTimeout(_hoverTimer);
+
+        if (_activeOverlay) {
+            const overlay = _activeOverlay;
+            _activeOverlay = null;
+
+            // 1. Restore Native Button
+            if (_borrowedButton && _originalParent) {
+                // Restore style
+                _borrowedButton.style.position = '';
+                _borrowedButton.style.bottom = '';
+                _borrowedButton.style.left = '';
+                _borrowedButton.style.margin = ''; // Reset margin too
+                _originalParent.appendChild(_borrowedButton);
+                _borrowedButton = null;
+                _originalParent = null;
+            }
+
+            overlay.classList.remove('is-loaded');
+            setTimeout(() => overlay.remove(), 150);
+        }
+    }
+
+    async function createHoverCard(card, id) {
+        closeHoverCard(); // Close existing
 
         let details = _cardCache.get(id);
         if (!details) {
@@ -2226,14 +2263,30 @@ function init() {
         }
         if (!details) return;
 
+        // Position Logic
+        const rect = card.getBoundingClientRect();
+        // Scale up 115%
+        const width = rect.width * 1.15;
+        // Centered
+        const left = rect.left - ((width - rect.width) / 2);
+        const top = rect.top - 20; // Slightly higher
+
+        const overlay = document.createElement('div');
+        overlay.className = 'legitflix-hover-overlay';
+        overlay.dataset.sourceId = id;
+
+        // Set fixed position
+        overlay.style.position = 'fixed';
+        overlay.style.width = `${width}px`;
+        overlay.style.left = `${left}px`;
+        overlay.style.top = `${top}px`;
+
+        // Content
         const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)}` : '';
         const year = details.ProductionYear || '';
         const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
         const desc = details.Overview || '';
-
-        const overlay = document.createElement('div');
-        overlay.className = 'legitflix-hover-overlay';
 
         // Crunchyroll Structure mimic
         overlay.innerHTML = `
@@ -2251,7 +2304,7 @@ function init() {
             </div>
             
             <div class="hover-footer">
-                 <!-- Native Play Button handles Play -->
+                 <div class="hover-native-btn-slot"></div>
                  <div class="hover-icon-row">
                     <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
                     <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
@@ -2261,14 +2314,29 @@ function init() {
             </div>
         `;
 
-        if (document.body.contains(card)) {
-            // Append to card (outermost) to allow expansion/overflow
-            card.appendChild(overlay);
+        document.body.appendChild(overlay);
+        _activeOverlay = overlay;
 
-            requestAnimationFrame(() => {
-                overlay.classList.add('is-loaded');
-            });
+        // Move Native Play Button
+        const nativeFab = card.querySelector('.cardOverlayFab-primary');
+        if (nativeFab) {
+            _borrowedButton = nativeFab;
+            _originalParent = nativeFab.parentNode;
+
+            // Hijack
+            const slot = overlay.querySelector('.hover-native-btn-slot');
+            slot.appendChild(nativeFab);
+
+            // Reset positioning for slot
+            nativeFab.style.position = 'static';
+            nativeFab.style.bottom = 'auto';
+            nativeFab.style.left = 'auto';
+            nativeFab.style.margin = '0';
         }
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-loaded');
+        });
     }
 
     // Call setup
