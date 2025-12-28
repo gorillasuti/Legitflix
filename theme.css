@@ -1680,11 +1680,32 @@ header,
     transition: transform 0.2s ease-in-out;
 }
 
-.cardScalable {
-    border-radius: var(--rounding);
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    /* Subtle shadow like images */
+
+/* --- FORCE PORTRAIT ASPECT RATIO (150%) --- */
+/* User requested "Tall" 1x2 shape for "Next Up"/"Anime" which default to 2x1 */
+.overflowBackdropCard .cardPadder,
+.cardPadder-overflowBackdrop,
+.cardPadder-backdrop {
+    padding-bottom: 150% !important;
+    /* Standard Poster Ratio (2:3) */
+}
+
+/* Ensure the wide image covers the tall box (Cropped) */
+.overflowBackdropCard .cardImageContainer,
+.cardPadder-overflowBackdrop~.cardImageContainer {
+    background-size: cover !important;
+    background-position: center top !important;
+    /* Focus on faces/top usually better */
+}
+
+/* Enforce Rounding & Styles */
+.cardScalable,
+.overflowBackdropCard .cardScalable,
+.cardImageContainer,
+.cardPadder {
+    border-radius: var(--rounding) !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
     transition: box-shadow 0.2s ease-in-out;
 }
 
@@ -1707,22 +1728,26 @@ header,
 }
 
 .card:focus-within .cardScalable {
-    border: 2px solid var(--clr-accent, #00A4DC);
+    border: 2px solid var(--clr-accent, #00A4DC) !important;
+}
+
+.card:focus-within .cardImageContainer {
+    border: 2px solid var(--clr-accent, #00A4DC) !important;
 }
 
 /* Card Text */
 .cardText {
-    margin-top: 8px;
-    font-weight: 500;
+    margin-top: 2px;
+    font-weight: 400;
     opacity: 0.9;
 }
 
 /* Unread Count Indicator Stylings (To match image 3) */
 .countIndicator,
 .playedIndicator {
-    background: var(--clr-accent, #00A4DC);
+    background: var(--clr-bg-surface);
     box-shadow: none;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     /* Slightly rounded square */
 }
 
@@ -1741,7 +1766,7 @@ header,
    Note: JS is more reliable for text replacement, but CSS can hide/append. 
    We will rely on JS for the text change as requested, but ensure styling here. */
 .sectionTitle {
-    font-weight: 700;
+    font-weight: 400;
     text-transform: capitalize;
     margin-bottom: 0.5em;
 }
