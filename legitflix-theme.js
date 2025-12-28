@@ -2395,29 +2395,9 @@ function init() {
         overlay.className = 'legitflix-hover-overlay'; // Base class
         overlay.dataset.sourceId = id; // Track source
 
-        // Calculate Centered Position relative to Viewport + Scroll
-        // Center logic:
-        // Left = RectLeft + (RectWidth - NewWidth)/2
-        // But we want it centered on the VISUAL card.
-        const leftPos = rect.left + window.scrollX - ((width - rect.width) / 2);
-        // Top: A bit higher to allow expanding down? Or center vertically?
-        // Let's Center Vertically on the original image for now, but allow content to expand down.
-        // Actually, usually hover cards expand OUTWARDS from center.
-        // We will set Top/Left and Width. Height is auto.
+        // Positioning is handled by CSS (top: 0; left: 0; width: 100%; min-height: 100%)
+        // The overlay is appended to the card which has position: relative
 
-        // FIX: Ensure it doesn't go off-screen right/left
-        // (Simple clamp if needed, but centering usually ok)
-
-        overlay.style.width = width + 'px';
-        overlay.style.left = leftPos + 'px';
-
-        // Vertical: Start centered on the card's visual top?
-        // If we want it to cover the card, we match top minus offset.
-        // rect.top + scrollY - (newHeight - oldHeight)/2 is hard since height is auto.
-        // Let's anchor it slightly above the current top to account for scale.
-        // If scale 1.05, we shift up by 2.5% of height.
-        const topOffset = (rect.height * (scale - 1)) / 2;
-        overlay.style.top = (rect.top + window.scrollY - topOffset) + 'px';
         const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
         const year = details.ProductionYear || '';
         const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
