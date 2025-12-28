@@ -1699,6 +1699,42 @@ header,
     transition: transform 0.2s ease-in-out;
 }
 
+/* Reset problematic card margins */
+.cardBox-bottompadded {
+    margin-bottom: 0 !important;
+}
+
+[dir=ltr] .itemsContainer>.card>.cardBox {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* --- SECTION LAYOUT (Grid Spacing) --- */
+/* Horizontal scroll containers */
+.itemsContainer.scrollSlider {
+    white-space: nowrap;
+    will-change: transform;
+    transition: transform 270ms ease-out;
+    display: flex !important;
+    gap: 2rem !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+/* Vertical section containers */
+.verticalSection.emby-scroller-container,
+.verticalSection {
+    display: flex !important;
+    flex-direction: column !important;
+    align-content: flex-start;
+    justify-content: flex-start;
+    flex-wrap: nowrap !important;
+    row-gap: 1rem !important;
+}
+
 
 /* --- TARGETED PORTRAIT ASPECT RATIO ("Mixed Section" Only) --- */
 /* Obsolete: Handled by JS fixMixedCards() in legitflix-theme.js now

@@ -2550,12 +2550,9 @@ function init() {
         // Check/Fav -> Can implement later or leave as no-op for now.
         // For now they just stop propagation so they don't trigger nav.
 
-        // Append to cardScalable for proper positioning
-        const cardScalable = card.querySelector('.cardScalable') || card;
-
-        if (document.body.contains(cardScalable)) {
-            console.log('[LegitFlix] createHoverCard: Appending overlay to cardScalable...');
-            cardScalable.appendChild(overlay);
+        if (document.body.contains(card)) {
+            console.log('[LegitFlix] createHoverCard: Appending overlay to card...');
+            card.appendChild(overlay);
             _activeOverlay = overlay;
             console.log('[LegitFlix] createHoverCard: Overlay appended. In DOM?', document.body.contains(overlay));
 
