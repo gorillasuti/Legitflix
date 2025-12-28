@@ -1914,21 +1914,28 @@ header,
     color: black;
 }
 
-/* --- HOVER CARD OVERLAY (Body Appended) --- */
+/* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
 .legitflix-hover-overlay {
     position: fixed;
     /* JS handles top/left/width */
     z-index: 9999 !important;
     /* Above everything */
 
-    background: #191919;
+    /* Glass Effect */
+    background: rgba(25, 25, 25, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
     color: white;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, transform 0.2s ease;
     padding: 0;
-    border-radius: 6px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+
+    /* Rounding from card */
+    border-radius: var(--rounding, 12px);
+
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     pointer-events: auto;
@@ -1936,6 +1943,9 @@ header,
     transform-origin: center center;
     transform: scale(0.95);
     /* Start slightly smaller for pop effect */
+
+    /* Border stroke for definition */
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Open State */
@@ -1945,20 +1955,23 @@ header,
     transform: scale(1);
 }
 
-/* Content Layout */
+/* Content Layout (5 Rows) */
 .hover-body {
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    /* Use gap for row spacing */
+    gap: 0.25rem;
 }
 
 .hover-title {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
     line-height: 1.2;
     color: #fff;
+    margin-bottom: 0.3rem;
+    /* Extra Gap after title */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -1966,30 +1979,34 @@ header,
     overflow: hidden;
 }
 
-.hover-meta-row {
+/* Rows */
+.hover-row {
+    font-size: 0.8rem;
+    color: #ccc;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.8rem;
-    color: #a0a0a0;
 }
 
 .hover-rating {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    color: #fff;
-    font-weight: 600;
+    font-weight: bold;
+    color: white;
+    gap: 4px;
 }
 
 .hover-rating .star-icon {
     font-size: 14px;
-    color: white;
+    color: #ffd700;
 }
 
-.hover-meta-info {
-    display: flex;
-    gap: 8px;
+.hover-seasons {
+    font-weight: 600;
+    color: #ddd;
+}
+
+.hover-unplayed {
+    color: #f47521;
+    /* Highlight unplayed count */
+    font-weight: 600;
 }
 
 .hover-desc {

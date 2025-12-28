@@ -2183,6 +2183,22 @@ function init() {
             // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
             if (!card || !card.dataset.id) return;
 
+            // --- FILTERING LOGIC ---
+            // 1. Exclude "Categories" (Folders)
+            if (card.dataset.type === 'CollectionFolder' || card.dataset.type === 'UserView') return;
+
+            // 2. Exclude "Continue Watching", "History" (Next Up), "My Media"
+            const section = card.closest('.verticalSection');
+            if (section) {
+                const titleEl = section.querySelector('.sectionTitle');
+                if (titleEl) {
+                    const t = titleEl.innerText.toLowerCase();
+                    if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
+                        return;
+                    }
+                }
+            }
+
             // Avoid re-triggering if already showing or bad target
             if (_activeOverlay && _activeOverlay.dataset.sourceId === card.dataset.id) return;
 
@@ -2192,7 +2208,7 @@ function init() {
             // Set delay (Instant - 50ms to prevent accidental flickers)
             _hoverTimer = setTimeout(() => {
                 createHoverCard(card, card.dataset.id);
-            }, 100);
+            }, 50);
         });
 
         document.body.addEventListener('mouseout', (e) => {
@@ -2282,34 +2298,37 @@ function init() {
         overlay.style.top = `${top}px`;
 
         // Content
-        const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)}` : '';
+        const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
         const year = details.ProductionYear || '';
         const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
+        // Unplayed count for series
+        const unplayed = details.UserData && details.UserData.UnplayedItemCount ? `${details.UserData.UnplayedItemCount} Unplayed` : '';
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
         const desc = details.Overview || '';
 
-        // Crunchyroll Structure mimic
+        // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> Gap -> Buttons
         overlay.innerHTML = `
-            <div class="hover-body">
+            <div class="hover-body" style="height: 100%; display: flex; flex-direction: column;">
                 <h3 class="hover-title">${details.Name}</h3>
-                <div class="hover-meta-row">
-                    ${rating ? `<div class="hover-rating"><span>${rating}</span><span class="material-icons star-icon">star</span></div>` : ''}
-                    <div class="hover-meta-info">
-                        ${seasonCount ? `<span>${seasonCount}</span>` : ''}
-                        ${duration ? `<span>${duration}</span>` : ''}
-                         <span>${year}</span>
-                    </div>
-                </div>
+                
+                <div class="hover-row hover-rating">${rating}</div>
+                
+                ${seasonCount ? `<div class="hover-row hover-seasons">${seasonCount}</div>` : ''}
+                
+                ${unplayed ? `<div class="hover-row hover-unplayed">${unplayed}</div>` : (duration ? `<div class="hover-row">${duration}</div>` : '')}
+                
                 <p class="hover-desc">${desc}</p>
-            </div>
-            
-            <div class="hover-footer">
-                 <div class="hover-native-btn-slot"></div>
-                 <div class="hover-icon-row">
-                    <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
-                    <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
-                    <button class="hover-icon-btn" title="Information" onclick="window.legitFlixShowItem('${id}')"><span class="material-icons">info</span></button>
-                    <button class="hover-icon-btn" title="More"><span class="material-icons">more_vert</span></button>
+                
+                <div class="hover-spacer" style="flex: 1;"></div>
+                
+                <div class="hover-footer">
+                     <div class="hover-native-btn-slot"></div>
+                     <div class="hover-icon-row">
+                        <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
+                        <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
+                        <button class="hover-icon-btn" title="Information" onclick="window.legitFlixShowItem('${id}')"><span class="material-icons">info</span></button>
+                        <button class="hover-icon-btn" title="More"><span class="material-icons">more_vert</span></button>
+                    </div>
                 </div>
             </div>
         `;
@@ -2326,12 +2345,7 @@ function init() {
             // Hijack
             const slot = overlay.querySelector('.hover-native-btn-slot');
             slot.appendChild(nativeFab);
-
-            // Reset positioning for slot
-            nativeFab.style.position = 'static';
-            nativeFab.style.bottom = 'auto';
-            nativeFab.style.left = 'auto';
-            nativeFab.style.margin = '0';
+            // Styling reset handled by CSS under .hover-native-btn-slot
         }
 
         requestAnimationFrame(() => {
