@@ -1915,6 +1915,7 @@ header,
 }
 
 /* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
+/* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
 .legitflix-hover-overlay {
     position: absolute;
     /* Center and Expand */
@@ -1940,8 +1941,9 @@ header,
     transition: opacity 0.2s ease, transform 0.2s ease;
     padding: 0;
 
-    /* Rounding from card */
-    border-radius: var(--rounding, 12px);
+    /* Rounding from card - Enforce overflow to clip content */
+    border-radius: var(--rounding, 10px) !important;
+    overflow: hidden !important;
 
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     display: flex;
@@ -1964,11 +1966,12 @@ header,
 
 /* Content Layout (5 Rows) */
 .hover-body {
-    padding: 1rem;
+    padding: 1.5rem;
+    /* Better Padding (increased from 1rem) */
     display: flex;
     flex-direction: column;
     /* Use gap for row spacing */
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
 .hover-title {
@@ -1981,6 +1984,7 @@ header,
     /* Extra Gap after title */
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    /* Keep title clamped to avoid massive titles */
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -2019,26 +2023,29 @@ header,
 .hover-desc {
     font-size: 0.8rem;
     line-height: 1.4;
-    color: #ccc;
-    margin: 0.5rem 0 0 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    color: #bbb;
+    margin: 0.8rem 0 0 0;
+    /* More space before desc */
+
+    /* NO LINE CLAMP - Full Text */
+    display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    font-weight: 400;
 }
 
 /* Footer & Actions */
 .hover-footer {
     padding: 0.8rem 1rem;
-    background: #232323;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    background: transparent;
+    /* No BG color */
     margin-top: auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* Space native vs icons */
 }
 
 /* Slot for the hijacked Native Button */
@@ -2057,23 +2064,60 @@ header,
     margin: 0 !important;
     transform: none !important;
     /* JS handles this */
+    background: transparent !important;
+    /* Ensure native play is clean if needed, usually it has its own SVG/Icon */
+    box-shadow: none !important;
 }
 
+/* Native Play Button Icon is usually an SVG or Font Icon inside a wrapper. 
+   The wrapper might have the orange color. If user wants the orange play button, we keep it. 
+   If they want NO bg color on the *footer*, we did that. 
+   The play button usually stays orange. */
 .hover-native-btn-slot .cardOverlayFab-primary .material-icons {
     font-size: 3rem !important;
     color: #f47521 !important;
+    /* Orange Play */
     transition: transform 0.2s;
 }
 
 .hover-native-btn-slot .cardOverlayFab-primary:hover .material-icons {
     transform: scale(1.1);
-    color: white !important;
+    color: #ff9b5a !important;
 }
 
 
+/* Custom Action Buttons */
 .hover-icon-row {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+}
+
+.hover-icon-btn {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    /* Subtle ring? Or just transparent? User said "no bg". Let's do Ring for visibility or just icon. */
+    /* Screenshot showed white squares, likely default buttons. Let's make them circle icons. */
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.hover-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    transform: scale(1.1);
+}
+
+.hover-icon-btn .material-icons {
+    font-size: 20px;
 }
 
 /* Reset Card Overflow (No longer needed to be visible, but safe to keep) */
