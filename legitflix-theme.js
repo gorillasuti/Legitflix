@@ -1183,40 +1183,7 @@ window.LegitFlixAvatarPicker = {
             container.insertAdjacentHTML('beforeend', '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#aaa;">(Only showing first 500 results. Use search to filter.)</div>');
         }
 
-        // Dynamic Header Blur Logic
-        function initNavScroll() {
-            const header = document.querySelector('.skinHeader');
-            if (!header) return;
 
-            const onScroll = (e) => {
-                // In SPAs, scroll might be on body, html, or a specific div (.view)
-                // We check the target if available, or fallback to window
-                let scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
-
-                // If event target is a valid element (and not document/window), check its scroll
-                if (e && e.target && e.target.scrollTop !== undefined) {
-                    // Ignore small internal scrolls (like horizontal lists)
-                    // We want the MAIN vertical scroll. Usually body or .page
-                    if (e.target.classList && (e.target.classList.contains('active') || e.target.tagName === 'BODY' || e.target.classList.contains('page'))) {
-                        scrollTop = e.target.scrollTop;
-                    }
-                }
-
-                const threshold = window.innerHeight * 0.1; // 10vh
-
-                if (scrollTop > threshold) {
-                    header.classList.add('legitflix-nav-scrolled');
-                } else {
-                    header.classList.remove('legitflix-nav-scrolled');
-                }
-            };
-
-            // Capture true is crucial for nested scrolling divs
-            window.addEventListener('scroll', onScroll, { capture: true, passive: true });
-            // Run once
-            onScroll({});
-        }
-        initNavScroll();
 
         // Add Selection Logic
         const items = container.querySelectorAll('.lf-picker-item');
