@@ -208,12 +208,17 @@ window.legitFlixPlay = async function (id) {
     if (!window.PlaybackManager && typeof window.require === 'function') {
         try {
             window.require(['playbackManager'], (pm) => {
-                if (pm) window.PlaybackManager = pm;
+                if (pm) {
+                    // Handle ES Modules or Named Exports
+                    if (pm.play) window.PlaybackManager = pm;
+                    else if (pm.default && pm.default.play) window.PlaybackManager = pm.default;
+                    else if (pm.PlaybackManager) window.PlaybackManager = pm.PlaybackManager;
+                }
             });
         } catch (e) { console.warn('Force load failed', e); }
     }
 
-    const waitForGlobals = async (retries = 100, delay = 100) => {
+    const waitForGlobals = async (retries = 150, delay = 100) => {
         for (let i = 0; i < retries; i++) {
             if (window.PlaybackManager && window.ApiClient) return true;
             await new Promise(r => setTimeout(r, delay));
