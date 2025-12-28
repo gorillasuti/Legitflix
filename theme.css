@@ -1949,8 +1949,10 @@ header,
     z-index: 9999 !important;
     /* Above everything */
 
-    /* Glass Effect */
-    background: rgba(25, 25, 25, 0.95);
+    /* Glass Effect - DEBUG: Using red to test visibility */
+    background: red !important;
+    /* TEMP DEBUG - should be rgba(25, 25, 25, 0.95) */
+    backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 

@@ -2190,7 +2190,28 @@ function init() {
 
     // --- HOVER CARD LOGIC (Body Append + Native Button Move) ---
     // Cache for item details to avoid repeated API calls
+    // LIMITED to 50 items to prevent memory leaks
     const _cardCache = new Map();
+    const CACHE_MAX_SIZE = 50;
+
+    function limitCacheSize() {
+        if (_cardCache.size > CACHE_MAX_SIZE) {
+            // Remove oldest entries (first added)
+            const keysToDelete = [];
+            let count = 0;
+            for (const key of _cardCache.keys()) {
+                if (count < _cardCache.size - CACHE_MAX_SIZE) {
+                    keysToDelete.push(key);
+                    count++;
+                } else {
+                    break;
+                }
+            }
+            keysToDelete.forEach(k => _cardCache.delete(k));
+            console.log('[LegitFlix] Cache pruned:', keysToDelete.length, 'items');
+        }
+    }
+
     let _hoverTimer = null;
     let _activeOverlay = null;
     let _borrowedButton = null; // Track moved button
@@ -2336,6 +2357,7 @@ function init() {
                 const res = await fetch(`${auth.server || ''}/Users/${userId}/Items/${id}`, { headers });
                 details = await res.json();
                 _cardCache.set(id, details);
+                limitCacheSize(); // Prevent memory leak
                 console.log('[LegitFlix] createHoverCard: Got details', details.Name);
             } catch (e) {
                 console.error('[LegitFlix] createHoverCard: Fetch error', e);
