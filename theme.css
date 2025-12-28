@@ -1732,7 +1732,13 @@ header,
     align-content: flex-start;
     justify-content: flex-start;
     flex-wrap: nowrap !important;
-    row-gap: 1rem !important;
+    row-gap: 2rem !important;
+}
+
+/* Hide empty sections (no cards inside) */
+.verticalSection:has(.itemsContainer:empty),
+.verticalSection:has(.scrollSlider:empty) {
+    display: none !important;
 }
 
 
