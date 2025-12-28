@@ -1941,18 +1941,16 @@ header,
 /* --- HOVER CARD OVERLAY (Glass + 5 Rows) --- */
 .legitflix-hover-overlay {
     position: absolute;
-    /* Cover the card - position set by JS */
-    top: 0;
-    left: 0;
-    width: 100%;
-    min-height: 100%;
+    /* Center over the card with slight scale */
+    top: -5%;
+    left: -2.5%;
+    width: 105%;
+    min-height: 105%;
     z-index: 9999 !important;
     /* Above everything */
 
-    /* Glass Effect - DEBUG: Using red to test visibility */
-    background: red !important;
-    /* TEMP DEBUG - should be rgba(25, 25, 25, 0.95) */
-    backdrop-filter: blur(12px);
+    /* Glass Effect */
+    background: rgba(25, 25, 25, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 
