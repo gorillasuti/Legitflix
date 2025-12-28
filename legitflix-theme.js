@@ -2028,6 +2028,7 @@ function init() {
     fixMixedCards();
     // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
     let _promoInjectionInProgress = false; // Guard for race conditions
+    let _injectedBanner = false; // Track if banner already injected
 
     async function injectPromoBanner() {
         if (_promoInjectionInProgress || _injectedBanner) return;
@@ -2160,6 +2161,7 @@ function init() {
             historySection.insertAdjacentHTML('afterend', html);
             console.log('[LegitFlix] Promo Banner Injected Successfully');
             // Done!
+            _injectedBanner = true; // Mark as injected
             _promoInjectionInProgress = false; // Reset after successful injection
 
         } catch (e) {
