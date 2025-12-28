@@ -200,11 +200,20 @@ window.legitFlixShowItem = function (itemId) {
     window.top.location.href = `/#!/details?id=${itemId}`;
 };
 
-// --- PLAYBACK HELPER (Retry Logic) ---
+// --- PLAYBACK HELPER (Retry Logic & Force Load) ---
 window.legitFlixPlay = async function (id) {
     logger.log('legitFlixPlay: Clicked', id);
 
-    const waitForGlobals = async (retries = 10, delay = 200) => {
+    // Attempt to force load if missing (Jellyfin 10.8+ via require)
+    if (!window.PlaybackManager && typeof window.require === 'function') {
+        try {
+            window.require(['playbackManager'], (pm) => {
+                if (pm) window.PlaybackManager = pm;
+            });
+        } catch (e) { console.warn('Force load failed', e); }
+    }
+
+    const waitForGlobals = async (retries = 20, delay = 100) => {
         for (let i = 0; i < retries; i++) {
             if (window.PlaybackManager && window.ApiClient) return true;
             await new Promise(r => setTimeout(r, delay));
@@ -213,10 +222,10 @@ window.legitFlixPlay = async function (id) {
     };
 
     if (!window.PlaybackManager || !window.ApiClient) {
-        logger.warn('legitFlixPlay: Globals not ready, waiting...');
+        // Silent wait, just log
         const ready = await waitForGlobals();
         if (!ready) {
-            alert("Jellyfin is still loading components. Please try again in moment.");
+            console.error('[LegitFlix] PlaybackManager not ready after wait. Play request aborted.');
             return;
         }
     }
@@ -236,7 +245,6 @@ window.legitFlixPlay = async function (id) {
         });
     } catch (error) {
         logger.error('legitFlixPlay: Failed', error);
-        alert("Playback failed. See console.");
     }
 };
 
@@ -1616,6 +1624,9 @@ async function injectCustomNav() {
                 document.querySelector('.legit-nav-drawer')?.classList.remove('open');
             };
             drawer.appendChild(clone);
+
+            // Remove original button since we cloned it
+            if (btn.parentNode) btn.parentNode.removeChild(btn);
         } else {
             drawer.appendChild(btn);
         }

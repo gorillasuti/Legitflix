@@ -803,7 +803,7 @@ h4,
 
 /* Nav Links Container */
 .legit-nav-links {
-    display: flex;
+    display: none;
     gap: 6px;
     align-items: center;
 }
