@@ -1732,7 +1732,7 @@ header,
     align-content: flex-start;
     justify-content: flex-start;
     flex-wrap: nowrap !important;
-    row-gap: 2rem !important;
+    row-gap: 0.75rem !important;
 }
 
 /* Hide empty sections (no cards inside) */
@@ -1797,6 +1797,7 @@ header,
 /* Unread Count Indicator Stylings (To match image 3) */
 .countIndicator,
 .playedIndicator {
+    display: none !important;
     background: var(--clr-bg-surface);
     box-shadow: none;
     border-radius: var(--radius-pill);
