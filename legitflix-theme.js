@@ -2109,8 +2109,8 @@ function init() {
 
             // Helpers for images
             const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
-            // Switch to Primary for sub-items
-            const getPoster = (item) => `/Items/${item.Id}/Images/Primary/0?maxWidth=800`;
+            // Revert to Thumb for sub-items
+            const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
             const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
 
             const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
@@ -2137,7 +2137,7 @@ function init() {
                                  <p class="desc">${item2.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getPoster(item2)}" class="promo-poster">
+                             <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}'">
                          </div>
                     </div>
                     <!-- Item 3 -->
@@ -2149,7 +2149,7 @@ function init() {
                                  <p class="desc">${item3.Overview || ''}</p>
                                  <button class="btn-orange">START WATCHING</button>
                              </div>
-                             <img src="${getPoster(item3)}" class="promo-poster">
+                             <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}'">
                          </div>
                     </div>
                 </div>
@@ -2245,10 +2245,9 @@ function init() {
             </div>
             <p class="hover-desc">${desc}</p>
             
+            
             <div class="hover-actions-container">
-                <button class="hover-play-btn" onclick="window.legitFlixShowItem('${id}')">
-                    <span class="material-icons">play_arrow</span> PLAY
-                </button>
+                <!-- Native Play Button acts as Primary now (positioned via CSS) -->
                 <div class="hover-icon-row">
                     <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
                     <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
