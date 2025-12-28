@@ -2186,69 +2186,73 @@ function init() {
             // Clear any pending timer
             if (_hoverTimer) clearTimeout(_hoverTimer);
 
-            // Set delay (e.g. 600ms)
+            // Set delay (Instant - 50ms to prevent accidental flickers)
             _hoverTimer = setTimeout(() => {
                 showHoverCard(card, card.dataset.id);
-            }, 600);
+            }, 50);
         });
 
         document.body.addEventListener('mouseout', (e) => {
             const card = e.target.closest('.card');
             if (card) {
                 if (_hoverTimer) clearTimeout(_hoverTimer);
-                // Optional: Remove overlay immediately or let CSS transition handle it?
-                // If we remove strictly, we save DOM. 
-                // Current CSS uses opacity transition on .is-loaded class.
-                // We can simply verify it triggers.
+                // We rely on CSS pointer-events to handle mouseout from overlay?
+                // Actually, if we make overlay bigger, mouse is still inside.
+                // But if we leave card area completely:
+                const overlay = card.querySelector('.legitflix-hover-overlay');
+                if (overlay) {
+                    overlay.classList.remove('is-loaded');
+                    setTimeout(() => overlay.remove(), 200); // Cleanup after fade
+                }
+                // If we strictly follow 'mouseout' bubble, entering child triggers mouseout.
+                // e.relatedTarget check needed.
             }
         });
     }
 
     async function showHoverCard(card, id) {
-        if (card.querySelector('.legitflix-hover-overlay')) return; // Check again
+        if (card.querySelector('.legitflix-hover-overlay')) return;
 
         let details = _cardCache.get(id);
         if (!details) {
-            // Fetch
             try {
                 const auth = await getAuth();
                 if (!auth) return;
                 const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
-                // Fetch details: Overview, CommunityRating, RunTime, ProductionYear, ChildCount
                 const res = await fetch(`/Users/${auth.UserId}/Items/${id}`, { headers });
                 details = await res.json();
                 _cardCache.set(id, details);
-            } catch (e) {
-                console.error('[LegitFlix] Hover fetch error:', e);
-                return;
-            }
+            } catch (e) { return; }
         }
-
         if (!details) return;
 
-        // Build HTML
-        const rating = details.CommunityRating ? `⭐ ${details.CommunityRating.toFixed(1)}` : '';
+        const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)}` : '';
         const year = details.ProductionYear || '';
-        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : (details.ChildCount ? details.ChildCount + ' S' : ''); // Approx
+        const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
+        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
         const desc = details.Overview || '';
 
         const overlay = document.createElement('div');
         overlay.className = 'legitflix-hover-overlay';
 
-        // Icons: Play, Check, Favorite, Info, More
+        // Crunchyroll Structure mimic
         overlay.innerHTML = `
-            <h3 class="hover-title">${details.Name}</h3>
-            <div class="hover-meta">
-                ${rating ? `<span class="star-rating">${rating}</span>` : ''}
-                <span>${year}</span>
-                <span>${duration}</span>
+            <div class="hover-body">
+                <h3 class="hover-title">${details.Name}</h3>
+                <div class="hover-meta-row">
+                    ${rating ? `<div class="hover-rating"><span>${rating}</span><span class="material-icons star-icon">star</span></div>` : ''}
+                    <div class="hover-meta-info">
+                        ${seasonCount ? `<span>${seasonCount}</span>` : ''}
+                        ${duration ? `<span>${duration}</span>` : ''}
+                         <span>${year}</span>
+                    </div>
+                </div>
+                <p class="hover-desc">${desc}</p>
             </div>
-            <p class="hover-desc">${desc}</p>
             
-            
-            <div class="hover-actions-container">
-                <!-- Native Play Button acts as Primary now (positioned via CSS) -->
-                <div class="hover-icon-row">
+            <div class="hover-footer">
+                 <!-- Native Play Button handles Play -->
+                 <div class="hover-icon-row">
                     <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
                     <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
                     <button class="hover-icon-btn" title="Information" onclick="window.legitFlixShowItem('${id}')"><span class="material-icons">info</span></button>
@@ -2257,22 +2261,10 @@ function init() {
             </div>
         `;
 
-        // Check if card still exists and hovered? 
-        // We append. CSS handles opacity.
-        // We need to ensure the card didn't disappear (e.g. scroll).
         if (document.body.contains(card)) {
-            // Append to card's image container or scalable part if possible, 
-            // but standard 'card' is safest container.
-            // We might need relative positioning on card.
-            // .cardBox usually has position relative?
-            const container = card.querySelector('.cardBox') || card;
-            // Force relative if needed?
-            // container.style.position = 'relative'; // Might break layout?
-            // theme.css usually handles .cardBox relative.
+            // Append to card (outermost) to allow expansion/overflow
+            card.appendChild(overlay);
 
-            container.appendChild(overlay);
-
-            // Trigger reflow/anim
             requestAnimationFrame(() => {
                 overlay.classList.add('is-loaded');
             });
