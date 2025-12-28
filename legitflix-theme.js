@@ -2292,29 +2292,53 @@ function init() {
     }
 
     async function createHoverCard(card, id) {
+        console.log('[LegitFlix] createHoverCard: Starting for', id);
+
         // PRE-FETCH CHECK: If no longer hovering, abort immediately
-        if (!card.matches(':hover')) return;
+        if (!card.matches(':hover')) {
+            console.log('[LegitFlix] createHoverCard: Aborted (not hovering)');
+            return;
+        }
 
         closeHoverCard(); // Close existing
 
         let details = _cardCache.get(id);
         if (!details) {
+            console.log('[LegitFlix] createHoverCard: Fetching details from API...');
             try {
                 const auth = await getAuth();
-                if (!auth) return;
+                if (!auth) {
+                    console.log('[LegitFlix] createHoverCard: No auth, aborting');
+                    return;
+                }
                 const headers = { 'X-Emby-Token': auth.AccessToken || auth.token, 'Accept': 'application/json' };
                 // Use auth.user or auth.UserId if getAuth returns differently depending on version
                 const userId = auth.UserId || auth.user;
+                console.log('[LegitFlix] createHoverCard: Fetching /Users/' + userId + '/Items/' + id);
                 const res = await fetch(`${auth.server || ''}/Users/${userId}/Items/${id}`, { headers });
                 details = await res.json();
                 _cardCache.set(id, details);
-            } catch (e) { return; }
+                console.log('[LegitFlix] createHoverCard: Got details', details.Name);
+            } catch (e) {
+                console.error('[LegitFlix] createHoverCard: Fetch error', e);
+                return;
+            }
+        } else {
+            console.log('[LegitFlix] createHoverCard: Using cached details for', details.Name);
         }
 
         // POST-FETCH CHECK: Critical check to prevent "stuck" card if mouse left during await
-        if (!card.matches(':hover')) return;
+        if (!card.matches(':hover')) {
+            console.log('[LegitFlix] createHoverCard: Aborted after fetch (not hovering)');
+            return;
+        }
 
-        if (!details) return;
+        if (!details) {
+            console.log('[LegitFlix] createHoverCard: No details, aborting');
+            return;
+        }
+
+        console.log('[LegitFlix] createHoverCard: Building overlay...');
 
         // Position Logic
         // Use .cardBox for visual alignment (ignores outer padding/margins of .card)
