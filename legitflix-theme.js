@@ -87,10 +87,20 @@ async function fetchUserViews() {
 // theme context. The current solution (V6) uses a workaround:
 // -> Navigates to details page -> Auto-clicks the native Play button.
 // =========================================================================
-async function fetchMediaBarItems() {
+async function fetchMediaBarItems(retryCount = 0) {
     logger.log('fetchMediaBarItems: Fetching hero content...');
     const auth = await getAuth();
-    if (!auth) return [];
+
+    // Verify we have valid auth with access token
+    if (!auth || !auth.AccessToken || !auth.UserId) {
+        if (retryCount < 5) {
+            logger.log('fetchMediaBarItems: Auth not ready, retrying in 1s...');
+            await new Promise(r => setTimeout(r, 1000));
+            return fetchMediaBarItems(retryCount + 1);
+        }
+        logger.error('fetchMediaBarItems: Auth failed after retries');
+        return [];
+    }
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
     const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
@@ -99,12 +109,28 @@ async function fetchMediaBarItems() {
         const response = await fetch(url, {
             headers: { 'X-Emby-Token': auth.AccessToken }
         });
+
+        // Check for auth errors
+        if (response.status === 401 || response.status === 403) {
+            if (retryCount < 5) {
+                logger.log('fetchMediaBarItems: Auth error ' + response.status + ', retrying...');
+                await new Promise(r => setTimeout(r, 1000));
+                return fetchMediaBarItems(retryCount + 1);
+            }
+            logger.error('fetchMediaBarItems: Auth failed with ' + response.status);
+            return [];
+        }
+
         const data = await response.json();
         const allItems = data.Items || [];
         logger.log('fetchMediaBarItems: Downloaded items', allItems.length);
         return shuffleArray(allItems);
     } catch (error) {
         logger.error('fetchMediaBarItems: API Error', error);
+        if (retryCount < 3) {
+            await new Promise(r => setTimeout(r, 1000));
+            return fetchMediaBarItems(retryCount + 1);
+        }
         return [];
     }
 }

@@ -1733,6 +1733,7 @@ header,
     justify-content: flex-start;
     flex-wrap: nowrap !important;
     row-gap: 0.75rem !important;
+    margin-bottom: 2rem !important;
 }
 
 /* Hide empty sections (no cards inside) */
