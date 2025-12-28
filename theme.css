@@ -2159,10 +2159,18 @@ header,
 /* Reset Card Overflow (Allow expansion for overlay) */
 .card,
 .cardBox,
-.cardScalable {
+.cardScalable,
+.scrollSlider,
+.itemsContainer,
+.verticalSection {
     overflow: visible !important;
     contain: none !important;
     /* Ensure painting doesn't clip */
+}
+
+.card,
+.cardBox,
+.cardScalable {
     position: relative !important;
     /* Ensure absolute overlay is relative to CARD, not body */
 }
