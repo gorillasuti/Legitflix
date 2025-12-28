@@ -1990,7 +1990,8 @@ const legitFlixPlayRemote = async function (id) {
 
             if (mySession) {
                 logger.log('legitFlixPlay: Found local session', mySession.Id);
-                const url = client.getUrl(`/Sessions/${mySession.Id}/Command/Play`);
+                // Correct Endpoint for Playback: /Sessions/{Id}/Playing
+                const url = client.getUrl(`/Sessions/${mySession.Id}/Playing`);
                 await client.ajax({
                     type: 'POST',
                     url: url,
