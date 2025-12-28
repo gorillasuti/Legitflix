@@ -1981,15 +1981,23 @@ function init() {
             const imgContainer = card.querySelector('.cardImageContainer');
             if (imgContainer) {
                 const style = imgContainer.getAttribute('style') || '';
-                // Only replace if it contains Images/Thumb
-                if (style.includes('Images/Thumb')) {
-                    // Use standard regex to be safe
-                    const newStyle = style.replace(/Images\/Thumb/g, 'Images/Primary');
-                    imgContainer.setAttribute('style', newStyle);
+                // Improved Lazy-Loader Fighting Logic
+                const swapImage = () => {
+                    const s = imgContainer.getAttribute('style') || '';
+                    if (s.includes('Images/Thumb')) {
+                        // Replace Thumb with Primary
+                        const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
+                        if (s !== ns) imgContainer.setAttribute('style', ns);
+                    }
+                };
 
-                    // Also update dimensions in URL if present (fillWidth/fillHeight)
-                    // Thumb usually asks for ~300x170, Primary needs ~200x300
-                    // We let Jellyfin handle basic resizing but the tag swap is key.
+                // Run immediately
+                swapImage();
+
+                // Observe for lazy loader changes
+                if (!imgContainer._observerAttached) {
+                    new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
+                    imgContainer._observerAttached = true;
                 }
             }
         });
