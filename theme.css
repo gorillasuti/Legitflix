@@ -1006,9 +1006,7 @@ header,
 
 /* =========== CONTEXT POPUP / ACTION SHEET (Match Nav Drawer Style) =========== */
 .actionSheet.centeredDialog {
-    background: rgba(20, 20, 20, 100) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    background: rgba(20, 20, 20, 1) !important;
     border-radius: var(--radius-md) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
@@ -1017,13 +1015,12 @@ header,
 }
 
 .actionSheetContent {
-    max-width: 280px;
+    max-width: 260px;
     min-width: 220px;
     background: transparent !important;
 }
 
 .actionSheetScroller {
-    padding: 4px !important;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1033,8 +1030,8 @@ header,
 .actionSheetMenuItem {
     width: 100% !important;
     margin: 0 !important;
-    padding: 10px 14px !important;
-    border-radius: 8px !important;
+    padding: 6px !important;
+    border-radius: var(--radius-sm) !important;
     background: transparent !important;
     transition: all 0.2s ease !important;
     display: flex !important;
@@ -1080,6 +1077,734 @@ header,
     height: 1px !important;
     background: rgba(255, 255, 255, 0.08) !important;
     margin: 6px 0 !important;
+}
+
+/* =========== MULTI-SELECT MODE STYLING =========== */
+
+/* Selection Commands Panel (Top bar when items selected) */
+.selectionCommandsPanel {
+    background: rgba(20, 20, 20, 0.98) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 16px !important;
+    gap: 12px !important;
+}
+
+.selectionCommandsPanel .itemSelectionCount {
+    color: var(--clr-accent) !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin: 0 auto !important;
+}
+
+.selectionCommandsPanel button {
+    background: transparent !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.selectionCommandsPanel button:hover {
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.selectionCommandsPanel button:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+/* Multi-Select Checkbox Styling */
+.multiSelectCheckboxOutline {
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: var(--radius-sm) !important;
+    background: rgba(20, 20, 20, 0.9) !important;
+    transition: all 0.2s ease !important;
+}
+
+.emby-checkbox:checked+.checkboxLabel+.multiSelectCheckboxOutline,
+.chkItemSelect:checked+.checkboxLabel+.multiSelectCheckboxOutline {
+    background: var(--clr-accent) !important;
+    border-color: var(--clr-accent) !important;
+}
+
+.multiSelectCheckboxOutline .checkboxIcon-checked {
+    color: white !important;
+}
+
+.multiSelectCheckboxOutline .checkboxIcon-unchecked {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Checkbox container positioning */
+.checkboxContainer.emby-checkbox-label {
+    z-index: 100 !important;
+}
+
+/* =========== FORM DIALOG STYLING (Add to Collection, etc.) =========== */
+
+/* Dialog Container */
+.formDialog {
+    background: rgba(20, 20, 20, 1) !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    overflow: hidden !important;
+}
+
+/* Dialog Header */
+.formDialogHeader {
+    background: rgba(30, 30, 30, 1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 12px 16px !important;
+}
+
+.formDialogHeaderTitle {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+}
+
+.formDialogHeader .btnCancel {
+    background: transparent !important;
+    border-radius: var(--radius-sm) !important;
+    transition: all 0.2s ease !important;
+}
+
+.formDialogHeader .btnCancel:hover {
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.formDialogHeader .btnCancel:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+/* Dialog Content */
+.formDialogContent {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dialogContentInner {
+    padding: 16px !important;
+}
+
+/* Form Inputs */
+.formDialog .inputContainer,
+.formDialog .selectContainer {
+    margin-bottom: 16px !important;
+}
+
+.formDialog .emby-input,
+.formDialog .emby-select {
+    background: rgba(40, 40, 40, 1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm) !important;
+    color: white !important;
+    padding: 12px !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.formDialog .emby-input:focus,
+.formDialog .emby-select:focus {
+    border-color: var(--clr-accent) !important;
+    outline: none !important;
+}
+
+.formDialog .inputLabel,
+.formDialog .selectLabel {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.formDialog .fieldDescription {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem !important;
+}
+
+/* Form Checkboxes */
+.formDialog .checkboxOutline {
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: var(--radius-sm) !important;
+    background: rgba(40, 40, 40, 1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.formDialog .emby-checkbox:checked+.checkboxLabel+.checkboxOutline {
+    background: var(--clr-accent) !important;
+    border-color: var(--clr-accent) !important;
+}
+
+.formDialog .checkboxLabel {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Form Footer */
+.formDialogFooter {
+    padding: 16px !important;
+    background: transparent !important;
+}
+
+/* Primary Button (Submit/OK) */
+.formDialog .button-submit,
+.formDialog .btnSubmit,
+.formDialog .raised.button-submit {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+    text-transform: none !important;
+}
+
+.formDialog .button-submit:hover,
+.formDialog .btnSubmit:hover {
+    background: var(--clr-accent-hover) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(255, 106, 0, 0.3) !important;
+}
+
+/* Secondary Button (Cancel) */
+.formDialog .button-cancel,
+.formDialog .btnCancel:not(.autoSize) {
+    background: rgba(60, 60, 60, 1) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 24px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.formDialog .button-cancel:hover {
+    background: rgba(80, 80, 80, 1) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Destructive/Delete Button (Danger) */
+.formDialog .button-delete,
+.formDialog .btnDelete,
+.button-delete {
+    background: #dc3545 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+    text-transform: none !important;
+}
+
+.formDialog .button-delete:hover,
+.formDialog .btnDelete:hover,
+.button-delete:hover {
+    background: #c82333 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* Dialog footer flex layout */
+.formDialogFooter-flex {
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: center !important;
+}
+
+.formDialogFooter-flex .btnOption {
+    min-width: 100px !important;
+}
+
+/* Reset Button (Secondary variant) */
+.formDialog .button-reset,
+.formDialog .btnReset {
+    background: rgba(60, 60, 60, 1) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 24px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.formDialog .button-reset:hover,
+.formDialog .btnReset:hover {
+    background: rgba(80, 80, 80, 1) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Textarea styling */
+.formDialog .emby-textarea,
+.emby-textarea {
+    background: rgba(40, 40, 40, 1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm) !important;
+    color: white !important;
+    padding: 12px !important;
+    transition: border-color 0.2s ease !important;
+    resize: vertical !important;
+}
+
+.formDialog .emby-textarea:focus {
+    border-color: var(--clr-accent) !important;
+    outline: none !important;
+}
+
+.formDialog .textareaLabel {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Paper List items (Genres, People, Studios, Tags) */
+.formDialog .paperList,
+.paperList {
+    background: rgba(30, 30, 30, 1) !important;
+    border-radius: var(--radius-sm) !important;
+    overflow: hidden !important;
+}
+
+.formDialog .paperList .listItem,
+.paperList .listItem {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background 0.2s ease !important;
+}
+
+.formDialog .paperList .listItem:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.formDialog .paperList .listItem:last-child {
+    border-bottom: none !important;
+}
+
+.formDialog .paperList .listItemIcon {
+    background: rgba(60, 60, 60, 1) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.formDialog .paperList .listItemBody .textValue,
+.formDialog .paperList .listItemBody .secondary {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.formDialog .paperList .listItemBody .secondary {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem !important;
+}
+
+/* Delete buttons in lists */
+.formDialog .btnRemoveFromEditorList,
+.formDialog .btnDeletePerson {
+    transition: all 0.2s ease !important;
+}
+
+.formDialog .btnRemoveFromEditorList:hover,
+.formDialog .btnDeletePerson:hover {
+    background: rgba(220, 53, 69, 0.15) !important;
+}
+
+.formDialog .btnRemoveFromEditorList:hover .material-icons,
+.formDialog .btnDeletePerson:hover .material-icons {
+    color: #dc3545 !important;
+}
+
+/* FAB Add buttons */
+.formDialog .fab,
+.fab.btnAddTextItem,
+.fab.btnAddPerson {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    transition: all 0.2s ease !important;
+}
+
+.formDialog .fab:hover {
+    background: var(--clr-accent-hover) !important;
+    transform: scale(1.1) !important;
+}
+
+/* Detail section headers */
+.formDialog .detailSection h2,
+.formDialog h2 {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 12px !important;
+}
+
+/* Provider settings container */
+.formDialog .providerSettingsContainer {
+    background: rgba(30, 30, 30, 1) !important;
+    padding: 16px !important;
+    border-radius: var(--radius-sm) !important;
+    margin-top: 12px !important;
+}
+
+.formDialog .providerSettingsContainer h2 {
+    font-size: 1rem !important;
+    margin-bottom: 8px !important;
+}
+
+.formDialog .providerSettingsContainer p {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 12px !important;
+}
+
+/* =========== IMAGE EDITOR DIALOGS =========== */
+
+/* Image editor buttons header */
+.imageEditor-buttons {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+}
+
+.imageEditor-buttons h2 {
+    margin: 0 !important;
+    flex: 1 !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* FAB mini buttons */
+.fab.mini,
+.btnBrowseAllImages,
+.btnOpenUploadMenu {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    transition: all 0.2s ease !important;
+}
+
+.fab.mini:hover {
+    background: var(--clr-accent-hover) !important;
+    transform: scale(1.1) !important;
+}
+
+/* Image editor cards */
+.imageEditorCard .visualCardBox {
+    background: rgba(30, 30, 30, 1) !important;
+    border-radius: var(--radius-sm) !important;
+    overflow: hidden !important;
+}
+
+.imageEditorCard .cardFooter {
+    background: rgba(30, 30, 30, 1) !important;
+    padding: 10px !important;
+}
+
+.imageEditorCard .cardText {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.imageEditorCard .cardText-secondary {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.8rem !important;
+}
+
+/* Image action buttons (search, delete, move) */
+.imageEditorCard .btnSearchImages,
+.imageEditorCard .btnDeleteImage,
+.imageEditorCard .btnMoveImage,
+.imageEditorCard .btnDownloadRemoteImage {
+    transition: all 0.2s ease !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.imageEditorCard .btnSearchImages:hover {
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.imageEditorCard .btnSearchImages:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+.imageEditorCard .btnDeleteImage:hover {
+    background: rgba(220, 53, 69, 0.15) !important;
+}
+
+.imageEditorCard .btnDeleteImage:hover .material-icons {
+    color: #dc3545 !important;
+}
+
+/* Download button - accent style */
+.btnDownloadRemoteImage {
+    transition: all 0.2s ease !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.btnDownloadRemoteImage:hover {
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.btnDownloadRemoteImage:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+/* Browse button */
+.btnBrowse {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease !important;
+    gap: 8px !important;
+}
+
+.btnBrowse:hover {
+    background: var(--clr-accent-hover) !important;
+}
+
+/* Drop zone styling */
+.imageEditor-dropZone {
+    background: rgba(40, 40, 40, 1) !important;
+    border: 2px dashed rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-md) !important;
+    min-height: 200px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.imageEditor-dropZone:hover {
+    border-color: var(--clr-accent) !important;
+    background: rgba(255, 106, 0, 0.05) !important;
+}
+
+.imageEditor-dropZone #dropImageText {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.95rem !important;
+}
+
+/* Paging info */
+.availableImagesPaging,
+.listPaging {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 0.85rem !important;
+}
+
+/* =========== SUBTITLE EDITOR DIALOG =========== */
+
+/* Subtitle list */
+.subtitleList {
+    background: rgba(30, 30, 30, 1) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 16px !important;
+    margin-bottom: 24px !important;
+}
+
+.subtitleList h2 {
+    color: white !important;
+    font-weight: 600 !important;
+    margin-bottom: 12px !important;
+}
+
+.subtitleList .listItem {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 8px 0 !important;
+}
+
+.subtitleList .listItem:last-child {
+    border-bottom: none !important;
+}
+
+.subtitleList .listItemIcon {
+    color: var(--clr-accent) !important;
+}
+
+.subtitleList .listItemBody div {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Original file path info */
+.originalFile {
+    background: rgba(40, 40, 40, 1) !important;
+    padding: 12px 16px !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.originalSubtitleFileLabel {
+    color: rgba(255, 255, 255, 0.5) !important;
+    margin-right: 8px !important;
+}
+
+.pathValue {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-family: monospace !important;
+    font-size: 0.85rem !important;
+    word-break: break-all !important;
+}
+
+/* Search subtitle button */
+.btnSearchSubtitles {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    transition: all 0.2s ease !important;
+}
+
+.btnSearchSubtitles:hover {
+    background: var(--clr-accent-hover) !important;
+    transform: scale(1.1) !important;
+}
+
+/* No results message */
+.noSearchResults {
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-align: center !important;
+    padding: 24px !important;
+    font-style: italic !important;
+}
+
+/* =========== IDENTIFY DIALOG =========== */
+
+.identifyDialog .fldPath {
+    background: rgba(40, 40, 40, 1) !important;
+    padding: 12px 16px !important;
+    border-radius: var(--radius-sm) !important;
+    margin-bottom: 16px !important;
+}
+
+.identifyDialog .fldPath>div:first-child {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 4px !important;
+}
+
+.identifyDialog .txtPath {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-family: monospace !important;
+    font-size: 0.8rem !important;
+    word-break: break-all !important;
+}
+
+/* Provider IDs section */
+.identifyProviderIds {
+    background: rgba(30, 30, 30, 1) !important;
+    padding: 16px !important;
+    border-radius: var(--radius-sm) !important;
+    margin: 16px 0 !important;
+}
+
+/* Search results */
+.identificationSearchResults h1 {
+    color: white !important;
+    font-weight: 600 !important;
+    margin-bottom: 16px !important;
+}
+
+.identificationSearchResultList {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+}
+
+/* Help link button */
+.btnHelp {
+    color: rgba(255, 255, 255, 0.6) !important;
+    transition: color 0.2s ease !important;
+}
+
+.btnHelp:hover {
+    color: var(--clr-accent) !important;
+}
+
+/* =========== MEDIA INFO DIALOG =========== */
+
+.mediaInfoContent {
+    background: transparent !important;
+}
+
+.mediaInfoSource {
+    background: rgba(30, 30, 30, 1) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+}
+
+.mediaInfoStream {
+    background: rgba(30, 30, 30, 1) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 16px !important;
+    margin-top: 12px !important;
+    border-left: 3px solid var(--clr-accent) !important;
+}
+
+.mediaInfoStreamType {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    margin: 0 0 12px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.mediaInfoLabel {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem !important;
+    min-width: 120px !important;
+    display: inline-block !important;
+}
+
+.mediaInfoAttribute {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-family: monospace !important;
+    font-size: 0.85rem !important;
+}
+
+/* Copy button */
+.btnCopy {
+    opacity: 0.5 !important;
+    transition: all 0.2s ease !important;
+    padding: 4px !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.btnCopy:hover {
+    opacity: 1 !important;
+    background: rgba(255, 106, 0, 0.15) !important;
+}
+
+.btnCopy:hover .material-icons {
+    color: var(--clr-accent) !important;
+}
+
+/* =========== TOAST NOTIFICATIONS =========== */
+.toastContainer {
+    z-index: 99999 !important;
+}
+
+.toast {
+    background: rgba(30, 30, 30, 0.98) !important;
+    color: white !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    padding: 14px 20px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
 }
 
 /* =========================================================================
@@ -1958,10 +2683,10 @@ header,
 }
 
 .promo-poster {
-    width: 40%;
+    width: 45%;
     object-fit: cover;
-    mask-image: linear-gradient(to left, black 80%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to left, black 80%, transparent 100%);
+    mask-image: linear-gradient(to left, black 0%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to left, black 0%, transparent 100%);
 }
 
 /* Backgrounds & Images */
