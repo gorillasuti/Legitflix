@@ -2019,4 +2019,72 @@ const legitFlixPlayRemote = async function (id) {
 // Override the previous definition
 window.legitFlixPlay = legitFlixPlayRemote;
 
+
+// --- API REMOTE PLAYBACK (Override v3 - PlayMediaSource) ---
+const legitFlixPlayRemoteV3 = async function (id) {
+    logger.log('legitFlixPlay (Remote v3): Clicked', id);
+    const client = window.ApiClient;
+
+    // 1. Try Standard PlaybackManager (if available)
+    if (window.PlaybackManager && window.PlaybackManager.play) {
+        try {
+            logger.log('legitFlixPlay: Using PlaybackManager');
+            const item = await client.getItem(client.getCurrentUserId(), id);
+            window.PlaybackManager.play({
+                items: [item],
+                startPositionTicks: 0,
+                isMuted: false,
+                isPaused: false,
+                serverId: client.serverId()
+            });
+            return;
+        } catch (e) { console.error('Standard play failed', e); }
+    }
+
+    // 2. Fallback: API "Remote" Control (PlayMediaSource)
+    if (client) {
+        logger.log('legitFlixPlay: Attempting API Control (PlayMediaSource)...');
+        try {
+            const deviceId = client.deviceId();
+            const sessions = await client.getSessions();
+            const mySession = sessions.find(s => s.DeviceId === deviceId);
+
+            if (mySession) {
+                logger.log('legitFlixPlay: Found local session', mySession.Id);
+
+                // Fetch item to get MediaSourceId
+                const item = await client.getItem(client.getCurrentUserId(), id);
+                const mediaSourceId = item.MediaSources && item.MediaSources[0] ? item.MediaSources[0].Id : id;
+
+                // Use 'PlayMediaSource' which is supported by the client general command listener
+                const url = client.getUrl(`/Sessions/${mySession.Id}/Command/PlayMediaSource`);
+                await client.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: JSON.stringify({
+                        ItemId: id,
+                        MediaSourceId: mediaSourceId,
+                        StartPositionTicks: 0,
+                        AudioStreamIndex: null,
+                        SubtitleStreamIndex: null
+                    }),
+                    contentType: 'application/json'
+                });
+                return;
+            } else {
+                console.warn('legitFlixPlay: Local session not found in API list.');
+            }
+        } catch (e) {
+            logger.error('legitFlixPlay: API Control failed', e);
+        }
+    }
+
+    // 3. Last Resort: Navigation
+    logger.warn('legitFlixPlay: All methods failed. Navigating to details.');
+    window.legitFlixShowItem(id);
+};
+
+// Override the previous definitions
+window.legitFlixPlay = legitFlixPlayRemoteV3;
+
 init();
