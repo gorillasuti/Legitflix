@@ -1680,25 +1680,23 @@ header,
     transition: transform 0.2s ease-in-out;
 }
 
-
-/* --- FORCE PORTRAIT ASPECT RATIO (150%) --- */
-/* User requested "Tall" 1x2 shape for "Next Up"/"Anime" which default to 2x1 */
-.overflowBackdropCard .cardPadder,
-.cardPadder-overflowBackdrop,
-.cardPadder-backdrop {
+/* --- TARGETED PORTRAIT ASPECT RATIO (Next Up Only) --- */
+/* User wants Series/Episodes in "Next Up" to look like Posters (1x2), 
+   but keep Categories (CollectionFolder) as Wide (2x1). */
+.overflowBackdropCard[data-type="Episode"] .cardPadder,
+.overflowBackdropCard[data-type="Series"] .cardPadder,
+.overflowBackdropCard[data-type="Movie"] .cardPadder {
     padding-bottom: 150% !important;
-    /* Standard Poster Ratio (2:3) */
+    /* Poster Ratio */
 }
 
-/* Ensure the wide image covers the tall box (Cropped) */
-.overflowBackdropCard .cardImageContainer,
-.cardPadder-overflowBackdrop~.cardImageContainer {
+.overflowBackdropCard[data-type="Episode"] .cardImageContainer,
+.overflowBackdropCard[data-type="Series"] .cardImageContainer,
+.overflowBackdropCard[data-type="Movie"] .cardImageContainer {
     background-size: cover !important;
     background-position: center top !important;
-    /* Focus on faces/top usually better */
 }
 
-/* Enforce Rounding & Styles */
 .cardScalable,
 .overflowBackdropCard .cardScalable,
 .cardImageContainer,
