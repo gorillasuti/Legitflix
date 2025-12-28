@@ -1965,13 +1965,15 @@ header,
 }
 
 /* Content Layout (5 Rows) */
+/* Content Layout (5 Rows) */
 .hover-body {
     padding: 1.5rem;
-    /* Better Padding (increased from 1rem) */
     display: flex;
     flex-direction: column;
     /* Use gap for row spacing */
     gap: 0.35rem;
+    flex: 1;
+    /* Push footer down */
 }
 
 .hover-title {
@@ -1982,12 +1984,14 @@ header,
     color: #fff;
     margin-bottom: 0.3rem;
     /* Extra Gap after title */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    /* Keep title clamped to avoid massive titles */
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+
+    /* Full Wrap */
+    display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+    height: auto;
+    max-height: none;
+    -webkit-line-clamp: unset;
 }
 
 /* Rows */
@@ -2027,21 +2031,22 @@ header,
     margin: 0.8rem 0 0 0;
     /* More space before desc */
 
-    /* NO LINE CLAMP - Full Text */
-    display: block;
-    white-space: normal;
-    overflow-wrap: break-word;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    /* Clamp to 5 Lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
     font-weight: 400;
 }
 
 /* Footer & Actions */
 .hover-footer {
-    padding: 0.8rem 1rem;
+    padding: 0 1rem 1rem 1rem;
+    /* Pad bottom, none top (body has padding) */
     background: transparent;
     /* No BG color */
+    /* No margin-top auto needed if body is flex:1, but safe to keep */
     margin-top: auto;
     display: flex;
     align-items: center;
@@ -2070,9 +2075,7 @@ header,
 }
 
 /* Native Play Button Icon is usually an SVG or Font Icon inside a wrapper. 
-   The wrapper might have the orange color. If user wants the orange play button, we keep it. 
-   If they want NO bg color on the *footer*, we did that. 
-   The play button usually stays orange. */
+   The wrapper might have the orange color. If user wants the orange play button, we keep it. */
 .hover-native-btn-slot .cardOverlayFab-primary .material-icons {
     font-size: 3rem !important;
     color: #f47521 !important;
@@ -2096,8 +2099,6 @@ header,
 .hover-icon-btn {
     background: transparent;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    /* Subtle ring? Or just transparent? User said "no bg". Let's do Ring for visibility or just icon. */
-    /* Screenshot showed white squares, likely default buttons. Let's make them circle icons. */
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -2120,15 +2121,13 @@ header,
     font-size: 20px;
 }
 
-/* Reset Card Overflow (No longer needed to be visible, but safe to keep) */
-.card {
-    overflow: hidden;
-}
-
-/* Ensure parents don't clip */
+/* Reset Card Overflow (Allow expansion for overlay) */
+.card,
 .cardBox,
 .cardScalable {
-    overflow: hidden;
+    overflow: visible !important;
+    contain: none !important;
+    /* Ensure painting doesn't clip */
 }
 
 /* Keep Native Elements visible on Card itself until hijacked */

@@ -2300,9 +2300,9 @@ function init() {
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
         const desc = details.Overview || '';
 
-        // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> Gap -> Buttons
+        // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> (Flex Body) -> Footer (Bottom)
         overlay.innerHTML = `
-            <div class="hover-body" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="hover-body">
                 <h3 class="hover-title">${details.Name}</h3>
                 
                 <div class="hover-row hover-rating">${rating}</div>
@@ -2312,53 +2312,105 @@ function init() {
                 ${unplayed ? `<div class="hover-row hover-unplayed">${unplayed}</div>` : (duration ? `<div class="hover-row">${duration}</div>` : '')}
                 
                 <p class="hover-desc">${desc}</p>
-                
-                <div class="hover-spacer" style="flex: 1;"></div>
-                
-                <div class="hover-footer">
-                     <div class="hover-native-btn-slot"></div>
-                     <div class="hover-icon-row">
-                        <button class="hover-icon-btn" title="Mark Played"><span class="material-icons">check</span></button>
-                        <button class="hover-icon-btn" title="Favorite"><span class="material-icons">favorite_border</span></button>
-                        <button class="hover-icon-btn" title="Information" onclick="window.legitFlixShowItem('${id}')"><span class="material-icons">info</span></button>
-                        <button class="hover-icon-btn" title="More"><span class="material-icons">more_vert</span></button>
-                    </div>
+            </div>
+            
+            <div class="hover-footer">
+                 <div class="hover-native-btn-slot"></div>
+                 <div class="hover-icon-row">
+                    <button class="hover-icon-btn action-check" title="Mark Played"><span class="material-icons">check</span></button>
+                    <button class="hover-icon-btn action-fav" title="Favorite"><span class="material-icons">favorite_border</span></button>
+                    <button class="hover-icon-btn action-info" title="Information"><span class="material-icons">info</span></button>
+                    <button class="hover-icon-btn action-more" title="More"><span class="material-icons">more_vert</span></button>
                 </div>
             </div>
         `;
 
-        if (document.body.contains(card)) {
-            card.appendChild(overlay);
-            _activeOverlay = overlay;
+        // --- Click Handling ---
 
-            // Move Native Play Button
-            const nativeFab = card.querySelector('.cardOverlayFab-primary');
-            // If we are attaching to card, nativeFab is inside card.
-            // But we want to move it INSIDE the overlay (child of card).
-            if (nativeFab) {
-                _borrowedButton = nativeFab;
-                _originalParent = nativeFab.parentNode;
+        // 1. Click Overlay -> Navigate (simulating left click on card)
+        overlay.addEventListener('click', (e) => {
+            // Prevent if clicking buttons/interactive elements
+            if (e.target.closest('button') || e.target.closest('.hover-native-btn-slot')) return;
+            window.legitFlixShowItem(id);
+        });
 
-                const slot = overlay.querySelector('.hover-native-btn-slot');
-                slot.appendChild(nativeFab);
-            }
+        // 2. Button Logic
+        const btns = overlay.querySelectorAll('.hover-icon-btn');
+        btns.forEach(b => {
+            b.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Button specific logic below
+            });
+        });
 
-            requestAnimationFrame(() => {
-                overlay.classList.add('is-loaded');
+        // 3-Dot (More) -> Trigger Native Context Menu (Right Click simulation)
+        const moreBtn = overlay.querySelector('.action-more');
+        if (moreBtn) {
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rect = moreBtn.getBoundingClientRect();
+                const event = new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: rect.left + (rect.width / 2),
+                    clientY: rect.top + (rect.height / 2),
+                    screenX: rect.left + (rect.width / 2),
+                    screenY: rect.top + (rect.height / 2),
+                    button: 2,
+                    buttons: 2
+                });
+                card.dispatchEvent(event);
+            });
+        }
+
+        // Info button - No Action
+        const infoBtn = overlay.querySelector('.action-info');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
             });
         }
     }
 
-    // Call setup
-    setupHoverCards();
+    // Info -> Do Nothing (as requested "YET")
+    // Check/Fav -> Can implement later or leave as no-op for now.
+    // For now they just stop propagation so they don't trigger nav.
 
-    const observer = new MutationObserver((mutations) => {
-        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
-        renameMyList();
-        fixMixedCards();
-        injectPromoBanner();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    if (document.body.contains(card)) {
+        card.appendChild(overlay);
+        _activeOverlay = overlay;
+
+        // Move Native Play Button
+        const nativeFab = card.querySelector('.cardOverlayFab-primary');
+        // If we are attaching to card, nativeFab is inside card.
+        // But we want to move it INSIDE the overlay (child of card).
+        if (nativeFab) {
+            _borrowedButton = nativeFab;
+            _originalParent = nativeFab.parentNode;
+
+            const slot = overlay.querySelector('.hover-native-btn-slot');
+            slot.appendChild(nativeFab);
+        }
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-loaded');
+        });
+    }
+}
+
+// Call setup
+setupHoverCards();
+
+const observer = new MutationObserver((mutations) => {
+    if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+    renameMyList();
+    fixMixedCards();
+    injectPromoBanner();
+});
+observer.observe(document.body, { childList: true, subtree: true });
 }
 
 
