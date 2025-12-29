@@ -2817,9 +2817,8 @@ function init() {
         };
 
         const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Switch to 'vid.puffyan.us' (US) or 'inv.tux.pizza' (EU) - yewtu.be blocks embeds often.
-            // Using vid.puffyan.us as it's generally reliable for embeds.
-            return `https://vid.puffyan.us/embed/${videoId}?autoplay=${autoPlay}&controls=1&listen=0&quality=dash`;
+            // Switching to 'inv.tux.pizza' - often more reliable for embeds than puffyan
+            return `https://inv.tux.pizza/embed/${videoId}?autoplay=${autoPlay}&controls=1&listen=0`;
         };
 
         // 1. Collect Movie Trailers
@@ -2861,15 +2860,16 @@ function init() {
         }
 
         // 3. Determine Main Trailer (Priority: Season 1 > First Movie Trailer)
+        let mainVidId = null;
         if (allTrailers.length > 0) {
             // Default to first
-            let mainVid = allTrailers[0].id;
+            mainVidId = allTrailers[0].id;
 
             // If Series, prefer Season 1
             const s1 = allTrailers.find(t => t.title === 'Season 1');
-            if (s1) mainVid = s1.id;
+            if (s1) mainVidId = s1.id;
 
-            mainTrailerUrl = createEmbedUrl(mainVid, 1); // Autoplay header
+            mainTrailerUrl = createEmbedUrl(mainVidId, 1); // Autoplay header
         }
 
         // --- METADATA ---
@@ -2953,6 +2953,9 @@ function init() {
                              <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" id="btnInfoFav">
                                 <span class="material-icons">${details.UserData?.IsFavorite ? 'check' : 'add'}</span> My List
                             </button>
+                            ${mainVidId ? `<button class="btn-watch-trailer" onclick="window.open('https://www.youtube.com/watch?v=${mainVidId}', '_blank')">
+                                <span class="material-icons">open_in_new</span> Trailer
+                            </button>` : ''}
                         </div>
                     </div>
                 </div>
