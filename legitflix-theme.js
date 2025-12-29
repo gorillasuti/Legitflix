@@ -2567,13 +2567,10 @@ function init() {
 
         if (btnInfo) {
             btnInfo.addEventListener('click', (e) => {
-                console.log('[LegitFlix] Info Button Clicked for:', id);
                 e.preventDefault();
                 e.stopPropagation();
                 if (window.openInfoModal) {
                     window.openInfoModal(id);
-                } else {
-                    console.error('[LegitFlix] window.openInfoModal is not defined!');
                 }
             });
         }

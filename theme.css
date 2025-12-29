@@ -3231,6 +3231,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
        But current CSS targets the card itself as .legitflix-info-modal based on my usual pattern.
        My JS structure was: modal (wrapper?) -> backdrop + content. 
        Let's enable flex centering on the modal wrapper. */
+    position: fixed !important;
     top: 0;
     left: 0;
     width: 100%;
@@ -3247,6 +3248,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .legitflix-info-modal.visible {
     transform: none;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .info-modal-backdrop {
