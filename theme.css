@@ -3920,7 +3920,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     width: 100%;
     background: rgba(255, 255, 255, 0.6);
     /* History is greyish */
-    transition: width 0.3s ease;
+    transition: width 0.3s ease !important;
+    /* Force snap-fill */
 }
 
 .hero-indicator.active .fill {
@@ -3931,11 +3932,14 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* Paused State (Manual Click) */
 .carousel-paused .hero-indicator.active .fill {
-    display: none;
-    /* No timer animation */
+    display: block;
+    width: 100% !important;
+    background: var(--clr-accent);
+    transition: none !important;
+    /* Stop animation instantly */
 }
 
 .carousel-paused .hero-indicator.active {
-    background: var(--clr-accent);
-    /* Static active color */
+    width: 56px;
+    /* Ensure expanded width stays */
 }
