@@ -293,7 +293,7 @@ function createMediaBarHTML(items) {
         const title = item.Name;
         const desc = item.Overview || '';
         const playOnClick = `window.legitFlixPlay('${item.Id}')`;
-        const infoOnClick = `window.legitFlixShowItem('${item.Id}')`;
+        const infoOnClick = `window.openInfoModal('${item.Id}')`;
 
         // Logo vs Text Logic
         const hasLogo = item.ImageTags && item.ImageTags.Logo;
