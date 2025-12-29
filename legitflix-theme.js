@@ -24,47 +24,39 @@ try {
             scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
         }
 
-        /* WebKit (Chrome/Edge/Safari) */
-        ::-webkit-scrollbar {
+        /* WebKit (Chrome/Edge/Safari) - WILDCARD OVERRIDE */
+        *::-webkit-scrollbar {
             width: 6px !important;
             height: 6px !important;
-            background: transparent !important;
-            display: block !important;
+            background-color: transparent !important;
         }
 
-        ::-webkit-scrollbar-track {
-            background: transparent !important;
-            border: none !important;
+        *::-webkit-scrollbar-track {
+            background-color: transparent !important;
+            border-radius: 0 !important;
             margin: 0 !important;
         }
 
-        ::-webkit-scrollbar-thumb {
+        *::-webkit-scrollbar-thumb {
             background-color: rgba(255, 255, 255, 0.15) !important;
-            border-radius: 100vh !important;
-            border: none !important;
-            transition: background-color 0.2s ease;
+            border-radius: 20px !important;
+            border: 2px solid transparent !important;
+            background-clip: content-box !important;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
+        *::-webkit-scrollbar-thumb:hover {
             background-color: rgba(255, 255, 255, 0.4) !important;
         }
 
-        /* NUCLEAR OPTION: Hide Buttons/Arrows */
-        ::-webkit-scrollbar-button,
-        ::-webkit-scrollbar-button:single-button,
-        ::-webkit-scrollbar-button:vertical:decrement,
-        ::-webkit-scrollbar-button:vertical:increment,
-        ::-webkit-scrollbar-button:horizontal:decrement,
-        ::-webkit-scrollbar-button:horizontal:increment {
+        /* NUCLEAR OPTION: Hide Buttons/Arrows Globally */
+        *::-webkit-scrollbar-button {
             display: none !important;
             width: 0 !important;
             height: 0 !important;
-            background: transparent !important;
-            border: none !important;
         }
 
-        ::-webkit-scrollbar-corner {
-            background: transparent !important;
+        *::-webkit-scrollbar-corner {
+            background-color: transparent !important;
         }
     `;
     document.head.appendChild(scrollStyle);
