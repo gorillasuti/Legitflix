@@ -3429,34 +3429,48 @@ async function injectDetailHero() {
     // 2. Wait for Container
     const pageId = '#itemDetailPage';
     let container = document.querySelector(pageId);
-    if (!container) return; // Wait for retry
+    if (!container) {
+        // logger.log('injectDetailHero: Container #itemDetailPage not found yet');
+        return; // Wait for retry
+    }
 
     // Prevent double injection
     if (container.classList.contains('has-legit-detail-hero')) return;
 
+    logger.log('injectDetailHero: Attempting injection for Item', itemId);
+
     // 3. Fetch Data
     const auth = await getAuth();
-    if (!auth) return;
-
-    const item = await window.ApiClient.getItem(auth.UserId, itemId);
-
-    // Series Logic: Fetch Next Up for the "Continue" button
-    let nextUpItem = null;
-    if (item.Type === 'Series') {
-        nextUpItem = await fetchNextUp(itemId, auth.UserId);
+    if (!auth) {
+        logger.error('injectDetailHero: No Auth available');
+        return;
     }
 
-    // 4. Build Hero HTML
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('legit-detail-hero');
-    wrapper.innerHTML = createDetailHeroHTML(item, nextUpItem);
+    try {
+        const item = await window.ApiClient.getItem(auth.UserId, itemId);
+        logger.log('injectDetailHero: Item fetched', item.Name);
 
-    // 5. Inject & Cleanup
-    // Insert at top of page, CSS will handle hiding the duplicates
-    container.insertBefore(wrapper, container.firstChild);
-    container.classList.add('has-legit-detail-hero');
+        // Series Logic: Fetch Next Up for the "Continue" button
+        let nextUpItem = null;
+        if (item.Type === 'Series') {
+            nextUpItem = await fetchNextUp(itemId, auth.UserId);
+            if (nextUpItem) logger.log('injectDetailHero: Next Up found', nextUpItem.Name);
+        }
 
-    logger.log('injectDetailHero: Injected for', item.Name);
+        // 4. Build Hero HTML
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('legit-detail-hero');
+        wrapper.innerHTML = createDetailHeroHTML(item, nextUpItem);
+
+        // 5. Inject & Cleanup
+        container.insertBefore(wrapper, container.firstChild);
+        container.classList.add('has-legit-detail-hero');
+
+        logger.log('injectDetailHero: SUCCESS - Injected Hero for', item.Name);
+
+    } catch (e) {
+        logger.error('injectDetailHero: Failed to fetch/render', e);
+    }
 }
 
 function createDetailHeroHTML(item, nextUp) {
