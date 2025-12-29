@@ -449,12 +449,18 @@ function startCarousel() {
     logger.log(`startCarousel: Starting new interval with ${slides.length} slides.`);
 
     let currentIndex = 0;
-    const rotate = () => {
+
+    const showSlide = (index) => {
         if (slides.length === 0) return;
+
+        // Wrap index
+        if (index >= slides.length) index = 0;
+        if (index < 0) index = slides.length - 1;
+
+        currentIndex = index;
 
         // 1. Update Slides
         slides.forEach(s => s.classList.remove('active'));
-        currentIndex = (currentIndex + 1) % slides.length;
         slides[currentIndex].classList.add('active');
 
         // 2. Update Indicators
@@ -474,6 +480,21 @@ function startCarousel() {
             });
         }
     };
+
+    const rotate = () => {
+        showSlide(currentIndex + 1);
+    };
+
+    // Add Click Listeners to Indicators
+    indicators.forEach((ind, i) => {
+        ind.onclick = () => {
+            // Reset Timer on manual interaction
+            clearInterval(carouselInterval);
+            carouselInterval = setInterval(rotate, 8000);
+
+            showSlide(i);
+        };
+    });
 
     carouselInterval = setInterval(rotate, 8000); // 8 seconds per slide
 }

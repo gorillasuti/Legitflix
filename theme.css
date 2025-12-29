@@ -2106,19 +2106,19 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     position: relative !important;
     /* Force Relative */
     width: 100%;
-    height: 75vh !important;
-    /* Force Height */
-    max-height: 800px;
+    height: 85vh !important;
+    /* User Request: Bigger */
     z-index: 1;
     overflow: hidden !important;
     /* Force Clipping */
-    margin-bottom: 20px;
+    margin-bottom: -25vh;
+    /* Pull categories UP into the hero */
     border-radius: 0;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 
-    /* Fade out bottom */
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    /* Fade out bottom - Smoother blend */
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
 }
 
 /* Push content down so it starts below the hero area */
@@ -2288,22 +2288,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     z-index: 2;
 }
 
-.hero-content {
-    position: absolute;
-    top: 37.5%;
-    /* Moved up closer to nav */
-    left: 4%;
-    transform: translateY(-50%);
-    width: 40%;
-    max-width: 600px;
-    z-index: 3;
-    padding-right: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.25rem;
-}
-
 .hero-title {
     font-size: 3rem;
     font-weight: 800;
@@ -2318,14 +2302,14 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     display: flex;
     align-items: center;
     gap: 1rem;
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.8);
     text-shadow: none;
     /* No shadow */
 }
 
 .hero-desc {
-    font-size: 1.125rem;
+    font-size: 1rem;
     line-height: 1.25;
     font-weight: 400;
     color: rgba(255, 255, 255, 0.8);
@@ -3928,23 +3912,31 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     position: absolute;
     /* Align with content (left 4%) */
     left: 4%;
-    /* Buttons are inside hero-content (bottom 25%). 
-       We need this 2rem below buttons. 
-       Since buttons vary, let's pick a safe fixed spot relative to bottom ~15% */
-    bottom: 15%;
+    /* Buttons are inside hero-content (bottom 25%). */
+    bottom: 20%;
     display: flex;
     gap: 8px;
+    /* Spacing */
     z-index: 20;
 }
 
 .hero-indicator {
-    width: 40px;
-    height: 4px;
+    width: 32px;
+    /* Initial Width */
+    height: 8px;
+    /* Thicker (User Req) */
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
+    border-radius: 4px;
     overflow: hidden;
     position: relative;
     cursor: pointer;
+    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Smooth expansion */
+}
+
+/* Active State: Wider */
+.hero-indicator.active {
+    width: 56px;
 }
 
 .hero-indicator .fill {
