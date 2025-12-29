@@ -309,6 +309,7 @@ async function fetchMediaBarItems(retryCount = 0) {
                 try {
                     const nextUpUrl = `/Shows/${item.Id}/NextUp?Limit=1&UserId=${auth.UserId}&Fields=UserData`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                    if (!nextUpRes.ok) continue; // Skip failing items silently
                     const nextUpData = await nextUpRes.json();
                     if (nextUpData && nextUpData.Items && nextUpData.Items.length > 0) {
                         item._nextUp = nextUpData.Items[0]; // Attach to item for UI
@@ -592,7 +593,10 @@ async function injectMediaBar() {
 
     // --- HOME PAGE LOGIC ---
     if (isHomePage) {
-        // Remove old wrappers to preventing stacking
+        // Stop if already injected to prevent infinite loops/flashing
+        if (document.querySelector('.legit-hero-wrapper')) return;
+
+        // Remove old wrappers (cleanup)
         document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
         document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
 
@@ -2269,215 +2273,185 @@ window.ensurePasswordForm = function () {
     }
 };
 
-function init() {
-    console.log('LegitFlix: V5.6 Robust Init');
+// --- LEGACY INIT REMOVED ---
+// The hashchange cleanup logic is removed as the new monitor loop handles state.
 
-    // Start Polling Loop (Runs every 1s)
-    setInterval(pollForUI, 1000);
 
-    // Watch for Route Changes to reset flags
-    window.addEventListener('hashchange', () => {
-        logger.log('Route Changed');
-        _injectedHero = false;
-        _injectedJelly = false;
+// --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
+function renameMyList() {
+    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
+        let text = el.innerText.trim();
+        const lowerText = text.toLowerCase();
+        let newText = null;
 
-        // Remove profile header to force re-injection on new page
-        const oldHeader = document.querySelector('.gaming-profile-header');
-        if (oldHeader) {
-            console.log('[LegitFlix] hashchange: Removing old header, new hash:', window.location.hash);
-            oldHeader.remove();
-        } else {
-            console.log('[LegitFlix] hashchange: No header to remove, new hash:', window.location.hash);
+        // 1. My List / My Media -> Categories
+        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
+            newText = 'Categories';
+        }
+        // 2. Next Up -> History
+        else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
+            newText = 'History';
+        }
+        // 3. Recently Added in [Type] -> Latest [Type]
+        else if (lowerText.startsWith('recently added in ')) {
+            // "Recently Added in " is 18 chars
+            const type = text.substring(18);
+            newText = `Latest ${type}`;
         }
 
-        // RE-RUN ACTIVE STATE CHECK ON NAV (For Pill Effect)
-        setTimeout(() => {
-            const currentHash = window.location.hash;
-            document.querySelectorAll('.legit-nav-links .nav-link').forEach(link => {
-                link.classList.remove('active');
-                if (currentHash.includes(link.getAttribute('href'))) {
-                    link.classList.add('active');
-                }
-            });
-        }, 200);
-        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+        if (newText) {
+            el.innerText = newText;
+            // Also update the link if it exists for tooltip/accessibility
+            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
+            if (parent) {
+                const link = parent.querySelector('a');
+                if (link) link.setAttribute('title', newText);
+            }
+        }
     });
+}
+// Run initially and on mutation
+renameMyList();
 
-    // --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
-    function renameMyList() {
-        document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
-            let text = el.innerText.trim();
-            const lowerText = text.toLowerCase();
-            let newText = null;
+// --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
+function fixMixedCards() {
+    // Find Backdrops that should be Posters (Movies/Series)
+    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
+    const cards = document.querySelectorAll(selector);
 
-            // 1. My List / My Media -> Categories
-            if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
-                newText = 'Categories';
-            }
-            // 2. Next Up -> History
-            else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
-                newText = 'History';
-            }
-            // 3. Recently Added in [Type] -> Latest [Type]
-            else if (lowerText.startsWith('recently added in ')) {
-                // "Recently Added in " is 18 chars
-                const type = text.substring(18);
-                newText = `Latest ${type}`;
-            }
+    cards.forEach(card => {
+        // 1. Swap Card Class (Backdrop -> Portrait)
+        // This fixes dimensions and grid layout
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
 
-            if (newText) {
-                el.innerText = newText;
-                // Also update the link if it exists for tooltip/accessibility
-                const parent = el.closest('.sectionHeader, .sectionTitleContainer');
-                if (parent) {
-                    const link = parent.querySelector('a');
-                    if (link) link.setAttribute('title', newText);
+        // 2. Swap Padder Class
+        const padder = card.querySelector('.cardPadder-overflowBackdrop');
+        if (padder) {
+            padder.classList.remove('cardPadder-overflowBackdrop');
+            padder.classList.add('cardPadder-overflowPortrait');
+        }
+
+        // 3. Swap Image URL (Thumb -> Primary)
+        // This gets the correct Poster image from server
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const style = imgContainer.getAttribute('style') || '';
+            // Improved Lazy-Loader Fighting Logic
+            const swapImage = () => {
+                const s = imgContainer.getAttribute('style') || '';
+                if (s.includes('Images/Thumb')) {
+                    // Replace Thumb with Primary
+                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
+                    if (s !== ns) imgContainer.setAttribute('style', ns);
                 }
+            };
+
+            // Run immediately
+            swapImage();
+
+            // Observe for lazy loader changes
+            if (!imgContainer._observerAttached) {
+                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
+                imgContainer._observerAttached = true;
             }
-        });
-    }
-    // Run initially and on mutation
-    renameMyList();
+        }
+    });
+}
 
-    // --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
-    function fixMixedCards() {
-        // Find Backdrops that should be Posters (Movies/Series)
-        const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
-        const cards = document.querySelectorAll(selector);
+// Run initially and on mutation
+renameMyList();
+fixMixedCards();
+// --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
+let _promoInjectionInProgress = false; // Guard for race conditions
+let _injectedBanner = false; // Track if banner already injected
 
-        cards.forEach(card => {
-            // 1. Swap Card Class (Backdrop -> Portrait)
-            // This fixes dimensions and grid layout
-            card.classList.remove('overflowBackdropCard');
-            card.classList.add('overflowPortraitCard');
+async function injectPromoBanner() {
+    if (_promoInjectionInProgress || _injectedBanner) return;
 
-            // 2. Swap Padder Class
-            const padder = card.querySelector('.cardPadder-overflowBackdrop');
-            if (padder) {
-                padder.classList.remove('cardPadder-overflowBackdrop');
-                padder.classList.add('cardPadder-overflowPortrait');
-            }
-
-            // 3. Swap Image URL (Thumb -> Primary)
-            // This gets the correct Poster image from server
-            const imgContainer = card.querySelector('.cardImageContainer');
-            if (imgContainer) {
-                const style = imgContainer.getAttribute('style') || '';
-                // Improved Lazy-Loader Fighting Logic
-                const swapImage = () => {
-                    const s = imgContainer.getAttribute('style') || '';
-                    if (s.includes('Images/Thumb')) {
-                        // Replace Thumb with Primary
-                        const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
-                        if (s !== ns) imgContainer.setAttribute('style', ns);
-                    }
-                };
-
-                // Run immediately
-                swapImage();
-
-                // Observe for lazy loader changes
-                if (!imgContainer._observerAttached) {
-                    new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
-                    imgContainer._observerAttached = true;
-                }
-            }
-        });
+    // Strict Home Page Check (Relaxed for root)
+    const hash = window.location.hash.toLowerCase();
+    // Allow 'home', 'index', or empty/root '#!/'
+    if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') {
+        return;
     }
 
-    // Run initially and on mutation
-    renameMyList();
-    fixMixedCards();
-    // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
-    let _promoInjectionInProgress = false; // Guard for race conditions
-    let _injectedBanner = false; // Track if banner already injected
+    const homeSections = document.querySelector('.homeSectionsContainer');
+    if (!homeSections && !document.querySelector('.verticalSection')) return;
 
-    async function injectPromoBanner() {
-        if (_promoInjectionInProgress || _injectedBanner) return;
+    _promoInjectionInProgress = true;
 
-        // Strict Home Page Check (Relaxed for root)
-        const hash = window.location.hash.toLowerCase();
-        // Allow 'home', 'index', or empty/root '#!/'
-        if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') {
+    try {
+        // 2. Find Injection Point: After "History" section
+        // Strategy A: Find by Title
+        const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
+        let historyTitle = titles.find(t => {
+            const txt = t.innerText.toLowerCase();
+            return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
+        });
+
+        let historySection = null;
+        if (historyTitle) {
+            historySection = historyTitle.closest('.verticalSection');
+        }
+
+        // Strategy B: Fallback to known class
+        if (!historySection) {
+            historySection = document.querySelector('.verticalSection.section5');
+        }
+
+        if (!historySection) {
+            _promoInjectionInProgress = false; // Reset so we can try again later
             return;
         }
 
-        const homeSections = document.querySelector('.homeSectionsContainer');
-        if (!homeSections && !document.querySelector('.verticalSection')) return;
 
-        _promoInjectionInProgress = true;
+        // 3. Fetch Data
+        const auth = await getAuth();
+        if (!auth) {
+            _promoInjectionInProgress = false;
+            return;
+        }
+        const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
 
-        try {
-            // 2. Find Injection Point: After "History" section
-            // Strategy A: Find by Title
-            const titles = Array.from(document.querySelectorAll('.sectionTitle, .sectionTitle-cards'));
-            let historyTitle = titles.find(t => {
-                const txt = t.innerText.toLowerCase();
-                return txt.includes('history') || txt.includes('next up') || txt.includes('continuar');
-            });
+        // A. Get Resume/History Items to Exclude
+        // Resume
+        const resumeRes = await fetch(`/Users/${auth.UserId}/Items?Limit=20&Recursive=true&Filters=IsResumable&SortBy=DatePlayed&SortOrder=Descending`, { headers });
+        const resumeJson = await resumeRes.json();
 
-            let historySection = null;
-            if (historyTitle) {
-                historySection = historyTitle.closest('.verticalSection');
-            }
+        // Next Up
+        const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
+        const nextUpJson = await nextUpRes.json();
 
-            // Strategy B: Fallback to known class
-            if (!historySection) {
-                historySection = document.querySelector('.verticalSection.section5');
-            }
+        // B. Get Candidates (Latest Movies/Series)
+        // Limit to 3 strictly. Sort by DateCreated Descending.
+        const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
+        const candidatesJson = await candidatesRes.json();
 
-            if (!historySection) {
-                _promoInjectionInProgress = false; // Reset so we can try again later
-                return;
-            }
+        // C. Select Top 3 (or less)
+        const selected = candidatesJson.Items || [];
 
+        if (selected.length === 0) {
+            _promoInjectionInProgress = false;
+            return;
+        }
 
-            // 3. Fetch Data
-            const auth = await getAuth();
-            if (!auth) {
-                _promoInjectionInProgress = false;
-                return;
-            }
-            const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
+        // 4. Build HTML
+        const item1 = selected[0]; // Hero
+        const item2 = selected[1]; // Sub 1 (Optional)
+        const item3 = selected[2]; // Sub 2 (Optional)
 
-            // A. Get Resume/History Items to Exclude
-            // Resume
-            const resumeRes = await fetch(`/Users/${auth.UserId}/Items?Limit=20&Recursive=true&Filters=IsResumable&SortBy=DatePlayed&SortOrder=Descending`, { headers });
-            const resumeJson = await resumeRes.json();
+        console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2?.Name, item3?.Name);
 
-            // Next Up
-            const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
-            const nextUpJson = await nextUpRes.json();
+        // Helpers for images
+        const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
+        // Revert to Thumb for sub-items
+        const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
+        const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
 
-            // B. Get Candidates (Latest Movies/Series)
-            // Limit to 3 strictly. Sort by DateCreated Descending.
-            const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
-            const candidatesJson = await candidatesRes.json();
+        const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
 
-            // C. Select Top 3 (or less)
-            const selected = candidatesJson.Items || [];
-
-            if (selected.length === 0) {
-                _promoInjectionInProgress = false;
-                return;
-            }
-
-            // 4. Build HTML
-            const item1 = selected[0]; // Hero
-            const item2 = selected[1]; // Sub 1 (Optional)
-            const item3 = selected[2]; // Sub 2 (Optional)
-
-            console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2?.Name, item3?.Name);
-
-            // Helpers for images
-            const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
-            // Revert to Thumb for sub-items
-            const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
-            const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
-
-            const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
-
-            const html = `
+        const html = `
             <div class="legitflix-promo-container">
                 <!-- Top Banner (Item 1) -->
                 <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
@@ -2519,277 +2493,277 @@ function init() {
             </div>
             `;
 
-            // 5. Inject
-            historySection.insertAdjacentHTML('afterend', html);
-            console.log('[LegitFlix] Promo Banner Injected Successfully');
-            // Done!
-            _injectedBanner = true; // Mark as injected
-            _promoInjectionInProgress = false; // Reset after successful injection
+        // 5. Inject
+        historySection.insertAdjacentHTML('afterend', html);
+        console.log('[LegitFlix] Promo Banner Injected Successfully');
+        // Done!
+        _injectedBanner = true; // Mark as injected
+        _promoInjectionInProgress = false; // Reset after successful injection
 
-        } catch (e) {
-            console.error('[LegitFlix] Error building promo banner:', e);
-            _promoInjectionInProgress = false; // Reset on error
-        }
+    } catch (e) {
+        console.error('[LegitFlix] Error building promo banner:', e);
+        _promoInjectionInProgress = false; // Reset on error
     }
+}
 
-    // --- HOVER CARD LOGIC (Body Append + Native Button Move) ---
-    // Cache for item details to avoid repeated API calls
-    // LIMITED to 50 items to prevent memory leaks
-    const _cardCache = new Map();
-    const CACHE_MAX_SIZE = 50;
+// --- HOVER CARD LOGIC (Body Append + Native Button Move) ---
+// Cache for item details to avoid repeated API calls
+// LIMITED to 50 items to prevent memory leaks
+const _cardCache = new Map();
+const CACHE_MAX_SIZE = 50;
 
-    function limitCacheSize() {
-        if (_cardCache.size > CACHE_MAX_SIZE) {
-            // Remove oldest entries (first added)
-            const keysToDelete = [];
-            let count = 0;
-            for (const key of _cardCache.keys()) {
-                if (count < _cardCache.size - CACHE_MAX_SIZE) {
-                    keysToDelete.push(key);
-                    count++;
-                } else {
-                    break;
-                }
-            }
-            keysToDelete.forEach(k => _cardCache.delete(k));
-            console.log('[LegitFlix] Cache pruned:', keysToDelete.length, 'items');
-        }
-    }
-
-    let _hoverTimer = null;
-    let _activeOverlay = null;
-    let _borrowedButton = null; // Track moved button
-    let _originalParent = null;
-
-    function setupHoverCards() {
-        console.log('[LegitFlix] setupHoverCards: Initialized');
-        // Delegate mouseover to body but filter for cards
-        document.body.addEventListener('mouseover', (e) => {
-            // Disable on edit/admin pages
-            if (window.location.href.includes('edititem') || window.location.href.includes('metadata')) return;
-
-            // Disable on Details Pages (Native Hover Mode)
-            if (document.body.classList.contains('native-hover-mode')) return;
-
-            const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
-            // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
-            if (!card || !card.dataset.id) return;
-
-            // DEBUG: Log card detection
-            console.log('[LegitFlix] Hover: Card detected', card.dataset.id, card.dataset.type);
-
-            // --- FILTERING LOGIC ---
-            // 1. Exclude "Categories" (Folders)
-            if (card.dataset.type === 'CollectionFolder' || card.dataset.type === 'UserView') {
-                console.log('[LegitFlix] Hover: Excluded (folder)');
-                return;
-            }
-
-            // 2. Exclude "Continue Watching", "History" (Next Up), "My Media"
-            const section = card.closest('.verticalSection');
-            if (section) {
-                const titleEl = section.querySelector('.sectionTitle');
-                if (titleEl) {
-                    const t = titleEl.innerText.toLowerCase();
-                    if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
-                        console.log('[LegitFlix] Hover: Excluded (section:', t, ')');
-                        return;
-                    }
-                }
-            }
-
-            if (card.classList.contains('card-flat') || card.classList.contains('chapterCard') || card.closest('.visualCardBox')) {
-                console.log('[LegitFlix] Hover: Excluded (card type)');
-                return;
-            }
-
-            // EXCLUSION: Image Editor & Dialogs
-            if (card.classList.contains('imageEditorCard') || card.closest('.dialog') || card.closest('.formDialog')) {
-                console.log('[LegitFlix] Hover: Excluded (dialog)');
-                return;
-            }
-
-            // Avoid re-triggering if already showing or bad target
-            if (_activeOverlay && _activeOverlay.dataset.sourceId === card.dataset.id) return;
-
-            // Clear any pending timer
-            if (_hoverTimer) clearTimeout(_hoverTimer);
-
-            console.log('[LegitFlix] Hover: Will create card for', card.dataset.id);
-            // Set delay (Instant - 50ms to prevent accidental flickers)
-            _hoverTimer = setTimeout(() => {
-                createHoverCard(card, card.dataset.id);
-            }, 50);
-        });
-
-        document.body.addEventListener('mouseout', (e) => {
-            // Check if we left the card AND the overlay
-            // This is tricky with body append. we need a check.
-            // Simplified: If we hover mainly on the overlay, we keep it.
-            // If we leave overlay and card, we close.
-            const toElement = e.relatedTarget;
-            if (_activeOverlay && !toElement?.closest('.legitflix-hover-overlay') && !toElement?.closest('.card')) {
-                closeHoverCard();
-            }
-        });
-
-        // Also listen on overlay leave
-        document.body.addEventListener('mouseout', (e) => {
-            if (e.target.closest('.legitflix-hover-overlay')) {
-                const toElement = e.relatedTarget;
-                // If moving back to origin card, technically ok, but usually we cover it.
-                if (!_activeOverlay) return;
-                // If left overlay and not going to origin card
-                const originId = _activeOverlay.dataset.sourceId;
-                const originCard = document.querySelector(`.card[data-id="${originId}"]`);
-
-                if (!toElement?.closest('.legitflix-hover-overlay') && toElement !== originCard && !originCard?.contains(toElement)) {
-                    closeHoverCard();
-                }
-            }
-        });
-    }
-
-    function closeHoverCard() {
-        if (_hoverTimer) clearTimeout(_hoverTimer);
-
-        if (_activeOverlay) {
-            const overlay = _activeOverlay;
-            _activeOverlay = null;
-
-            // 1. Restore Native Button
-            if (_borrowedButton && _originalParent) {
-                // Restore style
-                _borrowedButton.style.position = '';
-                _borrowedButton.style.bottom = '';
-                _borrowedButton.style.left = '';
-                _borrowedButton.style.margin = ''; // Reset margin too
-                _originalParent.appendChild(_borrowedButton);
-                _borrowedButton = null;
-                _originalParent = null;
-            }
-
-            overlay.classList.remove('is-loaded');
-            setTimeout(() => overlay.remove(), 50); // Faster removal
-        }
-    }
-
-    // --- SELECTION MODE DETECTION ---
-    function isSelectionMode() {
-        return document.querySelector('.selectionCommandsPanel') !== null ||
-            document.querySelector('.itemSelectionPanel') !== null;
-    }
-
-    function startSelectionMonitor() {
-        // Monitor body for addition/removal of selection panels
-        const observer = new MutationObserver(() => {
-            if (isSelectionMode()) {
-                document.body.classList.add('legitflix-selection-mode');
+function limitCacheSize() {
+    if (_cardCache.size > CACHE_MAX_SIZE) {
+        // Remove oldest entries (first added)
+        const keysToDelete = [];
+        let count = 0;
+        for (const key of _cardCache.keys()) {
+            if (count < _cardCache.size - CACHE_MAX_SIZE) {
+                keysToDelete.push(key);
+                count++;
             } else {
-                document.body.classList.remove('legitflix-selection-mode');
+                break;
             }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // Initial check
-        if (isSelectionMode()) document.body.classList.add('legitflix-selection-mode');
+        }
+        keysToDelete.forEach(k => _cardCache.delete(k));
+        console.log('[LegitFlix] Cache pruned:', keysToDelete.length, 'items');
     }
-    startSelectionMonitor();
+}
 
-    async function createHoverCard(card, id) {
-        // Selection Mode Check
-        if (isSelectionMode()) {
-            console.log('[LegitFlix] createHoverCard: Aborted (Selection Mode Active)');
+let _hoverTimer = null;
+let _activeOverlay = null;
+let _borrowedButton = null; // Track moved button
+let _originalParent = null;
+
+function setupHoverCards() {
+    console.log('[LegitFlix] setupHoverCards: Initialized');
+    // Delegate mouseover to body but filter for cards
+    document.body.addEventListener('mouseover', (e) => {
+        // Disable on edit/admin pages
+        if (window.location.href.includes('edititem') || window.location.href.includes('metadata')) return;
+
+        // Disable on Details Pages (Native Hover Mode)
+        if (document.body.classList.contains('native-hover-mode')) return;
+
+        const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
+        // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
+        if (!card || !card.dataset.id) return;
+
+        // DEBUG: Log card detection
+        console.log('[LegitFlix] Hover: Card detected', card.dataset.id, card.dataset.type);
+
+        // --- FILTERING LOGIC ---
+        // 1. Exclude "Categories" (Folders)
+        if (card.dataset.type === 'CollectionFolder' || card.dataset.type === 'UserView') {
+            console.log('[LegitFlix] Hover: Excluded (folder)');
             return;
         }
 
-        console.log('[LegitFlix] createHoverCard: Starting for', id);
-
-        // PRE-FETCH CHECK: If no longer hovering, abort immediately
-        if (!card.matches(':hover')) {
-            console.log('[LegitFlix] createHoverCard: Aborted (not hovering)');
-            return;
-        }
-
-        closeHoverCard(); // Close existing
-
-        let details = _cardCache.get(id);
-        if (!details) {
-            console.log('[LegitFlix] createHoverCard: Fetching details from API...');
-            try {
-                const auth = await getAuth();
-                if (!auth) {
-                    console.log('[LegitFlix] createHoverCard: No auth, aborting');
+        // 2. Exclude "Continue Watching", "History" (Next Up), "My Media"
+        const section = card.closest('.verticalSection');
+        if (section) {
+            const titleEl = section.querySelector('.sectionTitle');
+            if (titleEl) {
+                const t = titleEl.innerText.toLowerCase();
+                if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
+                    console.log('[LegitFlix] Hover: Excluded (section:', t, ')');
                     return;
                 }
-                const headers = { 'X-Emby-Token': auth.AccessToken || auth.token, 'Accept': 'application/json' };
-                // Use auth.user or auth.UserId if getAuth returns differently depending on version
-                const userId = auth.UserId || auth.user;
-                console.log('[LegitFlix] createHoverCard: Fetching /Users/' + userId + '/Items/' + id);
-                const res = await fetch(`${auth.server || ''}/Users/${userId}/Items/${id}`, { headers });
-                details = await res.json();
-                _cardCache.set(id, details);
-                limitCacheSize(); // Prevent memory leak
-                console.log('[LegitFlix] createHoverCard: Got details', details.Name);
-            } catch (e) {
-                console.error('[LegitFlix] createHoverCard: Fetch error', e);
+            }
+        }
+
+        if (card.classList.contains('card-flat') || card.classList.contains('chapterCard') || card.closest('.visualCardBox')) {
+            console.log('[LegitFlix] Hover: Excluded (card type)');
+            return;
+        }
+
+        // EXCLUSION: Image Editor & Dialogs
+        if (card.classList.contains('imageEditorCard') || card.closest('.dialog') || card.closest('.formDialog')) {
+            console.log('[LegitFlix] Hover: Excluded (dialog)');
+            return;
+        }
+
+        // Avoid re-triggering if already showing or bad target
+        if (_activeOverlay && _activeOverlay.dataset.sourceId === card.dataset.id) return;
+
+        // Clear any pending timer
+        if (_hoverTimer) clearTimeout(_hoverTimer);
+
+        console.log('[LegitFlix] Hover: Will create card for', card.dataset.id);
+        // Set delay (Instant - 50ms to prevent accidental flickers)
+        _hoverTimer = setTimeout(() => {
+            createHoverCard(card, card.dataset.id);
+        }, 50);
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+        // Check if we left the card AND the overlay
+        // This is tricky with body append. we need a check.
+        // Simplified: If we hover mainly on the overlay, we keep it.
+        // If we leave overlay and card, we close.
+        const toElement = e.relatedTarget;
+        if (_activeOverlay && !toElement?.closest('.legitflix-hover-overlay') && !toElement?.closest('.card')) {
+            closeHoverCard();
+        }
+    });
+
+    // Also listen on overlay leave
+    document.body.addEventListener('mouseout', (e) => {
+        if (e.target.closest('.legitflix-hover-overlay')) {
+            const toElement = e.relatedTarget;
+            // If moving back to origin card, technically ok, but usually we cover it.
+            if (!_activeOverlay) return;
+            // If left overlay and not going to origin card
+            const originId = _activeOverlay.dataset.sourceId;
+            const originCard = document.querySelector(`.card[data-id="${originId}"]`);
+
+            if (!toElement?.closest('.legitflix-hover-overlay') && toElement !== originCard && !originCard?.contains(toElement)) {
+                closeHoverCard();
+            }
+        }
+    });
+}
+
+function closeHoverCard() {
+    if (_hoverTimer) clearTimeout(_hoverTimer);
+
+    if (_activeOverlay) {
+        const overlay = _activeOverlay;
+        _activeOverlay = null;
+
+        // 1. Restore Native Button
+        if (_borrowedButton && _originalParent) {
+            // Restore style
+            _borrowedButton.style.position = '';
+            _borrowedButton.style.bottom = '';
+            _borrowedButton.style.left = '';
+            _borrowedButton.style.margin = ''; // Reset margin too
+            _originalParent.appendChild(_borrowedButton);
+            _borrowedButton = null;
+            _originalParent = null;
+        }
+
+        overlay.classList.remove('is-loaded');
+        setTimeout(() => overlay.remove(), 50); // Faster removal
+    }
+}
+
+// --- SELECTION MODE DETECTION ---
+function isSelectionMode() {
+    return document.querySelector('.selectionCommandsPanel') !== null ||
+        document.querySelector('.itemSelectionPanel') !== null;
+}
+
+function startSelectionMonitor() {
+    // Monitor body for addition/removal of selection panels
+    const observer = new MutationObserver(() => {
+        if (isSelectionMode()) {
+            document.body.classList.add('legitflix-selection-mode');
+        } else {
+            document.body.classList.remove('legitflix-selection-mode');
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial check
+    if (isSelectionMode()) document.body.classList.add('legitflix-selection-mode');
+}
+startSelectionMonitor();
+
+async function createHoverCard(card, id) {
+    // Selection Mode Check
+    if (isSelectionMode()) {
+        console.log('[LegitFlix] createHoverCard: Aborted (Selection Mode Active)');
+        return;
+    }
+
+    console.log('[LegitFlix] createHoverCard: Starting for', id);
+
+    // PRE-FETCH CHECK: If no longer hovering, abort immediately
+    if (!card.matches(':hover')) {
+        console.log('[LegitFlix] createHoverCard: Aborted (not hovering)');
+        return;
+    }
+
+    closeHoverCard(); // Close existing
+
+    let details = _cardCache.get(id);
+    if (!details) {
+        console.log('[LegitFlix] createHoverCard: Fetching details from API...');
+        try {
+            const auth = await getAuth();
+            if (!auth) {
+                console.log('[LegitFlix] createHoverCard: No auth, aborting');
                 return;
             }
-        } else {
-            console.log('[LegitFlix] createHoverCard: Using cached details for', details.Name);
-        }
-
-        // POST-FETCH CHECK: Critical check to prevent "stuck" card if mouse left during await
-        if (!card.matches(':hover')) {
-            console.log('[LegitFlix] createHoverCard: Aborted after fetch (not hovering)');
+            const headers = { 'X-Emby-Token': auth.AccessToken || auth.token, 'Accept': 'application/json' };
+            // Use auth.user or auth.UserId if getAuth returns differently depending on version
+            const userId = auth.UserId || auth.user;
+            console.log('[LegitFlix] createHoverCard: Fetching /Users/' + userId + '/Items/' + id);
+            const res = await fetch(`${auth.server || ''}/Users/${userId}/Items/${id}`, { headers });
+            details = await res.json();
+            _cardCache.set(id, details);
+            limitCacheSize(); // Prevent memory leak
+            console.log('[LegitFlix] createHoverCard: Got details', details.Name);
+        } catch (e) {
+            console.error('[LegitFlix] createHoverCard: Fetch error', e);
             return;
         }
+    } else {
+        console.log('[LegitFlix] createHoverCard: Using cached details for', details.Name);
+    }
 
-        if (!details) {
-            console.log('[LegitFlix] createHoverCard: No details, aborting');
-            return;
-        }
+    // POST-FETCH CHECK: Critical check to prevent "stuck" card if mouse left during await
+    if (!card.matches(':hover')) {
+        console.log('[LegitFlix] createHoverCard: Aborted after fetch (not hovering)');
+        return;
+    }
 
-        console.log('[LegitFlix] createHoverCard: Building overlay...');
+    if (!details) {
+        console.log('[LegitFlix] createHoverCard: No details, aborting');
+        return;
+    }
 
-        // Position Logic
-        // Use .cardBox for visual alignment (ignores outer padding/margins of .card)
-        const visualTarget = card.querySelector('.cardBox') || card;
-        const rect = visualTarget.getBoundingClientRect();
+    console.log('[LegitFlix] createHoverCard: Building overlay...');
 
-        // Scale Factor (Reduced from 1.15 to 1.05 as requested "larger than needed")
-        const scale = 1.05;
-        const width = rect.width * scale;
-        // const height = rect.height * scale; // Let height be auto/content based
+    // Position Logic
+    // Use .cardBox for visual alignment (ignores outer padding/margins of .card)
+    const visualTarget = card.querySelector('.cardBox') || card;
+    const rect = visualTarget.getBoundingClientRect();
 
-        // Create Overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'legitflix-hover-overlay'; // Base class
-        overlay.dataset.sourceId = id; // Track source
+    // Scale Factor (Reduced from 1.15 to 1.05 as requested "larger than needed")
+    const scale = 1.05;
+    const width = rect.width * scale;
+    // const height = rect.height * scale; // Let height be auto/content based
 
-        // Positioning is handled by CSS (top: 0; left: 0; width: 100%; min-height: 100%)
-        // The overlay is appended to the card which has position: relative
+    // Create Overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'legitflix-hover-overlay'; // Base class
+    overlay.dataset.sourceId = id; // Track source
 
-        const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
-        const year = details.ProductionYear || '';
-        const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
-        // Unplayed count for series
-        const unplayed = details.UserData && details.UserData.UnplayedItemCount ? `${details.UserData.UnplayedItemCount} Unplayed` : '';
-        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
-        const desc = details.Overview || '';
+    // Positioning is handled by CSS (top: 0; left: 0; width: 100%; min-height: 100%)
+    // The overlay is appended to the card which has position: relative
 
-        // State
-        let isPlayed = details.UserData?.Played || false;
-        let isFav = details.UserData?.IsFavorite || false;
+    const rating = details.CommunityRating ? `${details.CommunityRating.toFixed(1)} <span class="material-icons star-icon">star</span>` : '';
+    const year = details.ProductionYear || '';
+    const seasonCount = details.ChildCount ? `${details.ChildCount} Seasons` : '';
+    // Unplayed count for series
+    const unplayed = details.UserData && details.UserData.UnplayedItemCount ? `${details.UserData.UnplayedItemCount} Unplayed` : '';
+    const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
+    const desc = details.Overview || '';
 
-        const iconPlayed = isPlayed ? 'check_circle' : 'check';
-        const classPlayed = isPlayed ? 'active' : '';
+    // State
+    let isPlayed = details.UserData?.Played || false;
+    let isFav = details.UserData?.IsFavorite || false;
 
-        const iconFav = isFav ? 'favorite' : 'favorite_border';
-        const classFav = isFav ? 'active' : '';
+    const iconPlayed = isPlayed ? 'check_circle' : 'check';
+    const classPlayed = isPlayed ? 'active' : '';
 
-        // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> (Flex Body) -> Footer (Bottom)
-        overlay.innerHTML = `
+    const iconFav = isFav ? 'favorite' : 'favorite_border';
+    const classFav = isFav ? 'active' : '';
+
+    // Layout: Title -> Rating -> Season -> Unplayed -> Plot -> (Flex Body) -> Footer (Bottom)
+    overlay.innerHTML = `
             <div class="hover-body">
                 <h3 class="hover-title">${details.Name}</h3>
                 
@@ -2817,264 +2791,264 @@ function init() {
             </div>
         `;
 
-        // --- Click Handling ---
+    // --- Click Handling ---
 
-        // API Helpers
-        const toggleState = async (type, currentState, btn) => {
-            const auth = await getAuth();
-            if (!auth) return;
+    // API Helpers
+    const toggleState = async (type, currentState, btn) => {
+        const auth = await getAuth();
+        if (!auth) return;
 
-            const userId = auth.UserId || auth.user;
-            const token = auth.AccessToken || auth.token;
-            const server = auth.server || ''; // Relative path usually works if empty, but safer
+        const userId = auth.UserId || auth.user;
+        const token = auth.AccessToken || auth.token;
+        const server = auth.server || ''; // Relative path usually works if empty, but safer
 
-            if (!userId || !token) return;
+        if (!userId || !token) return;
 
-            const newState = !currentState;
-            const iconSpan = btn.querySelector('.material-icons');
+        const newState = !currentState;
+        const iconSpan = btn.querySelector('.material-icons');
 
-            // Optimistic UI Update & Cache Sync
-            if (type === 'fav') {
-                isFav = newState; // Update closure var
-                if (details.UserData) details.UserData.IsFavorite = isFav; // Update Cache
+        // Optimistic UI Update & Cache Sync
+        if (type === 'fav') {
+            isFav = newState; // Update closure var
+            if (details.UserData) details.UserData.IsFavorite = isFav; // Update Cache
 
-                btn.classList.toggle('active', isFav);
-                iconSpan.textContent = isFav ? 'favorite' : 'favorite_border';
-                btn.title = isFav ? 'Unfavorite' : 'Favorite';
+            btn.classList.toggle('active', isFav);
+            iconSpan.textContent = isFav ? 'favorite' : 'favorite_border';
+            btn.title = isFav ? 'Unfavorite' : 'Favorite';
 
-                const method = isFav ? 'POST' : 'DELETE';
-                fetch(`${server}/Users/${userId}/FavoriteItems/${id}?api_key=${token}`, { method });
+            const method = isFav ? 'POST' : 'DELETE';
+            fetch(`${server}/Users/${userId}/FavoriteItems/${id}?api_key=${token}`, { method });
 
-            } else if (type === 'played') {
-                isPlayed = newState; // Update closure var
-                if (details.UserData) details.UserData.Played = isPlayed; // Update Cache
+        } else if (type === 'played') {
+            isPlayed = newState; // Update closure var
+            if (details.UserData) details.UserData.Played = isPlayed; // Update Cache
 
-                btn.classList.toggle('active', isPlayed);
-                iconSpan.textContent = isPlayed ? 'check_circle' : 'check';
-                btn.title = isPlayed ? 'Mark Unplayed' : 'Mark Played';
+            btn.classList.toggle('active', isPlayed);
+            iconSpan.textContent = isPlayed ? 'check_circle' : 'check';
+            btn.title = isPlayed ? 'Mark Unplayed' : 'Mark Played';
 
-                const method = isPlayed ? 'POST' : 'DELETE';
-                fetch(`${server}/Users/${userId}/PlayedItems/${id}?api_key=${token}`, { method });
-            }
-        };
+            const method = isPlayed ? 'POST' : 'DELETE';
+            fetch(`${server}/Users/${userId}/PlayedItems/${id}?api_key=${token}`, { method });
+        }
+    };
 
-        // 1. Click Overlay -> Navigate (simulating left click on card)
-        overlay.addEventListener('click', (e) => {
-            // Prevent if clicking buttons/interactive elements
-            if (e.target.closest('button') || e.target.closest('.hover-native-btn-slot')) return;
-            window.legitFlixShowItem(id);
+    // 1. Click Overlay -> Navigate (simulating left click on card)
+    overlay.addEventListener('click', (e) => {
+        // Prevent if clicking buttons/interactive elements
+        if (e.target.closest('button') || e.target.closest('.hover-native-btn-slot')) return;
+        window.legitFlixShowItem(id);
+    });
+
+    // 2. Button Logic
+    const btnCheck = overlay.querySelector('.action-check');
+    const btnFav = overlay.querySelector('.action-fav');
+    const btnInfo = overlay.querySelector('.action-info');
+
+    if (btnCheck) {
+        btnCheck.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            toggleState('played', isPlayed, btnCheck);
         });
+    }
+    if (btnFav) {
+        btnFav.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            toggleState('fav', isFav, btnFav);
+        });
+    }
 
-        // 2. Button Logic
-        const btnCheck = overlay.querySelector('.action-check');
-        const btnFav = overlay.querySelector('.action-fav');
-        const btnInfo = overlay.querySelector('.action-info');
+    if (btnInfo) {
+        btnInfo.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.openInfoModal) {
+                window.openInfoModal(id);
+            }
+        });
+    }
 
-        if (btnCheck) {
-            btnCheck.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                toggleState('played', isPlayed, btnCheck);
-            });
+    // 3. Hijack Native Menu Button (The "More" action)
+    // 3. Hijack Native Menu Button (The "More" action)
+    const customMoreBtn = overlay.querySelector('.action-more');
+    // Strict Selector: Look for data-action="menu" OR iterate button contents
+    let nativeMenu = card.querySelector('.cardOverlayButton[data-action="menu"]');
+
+    if (!nativeMenu) {
+        // Fallback: Find button with more_vert icon if data-action absent
+        const buttons = card.querySelectorAll('.cardOverlayButton');
+        for (const btn of buttons) {
+            if (btn.innerHTML.includes('more_vert') || btn.innerHTML.includes('dots-vertical')) {
+                nativeMenu = btn;
+                break;
+            }
         }
-        if (btnFav) {
-            btnFav.addEventListener('click', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                toggleState('fav', isFav, btnFav);
-            });
-        }
+    }
 
-        if (btnInfo) {
-            btnInfo.addEventListener('click', (e) => {
+    if (nativeMenu && customMoreBtn) {
+        // Confirm it is NOT a play button
+        if (!nativeMenu.classList.contains('cardOverlayFab') && !nativeMenu.getAttribute('data-action')?.includes('play')) {
+            // PROXY CLICK: Don't move the button (it breaks events). Click it remotely.
+            customMoreBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.openInfoModal) {
-                    window.openInfoModal(id);
-                }
+                nativeMenu.click();
             });
-        }
-
-        // 3. Hijack Native Menu Button (The "More" action)
-        // 3. Hijack Native Menu Button (The "More" action)
-        const customMoreBtn = overlay.querySelector('.action-more');
-        // Strict Selector: Look for data-action="menu" OR iterate button contents
-        let nativeMenu = card.querySelector('.cardOverlayButton[data-action="menu"]');
-
-        if (!nativeMenu) {
-            // Fallback: Find button with more_vert icon if data-action absent
-            const buttons = card.querySelectorAll('.cardOverlayButton');
-            for (const btn of buttons) {
-                if (btn.innerHTML.includes('more_vert') || btn.innerHTML.includes('dots-vertical')) {
-                    nativeMenu = btn;
-                    break;
-                }
-            }
-        }
-
-        if (nativeMenu && customMoreBtn) {
-            // Confirm it is NOT a play button
-            if (!nativeMenu.classList.contains('cardOverlayFab') && !nativeMenu.getAttribute('data-action')?.includes('play')) {
-                // PROXY CLICK: Don't move the button (it breaks events). Click it remotely.
-                customMoreBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    nativeMenu.click();
-                });
-            }
-        }
-
-        // Info -> Do Nothing (as requested "YET")
-
-        // Info -> Do Nothing (as requested "YET")
-        // Check/Fav -> Can implement later or leave as no-op for now.
-        // For now they just stop propagation so they don't trigger nav.
-
-        if (document.body.contains(card)) {
-            console.log('[LegitFlix] createHoverCard: Appending overlay to card...');
-            card.appendChild(overlay);
-            _activeOverlay = overlay;
-            console.log('[LegitFlix] createHoverCard: Overlay appended. In DOM?', document.body.contains(overlay));
-
-            // Move Native Play Button
-            const nativeFab = card.querySelector('.cardOverlayFab-primary');
-            // If we are attaching to card, nativeFab is inside card.
-            // But we want to move it INSIDE the overlay (child of card).
-            if (nativeFab) {
-                _borrowedButton = nativeFab;
-                _originalParent = nativeFab.parentNode;
-
-                const slot = overlay.querySelector('.hover-native-btn-slot');
-                slot.appendChild(nativeFab);
-            }
-
-            requestAnimationFrame(() => {
-                overlay.classList.add('is-loaded');
-                console.log('[LegitFlix] createHoverCard: is-loaded class added. Overlay classes:', overlay.className);
-            });
-        } else {
-            console.log('[LegitFlix] createHoverCard: Card not in body, cannot append overlay');
         }
     }
 
-    // Call setup
-    try {
-        setupHoverCards();
-        console.log('[LegitFlix] setupHoverCards: Call completed successfully');
-    } catch (err) {
-        console.error('[LegitFlix] setupHoverCards FAILED:', err);
-    }
+    // Info -> Do Nothing (as requested "YET")
 
-    // Helper to tag sections where we want native hover
-    function tagNativeSections() {
-        const sections = document.querySelectorAll('.verticalSection');
-        sections.forEach(s => {
-            const titleEl = s.querySelector('.sectionTitle');
-            if (titleEl) {
-                const t = titleEl.innerText.toLowerCase();
-                if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
-                    s.classList.add('native-hover-section');
-                }
-            }
+    // Info -> Do Nothing (as requested "YET")
+    // Check/Fav -> Can implement later or leave as no-op for now.
+    // For now they just stop propagation so they don't trigger nav.
+
+    if (document.body.contains(card)) {
+        console.log('[LegitFlix] createHoverCard: Appending overlay to card...');
+        card.appendChild(overlay);
+        _activeOverlay = overlay;
+        console.log('[LegitFlix] createHoverCard: Overlay appended. In DOM?', document.body.contains(overlay));
+
+        // Move Native Play Button
+        const nativeFab = card.querySelector('.cardOverlayFab-primary');
+        // If we are attaching to card, nativeFab is inside card.
+        // But we want to move it INSIDE the overlay (child of card).
+        if (nativeFab) {
+            _borrowedButton = nativeFab;
+            _originalParent = nativeFab.parentNode;
+
+            const slot = overlay.querySelector('.hover-native-btn-slot');
+            slot.appendChild(nativeFab);
+        }
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-loaded');
+            console.log('[LegitFlix] createHoverCard: is-loaded class added. Overlay classes:', overlay.className);
         });
+    } else {
+        console.log('[LegitFlix] createHoverCard: Card not in body, cannot append overlay');
     }
+}
 
-    // Helper to detect Page Type (Details vs Home)
-    function checkPageMode() {
-        const hash = window.location.hash.toLowerCase();
-        // If on details page, enable native hover mode globally
-        if (hash.includes('details')) {
-            document.body.classList.add('native-hover-mode');
-        } else {
-            document.body.classList.remove('native-hover-mode');
+// Call setup
+try {
+    setupHoverCards();
+    console.log('[LegitFlix] setupHoverCards: Call completed successfully');
+} catch (err) {
+    console.error('[LegitFlix] setupHoverCards FAILED:', err);
+}
+
+// Helper to tag sections where we want native hover
+function tagNativeSections() {
+    const sections = document.querySelectorAll('.verticalSection');
+    sections.forEach(s => {
+        const titleEl = s.querySelector('.sectionTitle');
+        if (titleEl) {
+            const t = titleEl.innerText.toLowerCase();
+            if (t.includes('continue') || t.includes('resume') || t.includes('history') || t.includes('next up') || t.includes('categories')) {
+                s.classList.add('native-hover-section');
+            }
         }
-    }
-
-    const observer = new MutationObserver((mutations) => {
-        checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
-        if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
-        renameMyList();
-        fixMixedCards();
-        injectPromoBanner();
-        tagNativeSections();
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-    // Dynamic Header Blur Logic
-    function initNavScroll() {
-        console.log('[LegitFlix] initNavScroll: Starting...');
-        let header = document.querySelector('.skinHeader');
-        console.log('[LegitFlix] initNavScroll: Header found?', !!header);
+}
 
-        // If header not found yet, wait for it
-        if (!header) {
-            console.log('[LegitFlix] initNavScroll: Header not ready, will retry...');
-            setTimeout(initNavScroll, 500); // Retry after 500ms
-            return;
-        }
+// Helper to detect Page Type (Details vs Home)
+function checkPageMode() {
+    const hash = window.location.hash.toLowerCase();
+    // If on details page, enable native hover mode globally
+    if (hash.includes('details')) {
+        document.body.classList.add('native-hover-mode');
+    } else {
+        document.body.classList.remove('native-hover-mode');
+    }
+}
 
-        const onScroll = () => {
-            // Try multiple scroll sources (Jellyfin uses different containers)
-            let scrollTop = 0;
+const observer = new MutationObserver((mutations) => {
+    checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
+    if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
+    renameMyList();
+    fixMixedCards();
+    injectPromoBanner();
+    tagNativeSections();
+});
+observer.observe(document.body, { childList: true, subtree: true });
+// Dynamic Header Blur Logic
+function initNavScroll() {
+    console.log('[LegitFlix] initNavScroll: Starting...');
+    let header = document.querySelector('.skinHeader');
+    console.log('[LegitFlix] initNavScroll: Header found?', !!header);
 
-            // Check common scroll containers in Jellyfin
-            const scrollContainer = document.querySelector('.mainAnimatedPages')
-                || document.querySelector('.page.type-interior')
-                || document.querySelector('[data-role="page"].active')
-                || document.scrollingElement
-                || document.body;
-
-            if (scrollContainer) {
-                scrollTop = scrollContainer.scrollTop;
-            }
-
-            // Also check window scroll as fallback
-            if (scrollTop === 0) {
-                scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-            }
-
-            const threshold = window.innerHeight * 0.1; // 10vh
-
-            // DEBUG: Log every 10th scroll event to avoid spam
-            if (Math.random() < 0.1) {
-                console.log('[LegitFlix] Scroll: top=' + scrollTop + ', threshold=' + Math.round(threshold) + ', container=' + (scrollContainer?.className || 'window'));
-            }
-
-            if (scrollTop > threshold) {
-                header.classList.add('legitflix-nav-scrolled');
-            } else {
-                header.classList.remove('legitflix-nav-scrolled');
-            }
-        };
-
-        // Attach to window with capture to catch all scrolls
-        window.addEventListener('scroll', onScroll, { capture: true, passive: true });
-
-        // Also attach to known scroll containers directly
-        const containers = document.querySelectorAll('.mainAnimatedPages, .page, [data-role="page"]');
-        console.log('[LegitFlix] initNavScroll: Attaching to', containers.length, 'containers');
-        containers.forEach(c => c.addEventListener('scroll', onScroll, { passive: true }));
-
-        // MutationObserver to attach to new pages
-        const pageObserver = new MutationObserver(() => {
-            document.querySelectorAll('.page:not([data-scroll-listener])').forEach(page => {
-                page.setAttribute('data-scroll-listener', 'true');
-                page.addEventListener('scroll', onScroll, { passive: true });
-                console.log('[LegitFlix] Attached scroll listener to new page');
-            });
-        });
-        pageObserver.observe(document.body, { childList: true, subtree: true });
-
-        // Run once
-        onScroll();
-        console.log('[LegitFlix] initNavScroll: Complete');
+    // If header not found yet, wait for it
+    if (!header) {
+        console.log('[LegitFlix] initNavScroll: Header not ready, will retry...');
+        setTimeout(initNavScroll, 500); // Retry after 500ms
+        return;
     }
 
-    // --- CUSTOM FOOTER ---
-    function injectCustomFooter() {
-        if (document.querySelector('.legitflix-theme-footer')) return;
+    const onScroll = () => {
+        // Try multiple scroll sources (Jellyfin uses different containers)
+        let scrollTop = 0;
 
-        const footer = document.createElement('div');
-        footer.className = 'legitflix-theme-footer';
-        // Add Logo + Text
-        footer.innerHTML = `
+        // Check common scroll containers in Jellyfin
+        const scrollContainer = document.querySelector('.mainAnimatedPages')
+            || document.querySelector('.page.type-interior')
+            || document.querySelector('[data-role="page"].active')
+            || document.scrollingElement
+            || document.body;
+
+        if (scrollContainer) {
+            scrollTop = scrollContainer.scrollTop;
+        }
+
+        // Also check window scroll as fallback
+        if (scrollTop === 0) {
+            scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+        }
+
+        const threshold = window.innerHeight * 0.1; // 10vh
+
+        // DEBUG: Log every 10th scroll event to avoid spam
+        if (Math.random() < 0.1) {
+            console.log('[LegitFlix] Scroll: top=' + scrollTop + ', threshold=' + Math.round(threshold) + ', container=' + (scrollContainer?.className || 'window'));
+        }
+
+        if (scrollTop > threshold) {
+            header.classList.add('legitflix-nav-scrolled');
+        } else {
+            header.classList.remove('legitflix-nav-scrolled');
+        }
+    };
+
+    // Attach to window with capture to catch all scrolls
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+
+    // Also attach to known scroll containers directly
+    const containers = document.querySelectorAll('.mainAnimatedPages, .page, [data-role="page"]');
+    console.log('[LegitFlix] initNavScroll: Attaching to', containers.length, 'containers');
+    containers.forEach(c => c.addEventListener('scroll', onScroll, { passive: true }));
+
+    // MutationObserver to attach to new pages
+    const pageObserver = new MutationObserver(() => {
+        document.querySelectorAll('.page:not([data-scroll-listener])').forEach(page => {
+            page.setAttribute('data-scroll-listener', 'true');
+            page.addEventListener('scroll', onScroll, { passive: true });
+            console.log('[LegitFlix] Attached scroll listener to new page');
+        });
+    });
+    pageObserver.observe(document.body, { childList: true, subtree: true });
+
+    // Run once
+    onScroll();
+    console.log('[LegitFlix] initNavScroll: Complete');
+}
+
+// --- CUSTOM FOOTER ---
+function injectCustomFooter() {
+    if (document.querySelector('.legitflix-theme-footer')) return;
+
+    const footer = document.createElement('div');
+    footer.className = 'legitflix-theme-footer';
+    // Add Logo + Text
+    footer.innerHTML = `
             <div class="footer-content">
                 <div class="footer-logo">
                     <span class="logo-text-legit">Legit</span><span class="logo-text-flix">Flix</span>
@@ -3083,148 +3057,148 @@ function init() {
                 <div class="footer-author">Created by <strong>Dani</strong></div>
             </div>
         `;
-        document.body.appendChild(footer);
+    document.body.appendChild(footer);
 
-        // Scroll Monitor for Footer (Show only at bottom)
-        const onScrollFooter = () => {
-            const scrollY = window.scrollY || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-            const docHeight = document.documentElement.scrollHeight;
+    // Scroll Monitor for Footer (Show only at bottom)
+    const onScrollFooter = () => {
+        const scrollY = window.scrollY || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
 
-            // Show if we are close to bottom (e.g. within 100px)
-            if (scrollY + windowHeight >= docHeight - 100) {
-                footer.classList.add('visible');
-            } else {
-                footer.classList.remove('visible');
-            }
-        };
+        // Show if we are close to bottom (e.g. within 100px)
+        if (scrollY + windowHeight >= docHeight - 100) {
+            footer.classList.add('visible');
+        } else {
+            footer.classList.remove('visible');
+        }
+    };
 
-        window.addEventListener('scroll', onScrollFooter, { passive: true });
+    window.addEventListener('scroll', onScrollFooter, { passive: true });
+}
+
+// --- INFO MODAL (Netflix Style) ---
+window.openInfoModal = async function (id) {
+    console.log('[LegitFlix] Opening Info Modal for:', id);
+
+    // Remove existing modal if any
+    const existing = document.querySelector('.legitflix-info-modal');
+    if (existing) existing.remove();
+
+    const auth = await getAuth();
+    if (!auth) return;
+
+    const userId = ApiClient.getCurrentUserId();
+
+    // Fetch Extended Details
+    const details = await (await fetch(`/Users/${userId}/Items/${id}?Fields=RemoteTrailers,People,Studios,Genres,Overview,ProductionYear,OfficialRating,RunTimeTicks,Tags,ImageTags`, {
+        headers: { 'X-Emby-Token': auth.AccessToken || auth }
+    })).json();
+
+    if (!details) return;
+
+    // --- TRAILER LOGIC (Hybrid: Youtube Embed + Native Fallback) ---
+
+    // 1. Helper: Extract YT ID
+    const getYoutubeId = (url) => {
+        if (!url) return null;
+        if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+        return null;
+    };
+
+    let mainTrailerUrl = null;
+    let mainVidId = null;
+    let allTrailers = [];
+    let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
+
+    // 2. Collect Remote Trailers (Metadata Fallback)
+    if (details.RemoteTrailers) {
+        details.RemoteTrailers.forEach(t => {
+            const vid = getYoutubeId(t.Url);
+            if (vid) allTrailers.push({ title: 'Main Trailer', id: vid, type: 'Movie' });
+        });
     }
 
-    // --- INFO MODAL (Netflix Style) ---
-    window.openInfoModal = async function (id) {
-        console.log('[LegitFlix] Opening Info Modal for:', id);
-
-        // Remove existing modal if any
-        const existing = document.querySelector('.legitflix-info-modal');
-        if (existing) existing.remove();
-
-        const auth = await getAuth();
-        if (!auth) return;
-
-        const userId = ApiClient.getCurrentUserId();
-
-        // Fetch Extended Details
-        const details = await (await fetch(`/Users/${userId}/Items/${id}?Fields=RemoteTrailers,People,Studios,Genres,Overview,ProductionYear,OfficialRating,RunTimeTicks,Tags,ImageTags`, {
-            headers: { 'X-Emby-Token': auth.AccessToken || auth }
-        })).json();
-
-        if (!details) return;
-
-        // --- TRAILER LOGIC (Hybrid: Youtube Embed + Native Fallback) ---
-
-        // 1. Helper: Extract YT ID
-        const getYoutubeId = (url) => {
-            if (!url) return null;
-            if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
-            if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-            if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
-            return null;
-        };
-
-        let mainTrailerUrl = null;
-        let mainVidId = null;
-        let allTrailers = [];
-        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
-
-        // 2. Collect Remote Trailers (Metadata Fallback)
-        if (details.RemoteTrailers) {
-            details.RemoteTrailers.forEach(t => {
-                const vid = getYoutubeId(t.Url);
-                if (vid) allTrailers.push({ title: 'Main Trailer', id: vid, type: 'Movie' });
+    // 3. Collect Season Trailers (for Series)
+    if (details.Type === 'Series') {
+        try {
+            const seasonRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Season&Fields=RemoteTrailers`, {
+                headers: { 'X-Emby-Token': auth.AccessToken }
             });
-        }
-
-        // 3. Collect Season Trailers (for Series)
-        if (details.Type === 'Series') {
-            try {
-                const seasonRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Season&Fields=RemoteTrailers`, {
-                    headers: { 'X-Emby-Token': auth.AccessToken }
+            const seasons = await seasonRes.json();
+            if (seasons.Items) {
+                seasons.Items.forEach(s => {
+                    if (s.RemoteTrailers) {
+                        s.RemoteTrailers.forEach(t => {
+                            const vid = getYoutubeId(t.Url);
+                            if (vid) allTrailers.push({ title: s.Name, id: vid });
+                        });
+                    }
                 });
-                const seasons = await seasonRes.json();
-                if (seasons.Items) {
-                    seasons.Items.forEach(s => {
-                        if (s.RemoteTrailers) {
-                            s.RemoteTrailers.forEach(t => {
-                                const vid = getYoutubeId(t.Url);
-                                if (vid) allTrailers.push({ title: s.Name, id: vid });
-                            });
-                        }
-                    });
-                }
-            } catch (e) { console.log('Season fetch failed', e); }
-        }
-
-        // 4. Select Main Video (Priority: Season 1 > First)
-        if (allTrailers.length > 0) {
-            mainVidId = allTrailers[0].id; // Default
-            const s1 = allTrailers.find(t => t.title === 'Season 1');
-            if (s1) mainVidId = s1.id;
-
-            // Standard YouTube Embed (With Ads/Cookies/Strict Policy for max compatibility)
-            // Added params to strip UI: autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}
-            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}`;
-        }
-
-        // 5. Native Native Check (for Button)
-        let hasNativeTrailers = (details.LocalTrailerCount && details.LocalTrailerCount > 0);
-        let hasRemoteTrailers = (details.RemoteTrailers && details.RemoteTrailers.length > 0);
-
-        // --- METADATA ---
-        const year = details.ProductionYear || '';
-        const rating = details.OfficialRating || '';
-        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
-        const genres = details.Genres ? details.Genres.join(', ') : '';
-        const desc = details.Overview || 'No description available.';
-
-        // People
-        const people = details.People || [];
-        const cast = people.slice(0, 10).map(p => p.Name).join(', '); // More cast for About
-        const director = people.filter(p => p.Type === 'Director').map(p => p.Name).join(', ');
-        const writers = people.filter(p => p.Type === 'Writer').map(p => p.Name).join(', ');
-        const tags = details.Tags ? details.Tags.join(', ') : '';
-
-        // Logo
-        const hasLogo = details.ImageTags && details.ImageTags.Logo;
-        const logoHtml = hasLogo
-            ? `<img src="/Items/${details.Id}/Images/Logo?maxHeight=140&maxWidth=400&quality=90" class="info-logo" alt="${details.Name}" />`
-            : `<h1 class="info-title-text">${details.Name}</h1>`;
-
-        // --- TRAILERS SECTION HTML ---
-        // --- SWITCH TRAILER HELPER ---
-        window.legitFlixSwitchTrailer = function (vidId) {
-            const iframe = document.getElementById('mainInfoIframe');
-            const container = document.querySelector('.info-video-container');
-            const fallback = document.querySelector('.info-backdrop-fallback');
-
-            if (iframe) {
-                // Standard YouTube Embed (With Ads/Cookies/Strict Policy)
-                // Updated with stripped UI params
-                iframe.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${vidId}`;
-                container.classList.remove('no-video');
-                container.classList.add('has-video');
             }
-        };
+        } catch (e) { console.log('Season fetch failed', e); }
+    }
 
-        // --- TRAILERS GRID HTML ---
-        let trailersHtml = '';
-        if (allTrailers.length > 0) {
-            // Generate Grid
-            const cards = allTrailers.map(t => {
-                const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
-                // Switch Video as requested
-                return `
+    // 4. Select Main Video (Priority: Season 1 > First)
+    if (allTrailers.length > 0) {
+        mainVidId = allTrailers[0].id; // Default
+        const s1 = allTrailers.find(t => t.title === 'Season 1');
+        if (s1) mainVidId = s1.id;
+
+        // Standard YouTube Embed (With Ads/Cookies/Strict Policy for max compatibility)
+        // Added params to strip UI: autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}
+        mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}`;
+    }
+
+    // 5. Native Native Check (for Button)
+    let hasNativeTrailers = (details.LocalTrailerCount && details.LocalTrailerCount > 0);
+    let hasRemoteTrailers = (details.RemoteTrailers && details.RemoteTrailers.length > 0);
+
+    // --- METADATA ---
+    const year = details.ProductionYear || '';
+    const rating = details.OfficialRating || '';
+    const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
+    const genres = details.Genres ? details.Genres.join(', ') : '';
+    const desc = details.Overview || 'No description available.';
+
+    // People
+    const people = details.People || [];
+    const cast = people.slice(0, 10).map(p => p.Name).join(', '); // More cast for About
+    const director = people.filter(p => p.Type === 'Director').map(p => p.Name).join(', ');
+    const writers = people.filter(p => p.Type === 'Writer').map(p => p.Name).join(', ');
+    const tags = details.Tags ? details.Tags.join(', ') : '';
+
+    // Logo
+    const hasLogo = details.ImageTags && details.ImageTags.Logo;
+    const logoHtml = hasLogo
+        ? `<img src="/Items/${details.Id}/Images/Logo?maxHeight=140&maxWidth=400&quality=90" class="info-logo" alt="${details.Name}" />`
+        : `<h1 class="info-title-text">${details.Name}</h1>`;
+
+    // --- TRAILERS SECTION HTML ---
+    // --- SWITCH TRAILER HELPER ---
+    window.legitFlixSwitchTrailer = function (vidId) {
+        const iframe = document.getElementById('mainInfoIframe');
+        const container = document.querySelector('.info-video-container');
+        const fallback = document.querySelector('.info-backdrop-fallback');
+
+        if (iframe) {
+            // Standard YouTube Embed (With Ads/Cookies/Strict Policy)
+            // Updated with stripped UI params
+            iframe.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${vidId}`;
+            container.classList.remove('no-video');
+            container.classList.add('has-video');
+        }
+    };
+
+    // --- TRAILERS GRID HTML ---
+    let trailersHtml = '';
+    if (allTrailers.length > 0) {
+        // Generate Grid
+        const cards = allTrailers.map(t => {
+            const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
+            // Switch Video as requested
+            return `
                     <div class="trailer-card" onclick="window.legitFlixSwitchTrailer('${t.id}')">
                         <div class="trailer-thumb">
                             <img src="${img}" alt="${t.title}" loading="lazy">
@@ -3233,9 +3207,9 @@ function init() {
                         <div class="trailer-title">${t.title}</div>
                     </div>
                 `;
-            }).join('');
+        }).join('');
 
-            trailersHtml = `
+        trailersHtml = `
                 <div class="info-trailers-section">
                     <h3>Trailers & More</h3>
                     <div class="trailers-grid">
@@ -3243,12 +3217,12 @@ function init() {
                     </div>
                 </div>
             `;
-        }
+    }
 
-        // --- MODAL HTML ---
-        const modal = document.createElement('div');
-        modal.className = 'legitflix-info-modal';
-        modal.innerHTML = `
+    // --- MODAL HTML ---
+    const modal = document.createElement('div');
+    modal.className = 'legitflix-info-modal';
+    modal.innerHTML = `
             <div class="info-modal-backdrop"></div>
             <div class="info-modal-content">
                 <button class="btn-close-modal"><span class="material-icons">close</span></button>
@@ -3256,9 +3230,9 @@ function init() {
                 <div class="info-video-container ${mainTrailerUrl ? 'has-video' : 'no-video'}">
                     <div class="iframe-wrapper">
                          ${mainTrailerUrl
-                ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
-                : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
-            }
+            ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
+            : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
+        }
                     </div>
                     
                     ${mainTrailerUrl ? `
@@ -3335,73 +3309,73 @@ function init() {
             </div>
         `;
 
-        document.body.appendChild(modal);
-        document.body.classList.add('legitflix-no-scroll'); // LOCK SCROLL
+    document.body.appendChild(modal);
+    document.body.classList.add('legitflix-no-scroll'); // LOCK SCROLL
 
-        // Add Visible Class for Animation
-        requestAnimationFrame(() => modal.classList.add('visible'));
+    // Add Visible Class for Animation
+    requestAnimationFrame(() => modal.classList.add('visible'));
 
-        // --- EVENTS ---
+    // --- EVENTS ---
 
-        // Helper to switch video
-        // Helper to switch video (ALREADY DEFINED ABOVE - Removing Duplicate)
-        // window.legitFlixSwitchTrailer = ... (Removed to fix ReferenceError)
+    // Helper to switch video
+    // Helper to switch video (ALREADY DEFINED ABOVE - Removing Duplicate)
+    // window.legitFlixSwitchTrailer = ... (Removed to fix ReferenceError)
 
-        // CLOSE
-        const close = () => {
-            modal.classList.remove('visible');
-            document.body.classList.remove('legitflix-no-scroll'); // UNLOCK SCROLL
-            setTimeout(() => modal.remove(), 300);
-        };
-        modal.querySelector('.info-modal-backdrop').onclick = close;
-        modal.querySelector('.btn-close-modal').onclick = close;
+    // CLOSE
+    const close = () => {
+        modal.classList.remove('visible');
+        document.body.classList.remove('legitflix-no-scroll'); // UNLOCK SCROLL
+        setTimeout(() => modal.remove(), 300);
+    };
+    modal.querySelector('.info-modal-backdrop').onclick = close;
+    modal.querySelector('.btn-close-modal').onclick = close;
 
-        // Mute Logic
-        if (mainTrailerUrl) {
-            const btnMute = modal.querySelector('.btn-mute-toggle');
-            if (btnMute) {
-                let isMuted = true;
-                const iframe = modal.querySelector('iframe');
-                // Enable JS API if not already
-                if (!iframe.src.includes('enablejsapi')) iframe.src += "&enablejsapi=1";
+    // Mute Logic
+    if (mainTrailerUrl) {
+        const btnMute = modal.querySelector('.btn-mute-toggle');
+        if (btnMute) {
+            let isMuted = true;
+            const iframe = modal.querySelector('iframe');
+            // Enable JS API if not already
+            if (!iframe.src.includes('enablejsapi')) iframe.src += "&enablejsapi=1";
 
-                btnMute.onclick = () => {
-                    isMuted = !isMuted;
-                    btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
-                    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute', args: [] }), '*');
-                };
-            }
-        }
-
-        // Fav Button
-        // ...
-
-        // --- IDLE ANIMATION LOGIC (User Request) ---
-        const heroContent = modal.querySelector('.info-hero-content');
-        const videoContainer = modal.querySelector('.info-video-container');
-        let idleTimer;
-
-        const startIdleTimer = () => {
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => {
-                if (heroContent) heroContent.classList.add('idle');
-            }, 5000); // 5 seconds as requested
-        };
-
-        const resetIdle = () => {
-            if (heroContent) heroContent.classList.remove('idle');
-            startIdleTimer();
-        };
-
-        if (videoContainer) {
-            videoContainer.addEventListener('mousemove', resetIdle);
-            videoContainer.addEventListener('click', resetIdle); // Reset on click too
-            startIdleTimer(); // Start initially
+            btnMute.onclick = () => {
+                isMuted = !isMuted;
+                btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute', args: [] }), '*');
+            };
         }
     }
 
-    injectCustomFooter();
-    initNavScroll(); // Start scroll listener
+    // Fav Button
+    // ...
+
+    // --- IDLE ANIMATION LOGIC (User Request) ---
+    const heroContent = modal.querySelector('.info-hero-content');
+    const videoContainer = modal.querySelector('.info-video-container');
+    let idleTimer;
+
+    const startIdleTimer = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            if (heroContent) heroContent.classList.add('idle');
+        }, 5000); // 5 seconds as requested
+    };
+
+    const resetIdle = () => {
+        if (heroContent) heroContent.classList.remove('idle');
+        startIdleTimer();
+    };
+
+    if (videoContainer) {
+        videoContainer.addEventListener('mousemove', resetIdle);
+        videoContainer.addEventListener('click', resetIdle); // Reset on click too
+        startIdleTimer(); // Start initially
+    }
+}
+
+injectCustomFooter();
+initNavScroll(); // Start scroll listener
 
 }
 
@@ -3437,8 +3411,9 @@ async function injectDetailHero() {
         return; // Wait for retry
     }
 
-    // Prevent double injection
-    if (container.classList.contains('has-legit-detail-hero')) return;
+    // Prevent double injection or concurrent processing
+    if (container.classList.contains('has-legit-detail-hero') || container.classList.contains('pending-legit-hero')) return;
+    container.classList.add('pending-legit-hero');
 
     logger.log('injectDetailHero: Attempting injection for Item', itemId);
 
@@ -3446,6 +3421,7 @@ async function injectDetailHero() {
     const auth = await getAuth();
     if (!auth) {
         logger.error('injectDetailHero: No Auth available');
+        container.classList.remove('pending-legit-hero');
         return;
     }
 
@@ -3467,11 +3443,13 @@ async function injectDetailHero() {
 
         // 5. Inject & Cleanup
         container.insertBefore(wrapper, container.firstChild);
+        container.classList.remove('pending-legit-hero');
         container.classList.add('has-legit-detail-hero');
 
         logger.log('injectDetailHero: SUCCESS - Injected Hero for', item.Name);
 
     } catch (e) {
+        container.classList.remove('pending-legit-hero');
         logger.error('injectDetailHero: Failed to fetch/render', e);
     }
 }
