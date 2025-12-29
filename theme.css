@@ -3762,14 +3762,17 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- REFINED MODAL STYLES (User Request) --- */
 
 /* 1. Mute Button Alignment */
-/* Aligned with Close (Y / Top) and Play (X / Left) */
+/* Requested: Bottom-Right (Play Y / Close X) */
 .video-mute-overlay {
     position: absolute;
-    top: 20px !important;
-    /* Aligns with Close Y */
-    left: 40px !important;
-    /* Aligns with Play X */
-    z-index: 20;
+    top: auto !important;
+    bottom: 50px !important;
+    /* Aligns with Play Button Y */
+    left: auto !important;
+    right: 40px !important;
+    /* Aligns with Content Padding */
+    z-index: 2147483647 !important;
+    /* Force MAX Z-Index */
 }
 
 .btn-mute-toggle {
@@ -3840,9 +3843,9 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .btn-close-modal {
     position: absolute;
     top: 20px;
-    /* Matches Mute Y */
     right: 20px;
-    z-index: 20;
+    z-index: 2147483647 !important;
+    /* Force MAX Z-Index */
     background: rgba(20, 20, 20, 0.6);
     color: white;
     border: none;
