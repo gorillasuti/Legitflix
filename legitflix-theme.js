@@ -3535,4 +3535,16 @@ function createDetailHeroHTML(item, nextUp) {
     `;
 }
 
+
+// --- INITIALIZATION ---
 init();
+
+// --- CONTINUOUS MONITORING ---
+// Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
+function monitorPageLoop() {
+    injectMediaBar(); // Handles Home and Detail page logic
+    setTimeout(monitorPageLoop, 800);
+}
+
+// Start the loop
+monitorPageLoop();
