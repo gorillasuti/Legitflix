@@ -3425,16 +3425,7 @@ async function injectDetailHero() {
     }
 
     try {
-        // Updated Fetch: Get JSON directly to support 'Fields' properly and avoid client-side model limitations
-        // We need MediaStreams for Sub/Dub, Studios for icons, etc.
-        const encodedId = encodeURIComponent(itemId);
-        // Note: Using `Users/{UserId}/Items/{Id}` endpoint is more reliable for enriched data than generic getItem
-        const itemUrl = `/Users/${auth.UserId}/Items/${encodedId}?Fields=MediaStreams,UserData,Genres,ProductionYear,OfficialRating,Overview,Tags,Studios,ItemCounts&EnableImageTypes=Backdrop,Logo,Primary`;
-
-        const item = await (await fetch(itemUrl, {
-            headers: { 'X-Emby-Token': auth.AccessToken }
-        })).json();
-
+        const item = await window.ApiClient.getItem(auth.UserId, itemId);
         logger.log('injectDetailHero: Item fetched', item.Name);
 
         // Series Logic: Fetch Next Up for the "Continue" button
@@ -3473,9 +3464,8 @@ function createDetailHeroHTML(item, nextUp) {
         ? `/Items/${item.Id}/Images/Logo?maxWidth=800&quality=90`
         : null;
 
-    // --- DATA PROCESSING ---
-
-    // 1. Audio / Subtitles
+    // --- RICH METADATA (Matching Home Carousel) ---
+    // 1. Audio/Subtitle Logic
     let audioLangs = new Set();
     let subLangs = new Set();
     if (item.MediaStreams) {
@@ -3484,52 +3474,59 @@ function createDetailHeroHTML(item, nextUp) {
             if (stream.Type === 'Subtitle' && stream.Language) subLangs.add(stream.Language);
         });
     }
+    const hasJpnAudio = audioLangs.has('jpn');
+    const hasEngSub = subLangs.has('eng');
+    const subDubText = (hasJpnAudio && hasEngSub) ? 'Sub | Dub' : (audioLangs.size > 0 ? 'Sub | Dub' : '');
 
-    // Convert Set to Array map for better display names (e.g. 'eng' -> 'English' if possible, or just code)
-    // Simple formatter or just use the code for now. Reference shows full names "Japanese, English..."
-    const formatLangs = (set) => {
-        if (set.size === 0) return 'None';
-        return Array.from(set).join(', ').toUpperCase(); // Keeping it simple for now
-    };
+    // 2. Rating Star
+    const communityRating = item.CommunityRating ? item.CommunityRating.toFixed(1) : '';
+    const ratingStar = communityRating
+        ? `<span class="hero-meta-divider">•</span><span class="hero-rating"><span class="material-icons">star</span> ${communityRating}</span>`
+        : '';
 
-    const hasSub = subLangs.size > 0;
-    const hasDub = audioLangs.size > 1 || (audioLangs.size === 1 && !audioLangs.has('jpn')); // Rough logic
+    // 3. Status / End Date
+    let endsAtHtml = '';
+    if (item.Type === 'Series') {
+        const year = item.ProductionYear || '';
+        const endYear = item.EndDate ? new Date(item.EndDate).getFullYear() : '';
+        const status = item.Status || 'Continuing';
+        const statusText = (status === 'Continuing') ? 'Present' : endYear;
+        endsAtHtml = `<span class="hero-meta-divider">•</span><span class="hero-meta-text">${year} - ${statusText}</span>`;
+    } else {
+        // Movies: Year + Runtime
+        const year = item.ProductionYear || '';
+        const runtime = item.RunTimeTicks ? Math.round(item.RunTimeTicks / 600000000) + 'm' : '';
+        endsAtHtml = `<span class="hero-meta-divider">•</span><span class="hero-meta-text">${year}</span> <span class="hero-meta-divider">•</span> <span class="hero-meta-text">${runtime}</span>`;
+    }
 
-    // 2. Metadata
-    const rating = item.OfficialRating || 'NR';
-    const year = item.ProductionYear || '';
-    const ended = item.EndDate ? ` - ${new Date(item.EndDate).getFullYear()}` : (item.Status === 'Continuing' ? ' - Present' : '');
-    const genres = item.Genres ? item.Genres.slice(0, 3).join(' <span class="bullet">•</span> ') : '';
-    const description = item.Overview || '';
-
-    // 3. Buttons
+    // Buttons
     let actionBtnText = 'Start Watching';
-    let actionBtnSub = 'S1:E1'; // Subtext
     let actionBtnId = item.Id;
+    let actionIcon = 'play_arrow';
+    let btnSubText = '';
 
+    // Series Logic
     if (nextUp) {
         actionBtnId = nextUp.Id;
         const s = nextUp.ParentIndexNumber;
         const e = nextUp.IndexNumber;
-
         const userData = nextUp.UserData || {};
-        const pct = userData.PlaybackPositionTicks > 0
-            ? Math.round((userData.PlaybackPositionTicks / nextUp.RunTimeTicks) * 100)
-            : 0;
 
-        if (pct > 0) {
-            actionBtnText = 'Resume';
-            actionBtnSub = `S${s}:E${e} (${pct}%)`;
+        if (userData.PlaybackPositionTicks > 0) {
+            const pct = Math.round((userData.PlaybackPositionTicks / nextUp.RunTimeTicks) * 100);
+            actionBtnText = 'CONTINUE';
+            btnSubText = `S${s} E${e} - ${pct}%`;
         } else {
             actionBtnText = 'Start Watching';
-            actionBtnSub = `S${s}:E${e}`;
+            btnSubText = `S${s} E${e}`;
         }
-    } else if (item.UserData && item.UserData.PlaybackPositionTicks > 0) {
+    } else if (item.userData && item.UserData.PlaybackPositionTicks > 0) {
+        // Movie Resume
         actionBtnText = 'Resume';
-        actionBtnSub = `Continue`;
+        const pct = Math.round((item.UserData.PlaybackPositionTicks / item.RunTimeTicks) * 100);
+        btnSubText = `${pct}%`;
     }
 
-    // Fav
     const isFav = item.UserData && item.UserData.IsFavorite;
     const favIcon = isFav ? 'bookmark' : 'bookmark_border';
     const favClass = isFav ? 'active' : '';
@@ -3537,54 +3534,38 @@ function createDetailHeroHTML(item, nextUp) {
     return `
         <div class="hero-backdrop" style="background-image: url('${backdropUrl}')"></div>
         <div class="hero-overlay"></div>
-        
         <div class="hero-content detail-hero-content">
+            ${logoUrl ? `<img src="${logoUrl}" class="hero-logo" alt="${item.Name}">` : `<h1 class="hero-title">${item.Name}</h1>`}
             
-            <!-- LEFT COLUMN: Main Info -->
-            <div class="hero-col-left">
-                ${logoUrl
-            ? `<img src="${logoUrl}" class="hero-logo" alt="${item.Name}">`
-            : `<h1 class="hero-title">${item.Name}</h1>`}
-
-                <div class="hero-meta-line">
-                    <span class="badge-rating">${rating}</span>
-                    <span class="badge-subdub">${hasSub ? 'Sub' : ''} ${hasSub && hasDub ? '|' : ''} ${hasDub ? 'Dub' : ''}</span>
-                    <span class="meta-year">${year}${ended}</span>
-                    <span class="meta-genres">${genres}</span>
-                </div>
-
-                <div class="hero-actions">
-                    <button class="btn-hero-primary" onclick="window.legitFlixPlay('${actionBtnId}')">
-                        <span class="btn-text-stack">
-                            <span class="btn-label">${actionBtnText}</span>
-                            <span class="btn-sub">${actionBtnSub}</span>
-                        </span>
-                        <span class="material-icons btn-icon-right">play_arrow</span>
-                    </button>
-                    
-                    <button class="btn-hero-bookmark ${favClass}" onclick="window.legitFlixToggleFav('${item.Id}', this)">
-                        <span class="material-icons">${favIcon}</span>
-                    </button>
-                    
-                     <button class="btn-hero-bookmark icon-only" title="Share" onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!');">
-                        <span class="material-icons">share</span>
-                    </button>
-                </div>
-
-                <div class="hero-desc">${description}</div>
+            <div class="hero-meta-line">
+                <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
+                
+                ${subDubText ? `<span class="hero-meta-divider">•</span><span class="hero-meta-text">${subDubText}</span>` : ''}
+                
+                <span class="hero-meta-divider">•</span>
+                <span class="hero-meta-text">${item.Genres ? item.Genres.slice(0, 3).join(', ') : 'Anime'}</span>
+                
+                ${ratingStar}
+                ${endsAtHtml}
             </div>
 
-            <!-- RIGHT COLUMN: Tech Specs -->
-            <div class="hero-col-right">
-                <div class="spec-row">
-                    <span class="spec-label">Audio</span>
-                    <span class="spec-value">${formatLangs(audioLangs)}</span>
-                </div>
-                <div class="spec-row">
-                    <span class="spec-label">Subtitles</span>
-                    <span class="spec-value">${formatLangs(subLangs)}</span>
-                </div>
+            <div class="hero-actions">
+                <button class="btn-hero-primary" onclick="window.legitFlixPlay('${actionBtnId}')">
+                     <span class="material-icons">${actionIcon}</span> 
+                     <div class="btn-text-col">
+                        <span class="btn-main-text">${actionBtnText}</span>
+                        ${btnSubText ? `<span class="btn-sub-text">${btnSubText}</span>` : ''}
+                     </div>
+                </button>
+                <button class="btn-hero-bookmark ${favClass}" onclick="window.legitFlixToggleFav('${item.Id}', this)">
+                    <span class="material-icons">${favIcon}</span>
+                </button>
+                <button class="btn-hero-bookmark" title="More Information" onclick="window.openInfoModal('${item.Id}')">
+                    <span class="material-icons">more_vert</span>
+                </button>
             </div>
+
+            <div class="hero-desc">${description}</div>
         </div>
     `;
 }
