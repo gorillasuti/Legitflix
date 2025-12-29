@@ -7,6 +7,72 @@
 
 console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
+// --- FORCE SLEEK SCROLLBAR (JS Injection) ---
+// User requested "Use JS freely" to fix stubborn scrollbars.
+try {
+    const scrollStyle = document.createElement('style');
+    scrollStyle.id = 'legitflix-scrollbar-override';
+    scrollStyle.textContent = `
+        /* Force Hardware Acceleration for smooth scrolling */
+        html, body {
+            scroll-behavior: smooth;
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin !important;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+        }
+
+        /* WebKit (Chrome/Edge/Safari) */
+        ::-webkit-scrollbar {
+            width: 6px !important;
+            height: 6px !important;
+            background: transparent !important;
+            display: block !important;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent !important;
+            border: none !important;
+            margin: 0 !important;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            border-radius: 100vh !important;
+            border: none !important;
+            transition: background-color 0.2s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        /* NUCLEAR OPTION: Hide Buttons/Arrows */
+        ::-webkit-scrollbar-button,
+        ::-webkit-scrollbar-button:single-button,
+        ::-webkit-scrollbar-button:vertical:decrement,
+        ::-webkit-scrollbar-button:vertical:increment,
+        ::-webkit-scrollbar-button:horizontal:decrement,
+        ::-webkit-scrollbar-button:horizontal:increment {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: transparent !important;
+        }
+    `;
+    document.head.appendChild(scrollStyle);
+    console.log('[LegitFlix] Scrollbar styles injected.');
+} catch (e) {
+    console.warn('[LegitFlix] Failed to inject scrollbar styles:', e);
+}
+
 // --- CONFIG ---
 const CONFIG = {
     // Only fetch these types for the Hero Carousel
