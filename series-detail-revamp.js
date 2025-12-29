@@ -1467,18 +1467,62 @@
      * Hide original Jellyfin page elements
      */
     function hideOriginalElements() {
+        // Hide all original Jellyfin detail page elements
         const selectors = [
+            // Main content areas
             '.detailRibbon',
             '.detailPagePrimaryContent',
+            '.detailPagePrimaryContainer',
+            '.detailPageSecondaryContainer',
+            '.detailImageContainer',
+
+            // Seasons/Episodes sections
             '#listChildrenCollapsible',
+            '#childrenCollapsible',
+            '.nextUpSection',
+
+            // Cast & Similar
+            '#castCollapsible',
+            '#guestCastCollapsible',
+            '#similarCollapsible',
             '.itemDetailsCastSection',
-            '.similarSection'
+            '.similarSection',
+
+            // Other sections
+            '#additionalPartsCollapsible',
+            '#specialsCollapsible',
+            '#musicVideosCollapsible',
+            '#scenesCollapsible',
+            '.moreFromSeasonSection',
+            '.moreFromArtistSection',
+            '.programGuideSection',
+            '#seriesTimerScheduleSection',
+            '#seriesScheduleSection',
+            '#lyricsSection'
         ];
+
         selectors.forEach(sel => {
             document.querySelectorAll(sel).forEach(el => {
                 el.style.display = 'none';
             });
         });
+
+        // Remove the backdrop image from the page background
+        const itemDetailPage = document.querySelector('.itemDetailPage');
+        if (itemDetailPage) {
+            itemDetailPage.style.backgroundImage = 'none';
+            itemDetailPage.style.backgroundColor = 'var(--clr-bg-main, #141414)';
+        }
+
+        // Also clear any backdrop containers
+        document.querySelectorAll('.backdropImage, .detailPageBackdrop, [class*="backdrop"]').forEach(el => {
+            if (!el.closest('.lf-series-container')) {
+                el.style.backgroundImage = 'none';
+                el.style.opacity = '0';
+            }
+        });
+
+        log('Original Jellyfin elements hidden');
     }
 
     /**
