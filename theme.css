@@ -1151,6 +1151,25 @@ header,
     border: none !important;
 }
 
+/* Disable hover effects during multi-select to prevent interference */
+body.with-multiselect .card:hover .cardBox {
+    transform: none !important;
+}
+
+body.with-multiselect .card:hover .cardScalable {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    /* Reset to base shadow */
+}
+
+body.with-multiselect .card:hover .cardImageContainer::after,
+body.with-multiselect .card:hover .innerCardFooter,
+body.with-multiselect .card:hover .cardOverlayContainer,
+body.with-multiselect .card:hover .cardOverlayButton {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 /* =========== FORM DIALOG STYLING (Add to Collection, etc.) =========== */
 
 /* Dialog Container */
