@@ -2814,6 +2814,32 @@ function init() {
         let trailerUrl = null;
         let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
 
+        // SERIES: Attempt to fetch Season 1 Trailer first (User Request)
+        if (details.Type === 'Series') {
+            try {
+                // Fetch Seasons
+                const seasonRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Season&Fields=RemoteTrailers`, {
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+                const seasons = await seasonRes.json();
+
+                if (seasons.Items && seasons.Items.length > 0) {
+                    // Try to find Season 1, or just take the first one
+                    const season1 = seasons.Items.find(s => s.IndexNumber === 1) || seasons.Items[0];
+                    if (season1 && season1.RemoteTrailers && season1.RemoteTrailers.length > 0) {
+                        const s1Trailer = season1.RemoteTrailers.find(t => t.Url.includes('youtube') || t.Url.includes('youtu.be'));
+                        if (s1Trailer) {
+                            console.log('[LegitFlix] Found Season 1 Trailer:', s1Trailer.Url);
+                            // Set logic below will process this
+                            details.RemoteTrailers = [s1Trailer];
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('[LegitFlix] Failed to fetch Season 1 trailer:', e);
+            }
+        }
+
         if (details.RemoteTrailers && details.RemoteTrailers.length > 0) {
             // Find YouTube URL
             const validTrailer = details.RemoteTrailers.find(t => t.Url.includes('youtube') || t.Url.includes('youtu.be'));
@@ -2824,8 +2850,10 @@ function init() {
                 else if (validTrailer.Url.includes('youtu.be/')) videoId = validTrailer.Url.split('youtu.be/')[1].split('?')[0];
 
                 if (videoId) {
-                    // Privacy Enhanced + No Controls + Loop + No Related (rel=0) + Modest Branding
-                    trailerUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}&disablekb=1&fs=0&playsinline=1`;
+                    // Standard Youtube Domain (fixes Err 153) + No Cookie was creating issues?
+                    // Privacy Enhanced seems to be blocked by some owners. 
+                    // Using standard www.youtube.com
+                    trailerUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}&disablekb=1&fs=0&playsinline=1&origin=${window.location.origin}`;
                 }
             }
         }
