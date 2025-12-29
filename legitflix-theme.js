@@ -131,6 +131,26 @@ window.legitFlixPlayTrailer = function (id) {
     }
 };
 
+window.legitFlixPlay = function (id) {
+    logger.log('Play Clicked:', id);
+    if (window.require) {
+        window.require(['playbackManager'], (pm) => {
+            const apiClient = window.ApiClient;
+            apiClient.getItem(apiClient.getCurrentUserId(), id).then(item => {
+                pm.play({ items: [item] });
+            });
+        });
+    } else if (window.PlaybackManager) {
+        const userId = window.ApiClient.getCurrentUserId();
+        window.ApiClient.getItem(userId, id).then(item => {
+            window.PlaybackManager.play({ items: [item] });
+        });
+    } else {
+        // Fallback: Navigate to item
+        window.legitFlixShowItem(id);
+    }
+};
+
 window.legitFlixToggleFav = async function (id, btn) {
     logger.log('Toggle Fav:', id);
     const auth = await getAuth();
