@@ -2749,8 +2749,33 @@ function init() {
 
         const footer = document.createElement('div');
         footer.className = 'legitflix-theme-footer';
-        footer.innerHTML = 'Created by <strong>Dani</strong>';
+        // Add Logo + Text
+        footer.innerHTML = `
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-text-legit">Legit</span><span class="logo-text-flix">Flix</span>
+                </div>
+                <div class="footer-divider"></div>
+                <div class="footer-author">Created by <strong>Dani</strong></div>
+            </div>
+        `;
         document.body.appendChild(footer);
+
+        // Scroll Monitor for Footer (Show only at bottom)
+        const onScrollFooter = () => {
+            const scrollY = window.scrollY || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const docHeight = document.documentElement.scrollHeight;
+
+            // Show if we are close to bottom (e.g. within 100px)
+            if (scrollY + windowHeight >= docHeight - 100) {
+                footer.classList.add('visible');
+            } else {
+                footer.classList.remove('visible');
+            }
+        };
+
+        window.addEventListener('scroll', onScrollFooter, { passive: true });
     }
 
     injectCustomFooter();

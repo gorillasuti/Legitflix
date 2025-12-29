@@ -3132,30 +3132,75 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- CUSTOM FOOTER --- */
 .legitflix-theme-footer {
     position: fixed;
-    bottom: 12px;
-    right: 16px;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.4);
+    bottom: 16px;
+    right: 24px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
     font-weight: 400;
     z-index: 9999;
-    pointer-events: auto;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    transition: all 0.3s ease;
-    cursor: default;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px);
+    background: rgba(20, 20, 20, 0.8);
+    padding: 8px 16px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.legitflix-theme-footer:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(0, 0, 0, 0.6);
-    border-color: rgba(255, 255, 255, 0.2);
+.legitflix-theme-footer.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.legitflix-theme-footer .footer-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.legitflix-theme-footer .footer-logo {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    font-size: 0.95rem;
+}
+
+.legitflix-theme-footer .logo-text-legit {
+    color: white;
+}
+
+.legitflix-theme-footer .logo-text-flix {
+    color: var(--clr-accent, #00a4dc);
+}
+
+.legitflix-theme-footer .footer-divider {
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.legitflix-theme-footer .footer-author {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .legitflix-theme-footer strong {
     font-weight: 600;
-    color: var(--clr-accent, #00a4dc);
+    color: white;
+}
+
+.legitflix-theme-footer:hover {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
 }
