@@ -2207,11 +2207,15 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .hero-logo {
-    max-width: 100%;
-    width: auto;
-    max-height: 20rem;
+    height: 180px;
+    /* Fixed vertical space */
+    width: 100%;
+    max-width: 450px;
     object-fit: contain;
+    object-position: bottom left;
+    /* Anchors smaller logos to the bottom */
     display: block;
+    margin-bottom: 20px;
 }
 
 .hero-meta {
@@ -2222,22 +2226,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     color: rgba(255, 255, 255, 0.8);
     text-shadow: none;
     /* No shadow */
-}
-
-.hero-desc {
-    font-size: 1.125rem;
-    line-height: 1.25;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.8);
-    text-shadow: none;
-    /* No shadow */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    /* Limit to 3 lines */
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin: 0;
 }
 
 .hero-actions {
@@ -2401,13 +2389,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     font-family: var(--font-primary);
 }
 
-.hero-logo {
-    max-width: 100%;
-    width: auto;
-    max-height: 10rem;
-    object-fit: contain;
-    display: block;
-}
 
 .hero-meta {
     display: flex;
@@ -2427,12 +2408,14 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     text-shadow: none;
     /* No shadow */
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    /* Limit to 3 lines */
-    line-clamp: 3;
+    -webkit-line-clamp: 4;
+    /* Limit to 4 lines */
+    line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin: 0;
+    min-height: 5em;
+    /* 4 lines * 1.25 = 5em fixed height */
 }
 
 .hero-actions {
@@ -3908,11 +3891,10 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
-    font-size: 1.1rem;
+    margin-bottom: 6px;
+    font-size: 1rem;
     color: #e5e5e5;
-    font-weight: 500;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    font-weight: 400;
 }
 
 .hero-badge-age {
@@ -3939,13 +3921,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Reuse Pill Radius */
     padding: 12px 32px;
     font-size: 1rem;
-    font-weight: 800;
+    font-weight: 600;
     /* Bold like design */
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     transition: transform 0.2s, background 0.2s;
     letter-spacing: 0.5px;
 }
