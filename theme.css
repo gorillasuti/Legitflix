@@ -3623,8 +3623,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     max-height: 120px;
     object-fit: contain;
     object-position: left bottom;
-    margin-bottom: 20px;
-    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
 }
 
 .info-title-text {
@@ -3817,11 +3815,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     margin-bottom: 0.5rem;
 }
 
-.info-logo {
-    margin-bottom: 1rem;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
-}
-
 /* 3. Improved Transition / Gradient Fade */
 .video-overlay-gradient {
     position: absolute;
@@ -3908,4 +3901,81 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Prevent clicks when hidden */
     transition-delay: 0.1s;
     /* Slight staggered delay */
+}
+
+/* --- HERO METADATA REFINEMENTS --- */
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    color: #e5e5e5;
+    font-weight: 500;
+}
+
+.hero-meta-divider {
+    color: #a3a3a3;
+    /* Muted grey for separator */
+    font-size: 0.8em;
+}
+
+.hero-meta-text {
+    /* Standard text info (Sub|Dub, Genres) */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.hero-rating-badge {
+    border: 1px solid white;
+    padding: 2px 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    background: rgba(0, 0, 0, 0.3);
+    /* Slight dim bg */
+}
+
+/* --- CAROUSEL INDICATORS (Refined Stories Style) --- */
+.carousel-indicators {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    width: auto;
+    max-width: 800px;
+}
+
+.indicator-segment {
+    width: 60px;
+    /* Specific pill width like image */
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.indicator-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--clr-accent);
+    /* Orange */
+    border-radius: 4px;
+    /* Transition handled by JS */
+}
+
+.indicator-segment.completed .indicator-fill {
+    width: 100% !important;
+    background: #e0e0e0;
+    /* Bright grey for history */
+}
+
+/* Active one is orange */
+.indicator-segment.active .indicator-fill {
+    background: var(--clr-accent) !important;
 }

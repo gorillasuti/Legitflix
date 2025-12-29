@@ -94,7 +94,7 @@ setTimeout(() => {
 const CONFIG = {
     // Only fetch these types for the Hero Carousel
     heroMediaTypes: 'Movie,Series',
-    heroLimit: 20
+    heroLimit: 9
 };
 
 // --- LOGGING ---
@@ -229,7 +229,8 @@ async function fetchMediaBarItems(retryCount = 0) {
     }
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
+    // User Request: "Promo content scans for latest 3... Carousel scans for latest 6 after promo" (Total 9 Latest)
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=9&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
         const response = await fetch(url, {
@@ -272,7 +273,7 @@ function createMediaBarHTML(items) {
 
 
         // IMDb Rating
-        let ratingHtml = item.CommunityRating ? `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
+        let ratingHtml = item.OfficialRating ? `<span class="hero-rating-badge">${item.OfficialRating}</span>` : '';
 
         // Ends At Calculation
         let endsAtHtml = '';
@@ -303,17 +304,18 @@ function createMediaBarHTML(items) {
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
                     ${titleHtml}
-                    <div class="hero-meta">
                         ${ratingHtml}
-                        <span class="year">${item.ProductionYear || ''}</span>
-                        ${endsAtHtml}
+                        <span class="hero-meta-divider">•</span>
+                        <span class="hero-meta-text">Sub | Dub</span>
+                        <span class="hero-meta-divider">•</span>
+                        <span class="hero-meta-text">${item.Genres ? item.Genres.slice(0, 3).join(', ') : ''}</span>
                     </div>
                     <p class="hero-desc">${desc}</p>
                     <div class="hero-actions">
                         <button class="btn-play" onclick="${playOnClick}">
                             <i class="material-icons">play_arrow</i> PLAY
                         </button>
-                        <button class="hero-button-info" onclick="window.legitFlixShowItem('${item.Id}')" title="More Info">
+                        <button class="hero-button-info" onclick="window.openInfoModal('${item.Id}')" title="More Info">
                             <span class="material-icons-outlined">info</span>
                         </button>
                     </div>
@@ -322,42 +324,78 @@ function createMediaBarHTML(items) {
         `;
     }).join('');
 
-    return `<div id="legit-hero-carousel" class="hero-carousel-container">${slides}</div>`;
+    // Indicators HTML (Segments)
+    // We create a segment for each item
+    const indicatorsHtml = items.map((_, i) => `
+        <div class="indicator-segment ${i === 0 ? 'active' : ''}">
+            <div class="indicator-fill"></div>
+        </div>
+    `).join('');
+
+    return `
+        <div id="legit-hero-carousel" class="hero-carousel-container">
+            ${slides}
+            <div class="carousel-indicators">${indicatorsHtml}</div>
+        </div>
+    `;
 }
 
-// --- CAROUSEL LOGIC (Fixed) ---
+// --- CAROUSEL LOGIC (Indicators) ---
 let carouselInterval = null;
+let carouselTimer = null; // Animation sync
 
 function startCarousel() {
     logger.log('startCarousel: Attempting to start...');
 
-    // Stop any existing interval properly
-    if (carouselInterval) {
-        logger.log('startCarousel: Clearing old interval');
-        clearInterval(carouselInterval);
-        carouselInterval = null;
-    }
+    if (carouselInterval) clearInterval(carouselInterval);
+    if (carouselTimer) clearTimeout(carouselTimer);
 
     const slides = document.querySelectorAll('.hero-slide');
-    if (slides.length === 0) {
-        logger.warn('startCarousel: No slides found!');
-        return;
-    }
+    const segments = document.querySelectorAll('.indicator-segment');
 
-    logger.log(`startCarousel: Starting new interval with ${slides.length} slides.`);
+    if (slides.length === 0) return;
+
+    logger.log(`startCarousel: Starting with ${slides.length} slides.`);
 
     let currentIndex = 0;
-    const rotate = () => {
-        // Double check existence in case DOM changed
-        if (slides.length === 0) return;
+    const duration = 8000; // 8 Seconds per slide
 
-        slides.forEach(s => s.classList.remove('active'));
+    // Update UI Helper
+    const updateUI = () => {
+        // Slides
+        slides.forEach((s, i) => {
+            s.classList.toggle('active', i === currentIndex);
+        });
 
-        currentIndex = (currentIndex + 1) % slides.length;
-        slides[currentIndex].classList.add('active');
+        // Indicators
+        segments.forEach((seg, i) => {
+            seg.classList.remove('active', 'completed');
+            const fill = seg.querySelector('.indicator-fill');
+            fill.style.transition = 'none'; // Reset logic
+            fill.style.width = '0%';
+
+            if (i < currentIndex) {
+                seg.classList.add('completed');
+                fill.style.width = '100%';
+            } else if (i === currentIndex) {
+                seg.classList.add('active');
+                // Force Reflow
+                void fill.offsetWidth;
+                fill.style.transition = `width ${duration}ms linear`;
+                fill.style.width = '100%';
+            }
+        });
     };
 
-    carouselInterval = setInterval(rotate, 8000); // 8 seconds per slide
+    // Initial State
+    updateUI();
+
+    const rotate = () => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        updateUI();
+    };
+
+    carouselInterval = setInterval(rotate, duration);
 }
 
 // --- NAV HELPER (Fixes appRouter crash) ---
