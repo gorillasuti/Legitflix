@@ -2323,19 +2323,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     background-color: var(--clr-bg-glass) !important;
 }
 
-.hero-slide {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.8s ease-in-out;
-    visibility: hidden;
-}
 
-.hero-slide.active {
-    opacity: 1;
-    visibility: visible;
-    z-index: 1;
-}
 
 .hero-backdrop {
     position: absolute;
@@ -2347,9 +2335,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Subtle zoom effect? */
 }
 
-.hero-slide.active .hero-backdrop {
-    transform: scale(1.05);
-}
+
 
 .hero-overlay {
     position: absolute;
@@ -3969,4 +3955,78 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .btn-hero-bookmark.active {
     background: var(--clr-accent);
     color: white;
+}
+
+/* Smoother, Friendlier Animation */
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: scale(1.02);
+    /* Start slightly zoomed */
+    /* Transition: Opacity slow fade, Scale slow move */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 8s ease-out;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    transform: scale(1);
+    /* Settle to normal */
+    /* No delay on entry */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 8s ease-out;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* --- HERO TRACKER (Indicators) --- */
+.hero-indicators {
+    position: absolute;
+    /* Align with content (left 4%) */
+    left: 4%;
+    /* Buttons are inside hero-content (bottom 25%). 
+       We need this 2rem below buttons. 
+       Since buttons vary, let's pick a safe fixed spot relative to bottom ~15% */
+    bottom: 15%;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+}
+
+.hero-indicator {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.hero-indicator .fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--clr-accent);
+    transition: width 0s;
+    /* Reset immediately */
+}
+
+.hero-indicator.completed .fill {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    /* History is greyish */
+    transition: width 0.3s ease;
+}
+
+.hero-indicator.active .fill {
+    width: 100%;
+    /* Animate over 8s (match JS interval) */
+    transition: width 8s linear;
 }
