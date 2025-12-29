@@ -2675,6 +2675,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .legitflix-promo-container {
     width: webkit-fill-available;
+    width: -webkit-fill-available;
     padding: 0 44.875px;
     max-width: 1600px;
     margin: 3rem auto;
@@ -3203,4 +3204,335 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     transform: translateY(-2px);
+}
+
+.legitflix-info-modal.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.info-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: -1;
+    /* Behind modal content container, but we are inside modal div which is z-10000. 
+       Actually, this needs to be fixed. The modal container itself is the window. 
+       Let's use a wrapper logic or just make the backdrop fixed relative to viewport. */
+    /* Correction: The .legitflix-info-modal is the card. The backdrop needs to be outside or fixed.
+       Since we appended to body, let's make .info-modal-backdrop fixed fullscreen and .info-modal-content the card */
+}
+
+/* Redefine structure for correct layering based on JS structure */
+.legitflix-info-modal {
+    /* Container is actually fullscreen wrapper if we want backdrop click. 
+       But current CSS targets the card itself as .legitflix-info-modal based on my usual pattern.
+       My JS structure was: modal (wrapper?) -> backdrop + content. 
+       Let's enable flex centering on the modal wrapper. */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: none;
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-shadow: none;
+}
+
+.legitflix-info-modal.visible {
+    transform: none;
+}
+
+.info-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.info-modal-content {
+    position: relative;
+    width: 850px;
+    max-width: 100%;
+    max-height: 100%;
+    background: #141414;
+    border-radius: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.3s ease;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.legitflix-info-modal.visible .info-modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Close Button */
+.btn-close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Fix for visibility */
+    color: white;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+    background: white;
+    color: black;
+}
+
+/* Video Header */
+.info-video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: black;
+    overflow: hidden;
+}
+
+.info-video-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 110%;
+    /* Slight zoom to hide controls */
+    pointer-events: none;
+    /* Let clicks pass to backdrop/mute? No, need mute interaction. */
+    top: -5%;
+    /* Center crop */
+}
+
+/* Fallback Ken Burns */
+.info-backdrop-fallback {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    animation: kenBurns 15s ease-out infinite alternate;
+}
+
+@keyframes kenBurns {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.15);
+    }
+}
+
+/* Gradient Overlay */
+.video-overlay-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(to top, #141414, transparent);
+    z-index: 2;
+}
+
+/* Mute Toggle */
+.video-mute-overlay {
+    position: absolute;
+    bottom: 30%;
+    right: 30px;
+    z-index: 10;
+}
+
+.btn-mute-toggle {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-mute-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+/* Hero Content */
+.info-hero-content {
+    position: absolute;
+    bottom: 5%;
+    left: 40px;
+    z-index: 10;
+    width: 60%;
+}
+
+.info-logo {
+    max-width: 300px;
+    max-height: 120px;
+    object-fit: contain;
+    object-position: left bottom;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+}
+
+.info-title-text {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+    line-height: 1;
+}
+
+.info-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-play-hero {
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-play-hero:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.btn-my-list {
+    background: rgba(42, 42, 42, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* Match Netflix */
+    border-radius: 4px;
+    padding: 8px 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-my-list:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+.btn-my-list.active {
+    border-color: var(--clr-accent);
+    color: var(--clr-accent);
+}
+
+/* Details Section */
+.info-details-container {
+    padding: 20px 40px 40px 40px;
+    display: flex;
+    gap: 40px;
+}
+
+.info-col-left {
+    flex: 2;
+}
+
+.info-col-right {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #b3b3b3;
+    /* Netflix grey */
+}
+
+/* Metadata Row */
+.info-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    color: #a3a3a3;
+    font-weight: 500;
+}
+
+.info-year {
+    color: white;
+}
+
+.info-rating {
+    border: 1px solid #777;
+    padding: 0 6px;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.info-quality {
+    border: 1px solid #777;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 0.7rem;
+    color: #a3a3a3;
+    font-weight: 600;
+}
+
+.info-desc {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: white;
+}
+
+.info-row {
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.info-row .label {
+    color: #777;
+    margin-right: 4px;
+}
+
+.info-row .value {
+    color: white;
+    cursor: pointer;
+}
+
+.info-row .value:hover {
+    text-decoration: underline;
 }

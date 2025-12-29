@@ -2566,7 +2566,11 @@ function init() {
         }
 
         if (btnInfo) {
-            btnInfo.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+            btnInfo.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openInfoModal(id);
+            });
         }
 
         // 3. Hijack Native Menu Button (The "More" action)
@@ -2776,6 +2780,173 @@ function init() {
         };
 
         window.addEventListener('scroll', onScrollFooter, { passive: true });
+    }
+
+    // --- INFO MODAL (Netflix Style) ---
+    async function openInfoModal(id) {
+        console.log('[LegitFlix] Opening Info Modal for:', id);
+
+        // Remove existing modal if any
+        const existing = document.querySelector('.legitflix-info-modal');
+        if (existing) existing.remove();
+
+        const auth = await getAuth();
+        if (!auth) return;
+
+        // Fetch Extended Details
+        let details = null;
+        try {
+            const userId = auth.UserId || auth.user;
+            // Fetch: MediaSources (for trailers), People (Cast), Studios, Genres
+            const url = `/Users/${userId}/Items/${id}`;
+            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
+            details = await res.json();
+        } catch (e) {
+            console.error('[LegitFlix] Info Modal Fetch Error:', e);
+            return;
+        }
+
+        if (!details) return;
+
+        // --- TRAILER LOGIC ---
+        let trailerUrl = null;
+        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
+
+        if (details.RemoteTrailers && details.RemoteTrailers.length > 0) {
+            // Find YouTube URL
+            const validTrailer = details.RemoteTrailers.find(t => t.Url.includes('youtube') || t.Url.includes('youtu.be'));
+            if (validTrailer) {
+                // Extract ID
+                let videoId = null;
+                if (validTrailer.Url.includes('v=')) videoId = validTrailer.Url.split('v=')[1].split('&')[0];
+                else if (validTrailer.Url.includes('youtu.be/')) videoId = validTrailer.Url.split('youtu.be/')[1].split('?')[0];
+
+                if (videoId) {
+                    // Privacy Enhanced + No Controls + Loop + No Related (rel=0) + Modest Branding
+                    trailerUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}&disablekb=1&fs=0&playsinline=1`;
+                }
+            }
+        }
+
+        // --- METADATA ---
+        const year = details.ProductionYear || '';
+        const rating = details.OfficialRating || '';
+        const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
+        const genres = details.Genres ? details.Genres.slice(0, 3).join(', ') : '';
+        const desc = details.Overview || 'No description available.';
+        const cast = details.People ? details.People.slice(0, 5).map(p => p.Name).join(', ') : 'Unknown';
+        const director = details.People ? details.People.filter(p => p.Type === 'Director').map(p => p.Name).join(', ') : '';
+
+        // Logo
+        const hasLogo = details.ImageTags && details.ImageTags.Logo;
+        const logoHtml = hasLogo
+            ? `<img src="/Items/${details.Id}/Images/Logo?maxHeight=140&maxWidth=400&quality=90" class="info-logo" alt="${details.Name}" />`
+            : `<h1 class="info-title-text">${details.Name}</h1>`;
+
+        // --- MODAL HTML ---
+        const modal = document.createElement('div');
+        modal.className = 'legitflix-info-modal';
+        modal.innerHTML = `
+            <div class="info-modal-backdrop"></div>
+            <div class="info-modal-content">
+                <button class="btn-close-modal"><span class="material-icons">close</span></button>
+                
+                <div class="info-video-container ${trailerUrl ? 'has-video' : 'no-video'}">
+                    ${trailerUrl
+                ? `<iframe class="info-video-iframe" src="${trailerUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                           <div class="video-mute-overlay">
+                               <button class="btn-mute-toggle"><span class="material-icons">volume_off</span></button>
+                           </div>`
+                : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
+            }
+                    
+                    <div class="video-overlay-gradient"></div>
+
+                    <div class="info-hero-content">
+                        ${logoHtml}
+                        
+                        <div class="info-actions">
+                            <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}')">
+                                <span class="material-icons">play_arrow</span> Play
+                            </button>
+                             <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" id="btnInfoFav">
+                                <span class="material-icons">${details.UserData?.IsFavorite ? 'check' : 'add'}</span> My List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-details-container">
+                    <div class="info-col-left">
+                        <div class="info-meta-row">
+                            <span class="info-year">${year}</span>
+                            ${rating ? `<span class="info-rating">${rating}</span>` : ''}
+                            <span class="info-duration">${duration}</span>
+                            <span class="info-quality">HD</span>
+                        </div>
+                        <p class="info-desc">${desc}</p>
+                    </div>
+                    
+                    <div class="info-col-right">
+                        <div class="info-row">
+                            <span class="label">Cast:</span> <span class="value">${cast}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Genres:</span> <span class="value">${genres}</span>
+                        </div>
+                         ${director ? `<div class="info-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add Visible Class for Animation
+        requestAnimationFrame(() => modal.classList.add('visible'));
+
+        // --- EVENTS ---
+
+        // CLOSE
+        const close = () => {
+            modal.classList.remove('visible');
+            setTimeout(() => modal.remove(), 300);
+        };
+        modal.querySelector('.info-modal-backdrop').onclick = close;
+        modal.querySelector('.btn-close-modal').onclick = close;
+
+        // MUTE TOGGLE (Youtube API or just simple overlay blocking? 
+        // We used mute=1 in URL. Youtube iframe API needed for real toggle, 
+        // OR we just reload iframe with mute=0, but that restarts video.
+        // Better: Just provide basic "Unmute" that reloads with mute=0 if needed, 
+        // OR rely on user controls. But we hid controls.
+        // Best simple approach: "Replay at start with sound" or similar. 
+        // Actually, without postMessage API, we can't toggle mute easily. 
+        // Let's implement postMessage toggle.
+
+        if (trailerUrl) {
+            const iframe = modal.querySelector('iframe');
+            const btnMute = modal.querySelector('.btn-mute-toggle');
+            let isMuted = true;
+
+            // Need to enable JS API
+            iframe.src += "&enablejsapi=1";
+
+            btnMute.onclick = () => {
+                isMuted = !isMuted;
+                btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
+                // Send postMessage
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: isMuted ? 'mute' : 'unMute',
+                    args: []
+                }), '*');
+            };
+        }
+
+        // Fav Button
+        // Reuse toggleState logic or simpler fetch
+        // ...
     }
 
     injectCustomFooter();
