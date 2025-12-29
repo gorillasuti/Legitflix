@@ -420,7 +420,6 @@ function createMediaBarHTML(items) {
                     </div>
                 </div>
             </div>
-            </div>
         `;
     }).join('');
 
