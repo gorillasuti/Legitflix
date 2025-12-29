@@ -2811,14 +2811,17 @@ function init() {
 
         // Helper to normalize YT URL
         const getYoutubeId = (url) => {
+            if (!url) return null;
             if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
             if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+            if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
             return null;
         };
 
         const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Switching to 'inv.tux.pizza' - often more reliable for embeds than puffyan
-            return `https://inv.tux.pizza/embed/${videoId}?autoplay=${autoPlay}&controls=1&listen=0`;
+            // Switch to Piped.video - Robust Open Source frontend
+            // Often more reliable for restricted videos
+            return `https://piped.video/embed/${videoId}?playerOnly=true&autoplay=${autoPlay === 1}&muted=${autoPlay === 1}`;
         };
 
         // 1. Collect Movie Trailers
