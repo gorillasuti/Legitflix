@@ -3904,11 +3904,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 /* --- HERO METADATA REFINEMENTS --- */
-.hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+.legit-hero-meta {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
     font-size: 1.1rem;
     color: #e5e5e5;
     font-weight: 500;

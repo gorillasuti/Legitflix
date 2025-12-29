@@ -304,6 +304,7 @@ function createMediaBarHTML(items) {
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
                     ${titleHtml}
+                    <div class="legit-hero-meta">
                         ${ratingHtml}
                         <span class="hero-meta-divider">•</span>
                         <span class="hero-meta-text">Sub | Dub</span>
