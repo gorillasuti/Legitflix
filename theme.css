@@ -3896,8 +3896,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     overflow: hidden;
     position: relative;
     cursor: pointer;
-    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    /* Smooth expansion */
+    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease;
+    /* Smooth expansion & color */
+}
+
+.hero-indicator:hover {
+    background: rgba(var(--accent), 0.8);
 }
 
 /* Active State: Wider */

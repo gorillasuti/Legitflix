@@ -517,13 +517,13 @@ function startCarousel() {
     // Add Click Listeners to Indicators
     indicators.forEach((ind, i) => {
         ind.onclick = () => {
-            // Stop Timer on manual interaction (User wants to read/watch)
+            // Reset Timer on manual interaction (Restart 8s countdown)
             clearInterval(carouselInterval);
-            carouselInterval = null;
+            carouselInterval = setInterval(rotate, 8000); // Resume auto-rotate
 
-            // Mark container as paused for CSS
+            // Ensure paused class is removed if it happened to be there
             const container = document.getElementById('legit-hero-carousel');
-            if (container) container.classList.add('carousel-paused');
+            if (container) container.classList.remove('carousel-paused');
 
             showSlide(i);
         };
