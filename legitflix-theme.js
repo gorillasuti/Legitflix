@@ -230,8 +230,8 @@ async function fetchMediaBarItems(retryCount = 0) {
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
 
-    // User Request: "Latest 6 items after promo (3)" -> StartIndex=3, Limit=6, SortBy=DateCreated
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&StartIndex=3&Limit=6&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
+    // User Request: "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
         const response = await fetch(url, {
@@ -252,7 +252,9 @@ async function fetchMediaBarItems(retryCount = 0) {
         const data = await response.json();
         const allItems = data.Items || [];
         logger.log('fetchMediaBarItems: Downloaded items', allItems.length);
-        return allItems; // No shuffle needed for chronological list
+
+        // Skip first 3 (Promo), Take next 6
+        return allItems.slice(3, 9);
     } catch (error) {
         logger.error('fetchMediaBarItems: API Error', error);
         if (retryCount < 3) {
