@@ -2795,18 +2795,12 @@ function init() {
         const auth = await getAuth();
         if (!auth) return;
 
+        const userId = ApiClient.getCurrentUserId();
+
         // Fetch Extended Details
-        let details = null;
-        try {
-            const userId = auth.UserId || auth.user;
-            // Fetch: MediaSources (for trailers), People (Cast), Studios, Genres
-            const url = `/Users/${userId}/Items/${id}`;
-            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
-            details = await res.json();
-        } catch (e) {
-            console.error('[LegitFlix] Info Modal Fetch Error:', e);
-            return;
-        }
+        const details = await (await fetch(`/Users/${userId}/Items/${id}?Fields=RemoteTrailers,People,Studios,Genres,Overview,ProductionYear,OfficialRating,RunTimeTicks,Tags,ImageTags`, {
+            headers: { 'X-Emby-Token': auth.AccessToken || auth }
+        })).json();
 
         if (!details) return;
 
@@ -2823,9 +2817,9 @@ function init() {
         };
 
         const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Invidious (Open Source) - fixes 'Video Unavailable' and removes Ads
-            // 'local=true' proxies traffic through the instance (privacy)
-            return `https://yewtu.be/embed/${videoId}?autoplay=${autoPlay}&controls=1&local=true&listen=0&quality=dash`;
+            // Switch to 'vid.puffyan.us' (US) or 'inv.tux.pizza' (EU) - yewtu.be blocks embeds often.
+            // Using vid.puffyan.us as it's generally reliable for embeds.
+            return `https://vid.puffyan.us/embed/${videoId}?autoplay=${autoPlay}&controls=1&listen=0&quality=dash`;
         };
 
         // 1. Collect Movie Trailers
