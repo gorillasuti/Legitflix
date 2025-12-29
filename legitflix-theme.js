@@ -2253,6 +2253,9 @@ function init() {
             // Disable on Details Pages (Native Hover Mode)
             if (document.body.classList.contains('native-hover-mode')) return;
 
+            // Disable during multi-select
+            if (document.body.classList.contains('with-multiselect')) return;
+
             const card = e.target.closest('.card, .overflowPortraitCard, .overflowBackdropCard');
             // Only target cards with an ID and strictly media items (not folders/collections if possible, but mostly items)
             if (!card || !card.dataset.id) return;
