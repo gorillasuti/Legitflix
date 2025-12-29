@@ -3928,3 +3928,14 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Animate over 8s (match JS interval) */
     transition: width 8s linear;
 }
+
+/* Paused State (Manual Click) */
+.carousel-paused .hero-indicator.active .fill {
+    display: none;
+    /* No timer animation */
+}
+
+.carousel-paused .hero-indicator.active {
+    background: var(--clr-accent);
+    /* Static active color */
+}
