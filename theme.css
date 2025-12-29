@@ -3451,6 +3451,45 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     transform: scale(1.05);
 }
 
+/* Native Trailer Button (Jellyfin Fallback) */
+.btn-native-trailer {
+    background: rgba(255, 255, 255, 0.25) !important;
+    /* Secondary Glass */
+    color: white !important;
+    border: none !important;
+    padding: 0 24px !important;
+    height: 42px;
+    /* Match Play button height often */
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-right: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease !important;
+
+    /* Flex */
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-native-trailer:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    transform: scale(1.05);
+    color: white !important;
+}
+
+.btn-native-trailer .detailButton-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-native-trailer .material-icons {
+    font-size: 1.4rem;
+}
+
 /* Close Button */
 .btn-close-modal {
     position: absolute;

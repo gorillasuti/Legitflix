@@ -2887,22 +2887,15 @@ function init() {
 
         if (!details) return;
 
-        // --- TRAILER LOGIC (Paused for Local Data) ---
-        // User is setting up TinymediaManager (TMM) / AMTD.
-        // For now, we clean this up and disable unstable fetch.
+        // --- TRAILER LOGIC (Native Fallback) ---
+        // Checks for RemoteTrailers or LocalTrailerCount
+        let hasTrailers = false;
+        if ((details.RemoteTrailers && details.RemoteTrailers.length > 0) || (details.LocalTrailerCount && details.LocalTrailerCount > 0)) {
+            hasTrailers = true;
+        }
 
         let mainTrailerUrl = null;
-        let mainVidId = null;
-        let allTrailers = [];
         let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
-
-        /* 
-           FUTURE: When local trailers are ready, Jellyfin usually exposes them as:
-           1. "LocalTrailer" in MediaSources?
-           2. Or standard "RemoteTrailers" if TMM populates them with valid URLs.
-           
-           For now, we default to Backdrop + Play Button.
-        */
 
         // --- METADATA ---
         const year = details.ProductionYear || '';
@@ -2982,12 +2975,22 @@ function init() {
                             <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}')">
                                 <span class="material-icons">play_arrow</span> Play
                             </button>
+                            
+                            ${hasTrailers ? `
+                            <button is="emby-button" 
+                                    type="button" 
+                                    class="button-flat btnPlayTrailer detailButton emby-button btn-native-trailer" 
+                                    title="Trailer"
+                                    data-item-id="${details.Id}">
+                                <div class="detailButton-content">
+                                    <span class="material-icons detailButton-icon theaters" aria-hidden="true"></span>
+                                    <span>Trailer</span>
+                                </div>
+                            </button>` : ''}
+
                              <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" id="btnInfoFav">
                                 <span class="material-icons">${details.UserData?.IsFavorite ? 'check' : 'add'}</span> My List
                             </button>
-                            ${mainVidId ? `<button class="btn-watch-trailer" onclick="window.open('https://www.youtube.com/watch?v=${mainVidId}', '_blank')">
-                                <span class="material-icons">open_in_new</span> Trailer
-                            </button>` : ''}
                         </div>
                     </div>
                 </div>
