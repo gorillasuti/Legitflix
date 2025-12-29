@@ -3374,10 +3374,9 @@ window.openInfoModal = async function (id) {
     }
 }
 
-injectCustomFooter();
-initNavScroll(); // Start scroll listener
 
-}
+// (Moved init calls to end of file)
+
 
 
 // --- DETAIL PAGE HERO REPLACEMENT ---
@@ -3532,7 +3531,13 @@ function createDetailHeroHTML(item, nextUp) {
 
 
 // --- INITIALIZATION ---
-init();
+try {
+    injectCustomFooter();
+    initNavScroll();
+} catch (e) {
+    console.error('LegitFlix Init Error:', e);
+}
+
 
 // --- CONTINUOUS MONITORING ---
 // Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
