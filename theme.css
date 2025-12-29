@@ -2103,25 +2103,27 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
    ========================================================================= */
 
 .hero-carousel-container {
-    position: absolute !important;
-    top: 0;
-    left: 0;
+    position: relative;
+    /* Fix: In-flow positioning */
     width: 100%;
-    height: 100vh;
-    z-index: 0;
-    /* Behind content but clickable */
+    height: 75vh;
+    /* Fixed height, not full screen */
+    max-height: 800px;
+    z-index: 1;
     overflow: hidden;
-    margin-bottom: 0;
+    margin-bottom: 20px;
     border-radius: 0;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 
     /* Fade out bottom */
-    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
 }
 
 /* Push content down so it starts below the hero area */
+/* Push content down - logic removed as container is now relative */
 .has-legit-hero {
-    padding-top: 80vh !important;
+    padding-top: 0 !important;
     background: transparent !important;
     position: relative;
     z-index: 5;
@@ -2140,33 +2142,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     padding-top: 0 !important;
 }
 
-.hero-slide {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.8s ease-in-out;
-    visibility: hidden;
-}
 
-.hero-slide.active {
-    opacity: 1;
-    visibility: visible;
-    z-index: 1;
-}
-
-.hero-backdrop {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    /* USER REQUEST: Offset image to the right */
-    background-position: 80% center;
-    transition: transform 10s ease;
-    /* Subtle zoom effect? */
-}
-
-.hero-slide.active .hero-backdrop {
-    transform: scale(1.05);
-}
 
 .hero-overlay {
     position: absolute;
