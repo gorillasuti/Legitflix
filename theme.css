@@ -3275,8 +3275,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .info-modal-content {
     position: relative;
     /* Fixed Dimensions as requested */
-    width: 775px !important;
-    height: 850px !important;
+    width: 750px !important;
+    height: 800px !important;
     max-width: 95vw;
     max-height: 95vh;
     z-index: 2147483647 !important;
@@ -3316,7 +3316,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* --- TRAILERS SECTION --- */
 .info-trailers-section {
-    padding: 0 40px 40px 40px;
+    padding: 0 40px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 20px;
 }
@@ -3389,8 +3389,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* --- ABOUT SECTION --- */
 .info-about-section {
-    padding: 20px 40px 60px 40px;
-    margin-top: 2rem;
+    padding: 1rem 40px;
+    margin-top: 1.25rem;
     /* Requested gap */
     /* No border-top as requested "no need for divider" */
 }
@@ -3871,4 +3871,41 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     max-height: 140px;
     width: auto;
     object-position: left bottom;
+}
+
+/* --- IDLE MODE STYLES (User Request) --- */
+
+/* 1. Logo Shrink */
+.info-hero-content {
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: bottom left;
+}
+
+.info-hero-content.idle .info-logo {
+    transform: scale(0.65) translateY(40px);
+    /* Shrink and move down slightly to stay anchored */
+    transform-origin: bottom left;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.info-hero-content.idle .info-title-text {
+    transform: scale(0.7) translateY(40px);
+    transform-origin: bottom left;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 2. Actions (Buttons) Hide */
+.info-actions {
+    transition: all 0.5s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.info-hero-content.idle .info-actions {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+    pointer-events: none;
+    /* Prevent clicks when hidden */
+    transition-delay: 0.1s;
+    /* Slight staggered delay */
 }

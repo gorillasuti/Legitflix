@@ -3182,8 +3182,30 @@ function init() {
         }
 
         // Fav Button
-        // Reuse toggleState logic or simpler fetch
         // ...
+
+        // --- IDLE ANIMATION LOGIC (User Request) ---
+        const heroContent = modal.querySelector('.info-hero-content');
+        const videoContainer = modal.querySelector('.info-video-container');
+        let idleTimer;
+
+        const startIdleTimer = () => {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                if (heroContent) heroContent.classList.add('idle');
+            }, 5000); // 5 seconds as requested
+        };
+
+        const resetIdle = () => {
+            if (heroContent) heroContent.classList.remove('idle');
+            startIdleTimer();
+        };
+
+        if (videoContainer) {
+            videoContainer.addEventListener('mousemove', resetIdle);
+            videoContainer.addEventListener('click', resetIdle); // Reset on click too
+            startIdleTimer(); // Start initially
+        }
     }
 
     injectCustomFooter();
