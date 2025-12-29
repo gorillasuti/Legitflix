@@ -825,41 +825,8 @@ h4,
     transform: scale(1.02);
 }
 
-/* --- GLOBAL SCROLLBAR (Apple Style) --- */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-    background: transparent;
-    /* No bg as requested */
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 0;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    /* Creates floating effect */
-    background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-::-webkit-scrollbar-button {
-    display: none;
-    /* Remove arrows */
-    width: 0;
-    height: 0;
-}
-
-::-webkit-scrollbar-corner {
-    background: transparent;
-}
+/* --- GLOBAL SCROLLBAR (Handled by JS Injection) --- */
+/* Removed to prevent conflicts */
 
 /* Nav Links Container */
 .legit-nav-links {

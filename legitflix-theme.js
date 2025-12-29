@@ -9,61 +9,86 @@ console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: whi
 
 // --- FORCE SLEEK SCROLLBAR (JS Injection) ---
 // User requested "Use JS freely" to fix stubborn scrollbars.
-try {
-    const scrollStyle = document.createElement('style');
-    scrollStyle.id = 'legitflix-scrollbar-override';
-    scrollStyle.textContent = `
-        /* Force Hardware Acceleration for smooth scrolling */
-        html, body {
-            scroll-behavior: smooth;
-        }
+setTimeout(() => {
+    try {
+        const existing = document.getElementById('legitflix-scrollbar-override');
+        if (existing) existing.remove();
 
-        /* Firefox */
-        * {
-            scrollbar-width: thin !important;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
-        }
+        const scrollStyle = document.createElement('style');
+        scrollStyle.id = 'legitflix-scrollbar-override';
+        scrollStyle.textContent = `
+            /* Force Hardware Acceleration for smooth scrolling */
+            html, body {
+                scroll-behavior: smooth;
+            }
 
-        /* WebKit (Chrome/Edge/Safari) - WILDCARD OVERRIDE */
-        *::-webkit-scrollbar {
-            width: 6px !important;
-            height: 6px !important;
-            background-color: transparent !important;
-        }
+            /* Firefox - Global */
+            * {
+                scrollbar-width: thin !important;
+                scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+            }
 
-        *::-webkit-scrollbar-track {
-            background-color: transparent !important;
-            border-radius: 0 !important;
-            margin: 0 !important;
-        }
+            /* WebKit - Global & Specific Targets */
+            ::-webkit-scrollbar,
+            *::-webkit-scrollbar,
+            .info-modal-content::-webkit-scrollbar,
+            .scrollContainer::-webkit-scrollbar {
+                width: 6px !important;
+                height: 6px !important;
+                background: transparent !important;
+                display: block !important;
+            }
 
-        *::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.15) !important;
-            border-radius: 20px !important;
-            border: 2px solid transparent !important;
-            background-clip: content-box !important;
-        }
+            ::-webkit-scrollbar-track,
+            *::-webkit-scrollbar-track,
+            .info-modal-content::-webkit-scrollbar-track,
+            .scrollContainer::-webkit-scrollbar-track {
+                background: transparent !important;
+                background-color: transparent !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
 
-        *::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.4) !important;
-        }
+            ::-webkit-scrollbar-thumb,
+            *::-webkit-scrollbar-thumb,
+            .info-modal-content::-webkit-scrollbar-thumb,
+            .scrollContainer::-webkit-scrollbar-thumb {
+                background-color: rgba(255, 255, 255, 0.15) !important;
+                border-radius: 20px !important;
+                border: 2px solid transparent !important;
+                background-clip: content-box !important;
+            }
 
-        /* NUCLEAR OPTION: Hide Buttons/Arrows Globally */
-        *::-webkit-scrollbar-button {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
+            ::-webkit-scrollbar-thumb:hover,
+            *::-webkit-scrollbar-thumb:hover {
+                background-color: rgba(255, 255, 255, 0.4) !important;
+            }
 
-        *::-webkit-scrollbar-corner {
-            background-color: transparent !important;
-        }
-    `;
-    document.head.appendChild(scrollStyle);
-    console.log('[LegitFlix] Scrollbar styles injected.');
-} catch (e) {
-    console.warn('[LegitFlix] Failed to inject scrollbar styles:', e);
-}
+            /* KILL ARROWS/BUTTONS - Specific targets + Wildcards */
+            ::-webkit-scrollbar-button,
+            *::-webkit-scrollbar-button,
+            .info-modal-content::-webkit-scrollbar-button,
+            .scrollContainer::-webkit-scrollbar-button {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+                background: transparent !important;
+                border: none !important;
+            }
+            
+            ::-webkit-scrollbar-corner,
+            *::-webkit-scrollbar-corner {
+                background: transparent !important;
+            }
+        `;
+        document.head.appendChild(scrollStyle);
+        console.log('[LegitFlix] Scrollbar styles injected (Delayed).');
+    } catch (e) {
+        console.warn('[LegitFlix] Failed to inject scrollbar styles:', e);
+    }
+}, 500); // 500ms delay to override everything
 
 // --- CONFIG ---
 const CONFIG = {
