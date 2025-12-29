@@ -1475,6 +1475,8 @@
             '.detailPagePrimaryContainer',
             '.detailPageSecondaryContainer',
             '.detailImageContainer',
+            '.detailPageWrapperContainer', // Added wrapper container
+            '#itemBackdrop',               // Added backdrop
 
             // Seasons/Episodes sections
             '#listChildrenCollapsible',
@@ -1503,15 +1505,18 @@
 
         selectors.forEach(sel => {
             document.querySelectorAll(sel).forEach(el => {
-                el.style.display = 'none';
+                // Use setProperty for important priority
+                el.style.setProperty('display', 'none', 'important');
             });
         });
 
-        // Remove the backdrop image from the page background
+        // Remove the backdrop image from the page background and reset padding
         const itemDetailPage = document.querySelector('.itemDetailPage');
         if (itemDetailPage) {
             itemDetailPage.style.backgroundImage = 'none';
             itemDetailPage.style.backgroundColor = 'var(--clr-bg-main, #141414)';
+            itemDetailPage.style.paddingTop = '0';
+            itemDetailPage.style.paddingBottom = '0';
         }
 
         // Also clear any backdrop containers
