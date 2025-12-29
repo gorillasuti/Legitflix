@@ -2930,15 +2930,63 @@ function init() {
 
         if (!details) return;
 
-        // --- TRAILER LOGIC (Native Fallback) ---
-        // Checks for RemoteTrailers or LocalTrailerCount
-        let hasTrailers = false;
-        if ((details.RemoteTrailers && details.RemoteTrailers.length > 0) || (details.LocalTrailerCount && details.LocalTrailerCount > 0)) {
-            hasTrailers = true;
-        }
+        // --- TRAILER LOGIC (Hybrid: Youtube Embed + Native Fallback) ---
+
+        // 1. Helper: Extract YT ID
+        const getYoutubeId = (url) => {
+            if (!url) return null;
+            if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
+            if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+            if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+            return null;
+        };
 
         let mainTrailerUrl = null;
+        let mainVidId = null;
+        let allTrailers = [];
         let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
+
+        // 2. Collect Remote Trailers (Metadata Fallback)
+        if (details.RemoteTrailers) {
+            details.RemoteTrailers.forEach(t => {
+                const vid = getYoutubeId(t.Url);
+                if (vid) allTrailers.push({ title: 'Main Trailer', id: vid, type: 'Movie' });
+            });
+        }
+
+        // 3. Collect Season Trailers (for Series)
+        if (details.Type === 'Series') {
+            try {
+                const seasonRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Season&Fields=RemoteTrailers`, {
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+                const seasons = await seasonRes.json();
+                if (seasons.Items) {
+                    seasons.Items.forEach(s => {
+                        if (s.RemoteTrailers) {
+                            s.RemoteTrailers.forEach(t => {
+                                const vid = getYoutubeId(t.Url);
+                                if (vid) allTrailers.push({ title: s.Name, id: vid });
+                            });
+                        }
+                    });
+                }
+            } catch (e) { console.log('Season fetch failed', e); }
+        }
+
+        // 4. Select Main Video (Priority: Season 1 > First)
+        if (allTrailers.length > 0) {
+            mainVidId = allTrailers[0].id; // Default
+            const s1 = allTrailers.find(t => t.title === 'Season 1');
+            if (s1) mainVidId = s1.id;
+
+            // Standard YouTube Embed (With Ads/Cookies for max compatibility)
+            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
+        }
+
+        // 5. Native Native Check (for Button)
+        let hasNativeTrailers = (details.LocalTrailerCount && details.LocalTrailerCount > 0);
+        let hasRemoteTrailers = (details.RemoteTrailers && details.RemoteTrailers.length > 0);
 
         // --- METADATA ---
         const year = details.ProductionYear || '';
@@ -2961,15 +3009,15 @@ function init() {
             : `<h1 class="info-title-text">${details.Name}</h1>`;
 
         // --- TRAILERS SECTION HTML ---
+        // --- TRAILERS GRID HTML ---
         let trailersHtml = '';
-        /* Disabled to prevent 'allTrailers' ReferenceError */
-        if (false && allTrailers.length > 0) {
+        if (allTrailers.length > 0) {
             // Generate Grid
             const cards = allTrailers.map(t => {
                 const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
-                // Onclick: replace main iframe
+                // External Link as requested
                 return `
-                    <div class="trailer-card" onclick="window.legitFlixSwitchTrailer('${t.id}')">
+                    <div class="trailer-card" onclick="window.open('https://www.youtube.com/watch?v=${t.id}', '_blank')">
                         <div class="trailer-thumb">
                             <img src="${img}" alt="${t.title}" loading="lazy">
                             <div class="play-overlay"><span class="material-icons">play_circle_outline</span></div>
@@ -3020,7 +3068,7 @@ function init() {
                                 <span class="material-icons">play_arrow</span> Play
                             </button>
                             
-                            ${hasTrailers ? `
+                            ${hasNativeTrailers ? `
                             <button is="emby-button" 
                                     type="button" 
                                     class="button-flat btnPlayTrailer detailButton emby-button btn-native-trailer" 
