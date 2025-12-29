@@ -2356,7 +2356,35 @@ function init() {
         }
     }
 
+    // --- SELECTION MODE DETECTION ---
+    function isSelectionMode() {
+        return document.querySelector('.selectionCommandsPanel') !== null ||
+            document.querySelector('.itemSelectionPanel') !== null;
+    }
+
+    function startSelectionMonitor() {
+        // Monitor body for addition/removal of selection panels
+        const observer = new MutationObserver(() => {
+            if (isSelectionMode()) {
+                document.body.classList.add('legitflix-selection-mode');
+            } else {
+                document.body.classList.remove('legitflix-selection-mode');
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Initial check
+        if (isSelectionMode()) document.body.classList.add('legitflix-selection-mode');
+    }
+    startSelectionMonitor();
+
     async function createHoverCard(card, id) {
+        // Selection Mode Check
+        if (isSelectionMode()) {
+            console.log('[LegitFlix] createHoverCard: Aborted (Selection Mode Active)');
+            return;
+        }
+
         console.log('[LegitFlix] createHoverCard: Starting for', id);
 
         // PRE-FETCH CHECK: If no longer hovering, abort immediately

@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined');
 
@@ -1149,6 +1149,30 @@ header,
 /* Hide native blue border on item selection */
 .itemSelectionPanel {
     border: none !important;
+}
+
+/* Disable Hover Effects During Selection Mode */
+body.legitflix-selection-mode .card:hover .cardBox {
+    transform: none !important;
+}
+
+body.legitflix-selection-mode .card:hover .cardScalable {
+    box-shadow: none !important;
+}
+
+body.legitflix-selection-mode .legitflix-hover-overlay {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+body.legitflix-selection-mode .actionSheetMenuItem:hover {
+    background: transparent !important;
+}
+
+body.legitflix-selection-mode .actionSheetMenuItem:hover .listItemIcon,
+body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
+    color: inherit !important;
 }
 
 /* =========== FORM DIALOG STYLING (Add to Collection, etc.) =========== */
