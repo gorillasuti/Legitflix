@@ -2819,9 +2819,9 @@ function init() {
         };
 
         const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Switch to Piped.video - Robust Open Source frontend
-            // Often more reliable for restricted videos
-            return `https://piped.video/embed/${videoId}?playerOnly=true&autoplay=${autoPlay === 1}&muted=${autoPlay === 1}`;
+            // 'yt.artemislena.eu' is a reliable Invidious instance (Germany)
+            // Known for good up-time and embed support
+            return `https://yt.artemislena.eu/embed/${videoId}?autoplay=${autoPlay}&controls=1&listen=0&quality=dash`;
         };
 
         // 1. Collect Movie Trailers
