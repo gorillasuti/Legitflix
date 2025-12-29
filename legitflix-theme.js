@@ -447,7 +447,8 @@ function createMediaBarHTML(items) {
     }).join('');
 
     // --- TRACKER HTML ---
-    const indicators = items.map((_, i) => `<div class="hero-indicator ${i === 0 ? 'active' : ''}" data-index="${i}"><div class="fill"></div></div>`).join('');
+    // Note: First indicator starts inactive so we can animate it via JS
+    const indicators = items.map((_, i) => `<div class="hero-indicator" data-index="${i}"><div class="fill"></div></div>`).join('');
     const trackerHtml = `<div class="hero-indicators">${indicators}</div>`;
 
     return `<div id="legit-hero-carousel" class="hero-carousel-container">${slides}${trackerHtml}</div>`;
@@ -470,6 +471,11 @@ function startCarousel() {
     if (slides.length === 0) return;
 
     logger.log(`startCarousel: Starting new interval with ${slides.length} slides.`);
+
+    // Force initial animation for the first slide
+    setTimeout(() => {
+        if (indicators.length > 0) indicators[0].classList.add('active');
+    }, 100);
 
     let currentIndex = 0;
 

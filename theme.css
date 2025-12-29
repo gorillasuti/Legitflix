@@ -2149,19 +2149,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Zoom effect */
 }
 
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    /* USER REQUEST: Strong gradient from left (background color) to transparent */
-    /* Adjust usage of local variables if needed, or hardcode dark theme color */
-    background: linear-gradient(90deg,
-            rgba(16, 16, 16, 1) -10%,
-            rgba(16, 16, 16, 0.95) 27.5%,
-            rgba(16, 16, 16, 0.6) 60%,
-            rgba(16, 16, 16, 0) 110%);
-    z-index: 2;
-}
-
 .hero-content {
     position: absolute;
     top: 42.5%;
@@ -2250,20 +2237,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     color: var(--clr-accent) !important;
     background-color: var(--clr-bg-glass) !important;
 }
-
-
-
-.hero-backdrop {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    /* USER REQUEST: Offset image to the right */
-    background-position: 80% center;
-    transition: transform 10s ease;
-    /* Subtle zoom effect? */
-}
-
-
 
 .hero-overlay {
     position: absolute;
