@@ -197,22 +197,25 @@ window.legitFlixToggleFav = async function (id, btn) {
 };
 
 // --- AUTH HELPER ---
+// --- AUTH HELPER ---
 async function getAuth() {
-    logger.log('getAuth: Checking for ApiClient...');
+    // logger.log('getAuth: Checking for ApiClient...');
     let attempts = 0;
-    while (!window.ApiClient && attempts < 30) {
+
+    // Wait for ApiClient AND Valid User ID
+    while (attempts < 50) {
+        if (window.ApiClient && window.ApiClient.getCurrentUserId()) {
+            return {
+                UserId: window.ApiClient.getCurrentUserId(),
+                AccessToken: window.ApiClient.accessToken(),
+                ServerId: window.ApiClient.serverId()
+            };
+        }
         await new Promise(r => setTimeout(r, 200));
         attempts++;
     }
-    if (window.ApiClient) {
-        logger.log('getAuth: ApiClient found!');
-        return {
-            UserId: window.ApiClient.getCurrentUserId(),
-            AccessToken: window.ApiClient.accessToken(),
-            ServerId: window.ApiClient.serverId()
-        };
-    }
-    logger.error('getAuth: ApiClient timed out.');
+
+    logger.error('getAuth: ApiClient or UserId timed out.');
     return null;
 }
 
