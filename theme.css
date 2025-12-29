@@ -3370,9 +3370,61 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     font-weight: 500;
 }
 
-.trailer-card:hover .trailer-title {
+/* --- ABOUT SECTION --- */
+.info-about-section {
+    padding: 20px 40px 60px 40px;
+    margin-top: 2rem;
+    /* Requested gap */
+    /* No border-top as requested "no need for divider" */
+}
+
+.info-about-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
     color: white;
 }
+
+.about-row {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.about-row .label {
+    color: #777;
+    margin-right: 6px;
+}
+
+.about-row .value {
+    color: white;
+}
+
+/* Maturity Box */
+.maturity-row {
+    margin-top: 20px;
+}
+
+.maturity-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.maturity-box .rating-badge {
+    border: 1px solid white;
+    padding: 2px 8px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.maturity-box .rating-text {
+    color: white;
+    font-size: 0.95rem;
+}
+
 
 /* Close Button */
 .btn-close-modal {

@@ -2881,10 +2881,15 @@ function init() {
         const year = details.ProductionYear || '';
         const rating = details.OfficialRating || '';
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
-        const genres = details.Genres ? details.Genres.slice(0, 3).join(', ') : '';
+        const genres = details.Genres ? details.Genres.join(', ') : '';
         const desc = details.Overview || 'No description available.';
-        const cast = details.People ? details.People.slice(0, 5).map(p => p.Name).join(', ') : 'Unknown';
-        const director = details.People ? details.People.filter(p => p.Type === 'Director').map(p => p.Name).join(', ') : '';
+
+        // People
+        const people = details.People || [];
+        const cast = people.slice(0, 10).map(p => p.Name).join(', '); // More cast for About
+        const director = people.filter(p => p.Type === 'Director').map(p => p.Name).join(', ');
+        const writers = people.filter(p => p.Type === 'Writer').map(p => p.Name).join(', ');
+        const tags = details.Tags ? details.Tags.join(', ') : '';
 
         // Logo
         const hasLogo = details.ImageTags && details.ImageTags.Logo;
@@ -2958,7 +2963,7 @@ function init() {
                 </div>
 
                 <div class="info-details-container">
-                    <div class="info-col-left">
+                    <div class="info-col-left" style="flex: 1;">
                         <div class="info-meta-row">
                             <span class="info-year">${year}</span>
                             ${rating ? `<span class="info-rating">${rating}</span>` : ''}
@@ -2968,18 +2973,29 @@ function init() {
                         <p class="info-desc">${desc}</p>
                     </div>
                     
-                    <div class="info-col-right">
-                        <div class="info-row">
-                            <span class="label">Cast:</span> <span class="value">${cast}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Genres:</span> <span class="value">${genres}</span>
-                        </div>
-                         ${director ? `<div class="info-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
-                    </div>
+                    <!-- Moved detailed metadata to bottom section as requested -->
                 </div>
                 
                 ${trailersHtml}
+
+                <!-- NEW: About Section (Bottom) -->
+                <div class="info-about-section">
+                    <h3>About ${details.Name}</h3>
+                    
+                    ${director ? `<div class="about-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
+                    ${cast ? `<div class="about-row"><span class="label">Cast:</span> <span class="value">${cast}</span></div>` : ''}
+                    ${writers ? `<div class="about-row"><span class="label">Writers:</span> <span class="value">${writers}</span></div>` : ''}
+                    ${genres ? `<div class="about-row"><span class="label">Genres:</span> <span class="value">${genres}</span></div>` : ''}
+                    ${tags ? `<div class="about-row"><span class="label">This title is:</span> <span class="value">${tags}</span></div>` : ''}
+                    
+                    <div class="about-row maturity-row">
+                        <span class="label">Maturity Rating:</span>
+                        <div class="maturity-box">
+                             <span class="rating-badge">${rating || 'NR'}</span>
+                             <span class="rating-text">Recommended for ages ${rating ? rating.replace(/\D/g, '') + '+' : 'all'}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
