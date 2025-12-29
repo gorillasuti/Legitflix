@@ -3106,8 +3106,100 @@ body.with-multiselect .hero-button-info:hover {
     transform: scale(1.1);
 }
 
-.hover-footer .cardOverlayButton .material-icons {
-    font-size: 20px !important;
-    /* Match other icons */
+
+/* =========== THEME FOOTER STYLING =========== */
+.legitflix-footer {
+    background: rgba(16, 16, 16, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 60px 4% 40px !important;
+    margin-top: 60px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.footer-content {
+    display: grid !important;
+    grid-template-columns: 2fr 1fr 1fr 1fr !important;
+    gap: 40px !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+}
+
+.footer-column h4 {
     color: white !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 24px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.footer-logo {
+    height: 40px !important;
+    margin-bottom: 20px !important;
+}
+
+.footer-tagline {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    max-width: 300px !important;
+}
+
+.footer-links {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.footer-links li {
+    margin-bottom: 12px !important;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.6) !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease, transform 0.2s ease !important;
+    display: inline-block !important;
+    font-size: 0.95rem !important;
+}
+
+.footer-links a:hover {
+    color: var(--clr-accent) !important;
+    transform: translateX(4px) !important;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    margin-top: 60px !important;
+    padding-top: 30px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 0.85rem !important;
+}
+
+.footer-bottom p {
+    margin: 0 !important;
+}
+
+@media (max-width: 1024px) {
+    .footer-content {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .footer-content {
+        grid-template-columns: 1fr !important;
+        gap: 40px !important;
+    }
+
+    .footer-bottom {
+        flex-direction: column !important;
+        gap: 20px !important;
+        text-align: center !important;
+    }
 }

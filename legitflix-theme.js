@@ -2646,8 +2646,76 @@ function init() {
         fixMixedCards();
         injectPromoBanner();
         tagNativeSections();
+        injectFooter();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+
+    async function injectFooter() {
+        // Find the main container where we can append the footer
+        const activePage = document.querySelector('.pageContainer:not(.hide) .page, .page.type-interior, [data-role="page"].active');
+        if (!activePage) return;
+
+        // Prevent double injection
+        if (activePage.querySelector('.legitflix-footer')) return;
+
+        // Don't show footer on play page
+        if (window.location.hash.includes('video')) return;
+
+        const footer = document.createElement('footer');
+        footer.className = 'legitflix-footer';
+        footer.innerHTML = `
+            <div class="footer-content">
+                <div class="footer-column branding">
+                    <img src="https://i.imgur.com/9tbXBxu.png" alt="Legitflix" class="footer-logo">
+                    <p class="footer-tagline">Premium aesthetics for your Jellyfin experience. Designed for cinematic immersion.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Libraries</h4>
+                    <ul class="footer-links" id="footer-library-links">
+                        <li><a href="#/home">Home</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/kalibrado/Legitflix-Theme" target="_blank">Repository</a></li>
+                        <li><a href="https://jellyfin.org" target="_blank">Jellyfin.org</a></li>
+                        <li><a href="#">Wiki</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="#">Reddit</a></li>
+                        <li><a href="#">Donate</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Legitflix. Designed for Jellyfin.</p>
+                <p>Version 6.0 | Crafted with ❤️</p>
+            </div>
+        `;
+
+        // Populate library links
+        const navLinks = document.querySelector('.legit-nav-links');
+        if (navLinks) {
+            const footerLibraryList = footer.querySelector('#footer-library-links');
+            const links = navLinks.querySelectorAll('a');
+            links.forEach(l => {
+                const li = document.createElement('li');
+                const clone = l.cloneNode(true);
+                const icon = clone.querySelector('.material-icons');
+                if (icon) icon.remove();
+                li.appendChild(clone);
+                footerLibraryList.appendChild(li);
+            });
+        }
+
+        activePage.appendChild(footer);
+    }
+
     // Dynamic Header Blur Logic
     function initNavScroll() {
         console.log('[LegitFlix] initNavScroll: Starting...');
