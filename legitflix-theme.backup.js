@@ -3377,6 +3377,7 @@ window.openInfoModal = async function (id) {
 
 
 
+
 // --- INITIALIZATION ---
 try {
     injectCustomFooter();
@@ -3385,64 +3386,12 @@ try {
     console.error('LegitFlix Init Error:', e);
 }
 
-// --- LOAD SERIES DETAIL REVAMP MODULE ---
-// This dynamically loads the series-detail-revamp.js module
-(function loadSeriesDetailModule() {
-    // Check if already loaded
-    if (window.LFSeriesDetail) {
-        console.log('[LegitFlix] Series Detail module already loaded.');
-        return;
-    }
-
-    // Get the base path from the current script
-    const scripts = document.querySelectorAll('script[src*="legitflix"]');
-    let basePath = '';
-    scripts.forEach(script => {
-        const src = script.src;
-        if (src.includes('legitflix-theme.js')) {
-            basePath = src.replace('legitflix-theme.js', '');
-        }
-    });
-
-    // Fallback paths to try
-    const pathsToTry = [
-        basePath + 'series-detail-revamp.js',
-        '/web/Legitflix/series-detail-revamp.js',
-        '/Legitflix/series-detail-revamp.js',
-        './series-detail-revamp.js'
-    ];
-
-    function tryLoadScript(paths, index) {
-        if (index >= paths.length) {
-            console.warn('[LegitFlix] Could not load series-detail-revamp.js from any path.');
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = paths[index];
-        script.onload = () => {
-            console.log('[LegitFlix] Series Detail module loaded from:', paths[index]);
-        };
-        script.onerror = () => {
-            console.log('[LegitFlix] Failed to load from:', paths[index], '- trying next...');
-            tryLoadScript(paths, index + 1);
-        };
-        document.head.appendChild(script);
-    }
-
-    tryLoadScript(pathsToTry, 0);
-})();
-
 
 // --- CONTINUOUS MONITORING ---
 // Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
 function monitorPageLoop() {
     pollForUI();      // Restore Nav, Prefs, Jellyseerr
     injectMediaBar(); // Handles Home and Detail page logic
-
-    // Series Detail monitoring now handled by the loaded module (LFSeriesDetail.startMonitoring)
-    // The module auto-starts when it detects ApiClient
-
     setTimeout(monitorPageLoop, 800);
 }
 
