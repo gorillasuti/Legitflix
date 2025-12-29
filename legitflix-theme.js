@@ -2980,8 +2980,9 @@ function init() {
             const s1 = allTrailers.find(t => t.title === 'Season 1');
             if (s1) mainVidId = s1.id;
 
-            // Standard YouTube Embed (With Ads/Cookies for max compatibility)
-            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
+            // Standard YouTube Embed (With Ads/Cookies/Strict Policy for max compatibility)
+            // Added mute=1 to ensure autoplay works on modern browsers
+            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
         }
 
         // 5. Native Native Check (for Button)
@@ -3048,7 +3049,7 @@ function init() {
                 <div class="info-video-container ${mainTrailerUrl ? 'has-video' : 'no-video'}">
                     <div class="iframe-wrapper">
                          ${mainTrailerUrl
-                ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`
+                ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
                 : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
             }
                     </div>
