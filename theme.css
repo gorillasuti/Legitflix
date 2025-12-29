@@ -3290,8 +3290,22 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     border: none;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(50px) scale(0.95);
+    /* Start slightly lower/smaller */
 
     /* Global scrollbar applies now */
+}
+
+/* Fallback Backdrop when no video */
+.info-backdrop-fallback {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
 
 .legitflix-info-modal.visible .info-modal-content {
@@ -3484,6 +3498,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-direction: row;
 }
 
 .btn-native-trailer .material-icons {

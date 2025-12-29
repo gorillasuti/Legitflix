@@ -110,6 +110,49 @@ window.legitFlixShowItem = function (id) {
     window.top.location.href = `#!/details?id=${id}`;
 };
 
+// --- TRAILER & FAV HELPER (v4.0) ---
+window.legitFlixPlayTrailer = function (id) {
+    logger.log('Play Trailer Clicked:', id);
+    if (window.require) {
+        window.require(['playbackManager'], (pm) => {
+            const apiClient = window.ApiClient;
+            apiClient.getItem(apiClient.getCurrentUserId(), id).then(item => {
+                pm.playTrailer({ items: [item] });
+            });
+        });
+    } else {
+        logger.warn('Require not found, checking global PlaybackManager');
+        if (window.PlaybackManager) {
+            const userId = window.ApiClient.getCurrentUserId();
+            window.ApiClient.getItem(userId, id).then(item => {
+                window.PlaybackManager.playTrailer({ items: [item] });
+            });
+        }
+    }
+};
+
+window.legitFlixToggleFav = async function (id, btn) {
+    logger.log('Toggle Fav:', id);
+    const auth = await getAuth();
+    if (!auth) return;
+
+    // Toggle UI state immediately
+    const wasActive = btn.classList.contains('active');
+    btn.classList.toggle('active');
+    const icon = btn.querySelector('.material-icons');
+    if (icon) icon.textContent = wasActive ? 'add' : 'check';
+
+    try {
+        await window.ApiClient.updateFavoriteStatus(auth.UserId, id, !wasActive);
+        logger.log('Fav updated successfully');
+    } catch (e) {
+        logger.error('Fav update failed', e);
+        // Revert UI on failure
+        btn.classList.toggle('active');
+        if (icon) icon.textContent = wasActive ? 'check' : 'add';
+    }
+};
+
 // --- AUTH HELPER ---
 async function getAuth() {
     logger.log('getAuth: Checking for ApiClient...');
@@ -2981,7 +3024,8 @@ function init() {
                             <button is="emby-button" 
                                     type="button" 
                                     class="button-flat btnPlayTrailer detailButton emby-button btn-native-trailer" 
-                                    title="Trailer"
+                                    title="Play Trailer"
+                                    onclick="window.legitFlixPlayTrailer('${details.Id}')"
                                     data-item-id="${details.Id}">
                                 <div class="detailButton-content">
                                     <span class="material-icons detailButton-icon theaters" aria-hidden="true"></span>
@@ -2989,7 +3033,9 @@ function init() {
                                 </div>
                             </button>` : ''}
 
-                             <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" id="btnInfoFav">
+                             <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" 
+                                     id="btnInfoFav"
+                                     onclick="window.legitFlixToggleFav('${details.Id}', this)">
                                 <span class="material-icons">${details.UserData?.IsFavorite ? 'check' : 'add'}</span> My List
                             </button>
                         </div>
