@@ -3436,14 +3436,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     z-index: 2;
 }
 
-/* Mute Toggle */
-.video-mute-overlay {
-    position: absolute;
-    bottom: 30%;
-    right: 30px;
-    z-index: 10;
-}
-
 .btn-mute-toggle {
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -3614,14 +3606,13 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- REFINED MODAL STYLES (User Request) --- */
 
 /* 1. Mute Button Alignment */
-/* Requested: Bottom-Right (Play Y / Close X) */
 .video-mute-overlay {
     position: absolute;
     top: auto !important;
-    bottom: 50px !important;
+    bottom: 30px !important;
     /* Aligns with Play Button Y */
     left: auto !important;
-    right: 40px !important;
+    right: 20px !important;
     /* Aligns with Content Padding */
     z-index: 2147483647 !important;
     /* Force MAX Z-Index */
@@ -3652,14 +3643,13 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Ensures Play button (first child) aligns with Mute X */
 .info-hero-content {
     position: absolute;
-    bottom: 50px;
+    bottom: 30px;
     left: 40px;
     width: 55%;
     z-index: 5;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    gap: 1rem;
 }
 
 .info-title-text {
@@ -3817,7 +3807,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     border: 2px solid var(--clr-accent);
     /* Orange Outline */
     color: var(--clr-accent);
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     /* Slightly rounded box, not circle */
     width: 48px;
     height: 48px;
@@ -3901,7 +3891,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .hero-indicator:hover {
-    background: rgba(var(--accent), 0.8);
+    background: var(--clr-accent);
 }
 
 /* Active State: Wider */
