@@ -4004,3 +4004,290 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     width: 56px;
     /* Ensure expanded width stays */
 }
+
+/* --- SERIES DETAIL PAGE HERO (Fire Force Revamp) --- */
+.legit-detail-hero {
+    position: relative;
+    width: 100%;
+    height: 85vh;
+    min-height: 600px;
+    margin-bottom: -150px;
+    /* Overlap content below */
+    z-index: 0;
+    overflow: hidden;
+}
+
+.legit-detail-hero .hero-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    z-index: 1;
+}
+
+.legit-detail-hero .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, #141414 10%, rgba(20, 20, 20, 0.8) 30%, rgba(20, 20, 20, 0.3) 60%, transparent 100%);
+    z-index: 2;
+}
+
+.legit-detail-hero .detail-hero-content {
+    position: absolute;
+    bottom: 180px;
+    /* Shift up for negative margin */
+    left: 5%;
+    width: 90%;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 4rem;
+}
+
+/* LEFT COLUMN (Main Info) */
+.hero-col-left {
+    flex: 1;
+    max-width: 65%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.hero-col-left .hero-logo {
+    height: 220px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left bottom;
+    margin-bottom: 0.5rem;
+}
+
+.hero-col-left .hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+/* Meta Line (Badges & Text) */
+.hero-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1rem;
+    color: #e5e5e5;
+    font-family: 'Outfit', sans-serif;
+}
+
+.badge-rating {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 2px 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.badge-subdub {
+    font-size: 0.9rem;
+    color: #ccc;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.meta-year {
+    color: #aaa;
+}
+
+.meta-genres .bullet {
+    color: #f97f26;
+    /* Theme Orange */
+}
+
+/* Actions Row */
+.hero-col-left .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-hero-primary {
+    background-color: #f97f26;
+    /* Fire Force Orange */
+    color: #000;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    /* Flex for icon right alignment */
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    height: 60px;
+    /* Fixed height for stack */
+    min-width: 250px;
+}
+
+.btn-hero-primary:hover {
+    background-color: #ff9f5a;
+    transform: scale(1.02);
+}
+
+.btn-text-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+}
+
+.btn-text-stack .btn-label {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.btn-text-stack .btn-sub {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.btn-icon-right {
+    font-size: 2rem !important;
+    /* Larger icon */
+    margin-left: auto;
+    /* Push to right */
+}
+
+.btn-hero-bookmark {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-hero-bookmark:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-hero-bookmark.active {
+    background: #f97f26;
+    border-color: #f97f26;
+    color: #000;
+}
+
+.btn-hero-bookmark.icon-only {
+    border: none;
+    /* For Share button etc */
+}
+
+.btn-hero-bookmark.icon-only:hover {
+    background: transparent;
+    color: #f97f26;
+}
+
+
+/* Description */
+.hero-desc {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #ccc;
+    max-width: 800px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* RIGHT COLUMN (Tech Specs) */
+.hero-col-right {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-self: flex-end;
+    /* Align to bottom of content area */
+    margin-bottom: 2rem;
+    /* Align with bottom of description roughly */
+}
+
+.spec-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+}
+
+.spec-label {
+    color: #888;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.spec-value {
+    color: #ddd;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+/* HIDE DEFAULT JELLYFIN HERO ELEMENTS ON DETAIL PAGE */
+.has-legit-detail-hero .itemBackdrop,
+.has-legit-detail-hero .detailLogo,
+.has-legit-detail-hero .detailPagePrimaryContainer {
+    display: none !important;
+}
+
+/* Ensure secondary container (Episodes) flows after our hero */
+.has-legit-detail-hero .detailPageSecondaryContainer {
+    margin-top: 0 !important;
+    padding-top: 2rem !important;
+    position: relative;
+    z-index: 5;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 900px) {
+    .legit-detail-hero .detail-hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2rem;
+        bottom: 50px;
+    }
+
+    .hero-col-left {
+        max-width: 100%;
+    }
+
+    .hero-col-right {
+        display: none;
+        /* Hide specs on mobile to save space */
+    }
+
+    .legit-detail-hero {
+        height: 70vh;
+        margin-bottom: 0;
+    }
+}
