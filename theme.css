@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined');
 
@@ -1082,33 +1082,52 @@ header,
 /* =========== MULTI-SELECT MODE STYLING =========== */
 
 /* Selection Commands Panel (Top bar when items selected) */
+/* Selection Commands Panel (Floating Capsule) */
 .selectionCommandsPanel {
-    background: rgba(20, 20, 20, 0.98) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    position: fixed !important;
+    top: 24px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    min-width: 200px !important;
+    max-width: 90% !important;
+    border-radius: 50px !important;
+    background: rgba(30, 30, 30, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     display: flex !important;
     align-items: center !important;
-    padding: 8px 16px !important;
-    gap: 12px !important;
+    justify-content: space-between !important;
+    padding: 6px 8px !important;
+    gap: 16px !important;
+    z-index: 12000 !important;
 }
 
 .selectionCommandsPanel .itemSelectionCount {
-    color: var(--clr-accent) !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    margin: 0 auto !important;
+    color: white !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    padding: 0 8px !important;
 }
 
 .selectionCommandsPanel button {
     background: transparent !important;
-    border-radius: var(--radius-sm) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
     padding: 8px !important;
     transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .selectionCommandsPanel button:hover {
-    background: rgba(255, 106, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(1.1) !important;
 }
 
 .selectionCommandsPanel button:hover .material-icons {
@@ -1149,6 +1168,7 @@ header,
 /* Hide native blue border on item selection */
 .itemSelectionPanel {
     border: none !important;
+    background: transparent !important;
 }
 
 /* Disable Hover Effects During Selection Mode */
