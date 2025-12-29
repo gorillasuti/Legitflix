@@ -581,51 +581,61 @@ window.legitFlixPlay = async function (id) {
 
 // --- INJECTION & INIT ---
 async function injectMediaBar() {
-    logger.log('injectMediaBar: Started');
+    logger.log('injectMediaBar (Page Monitor): Started');
 
     const hash = window.location.hash;
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
-    if (!isHomePage) return;
+    const isDetailPage = hash.includes('details') && hash.includes('id=');
 
-    // Remove old wrappers to preventing stacking
-    document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
-    document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
+    // --- HOME PAGE LOGIC ---
+    if (isHomePage) {
+        // Remove old wrappers to preventing stacking
+        document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
+        document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
 
-    const items = await fetchMediaBarItems();
-    if (items.length === 0) return;
+        const items = await fetchMediaBarItems();
+        if (items.length === 0) return;
 
-    // Attempt injection
-    const checkInterval = setInterval(() => {
-        let container = document.querySelector('.homeSectionsContainer');
-        if (!container) container = document.querySelector('.mainAnimatedPages');
-        if (!container) container = document.querySelector('#indexPage .pageContent');
+        // Attempt injection
+        let checkInterval = null; // Declare checkInterval here
+        checkInterval = setInterval(() => {
+            let container = document.querySelector('.homeSectionsContainer');
+            if (!container) container = document.querySelector('.mainAnimatedPages');
+            if (!container) container = document.querySelector('#indexPage .pageContent');
 
-        const isReady = container && window.ApiClient;
+            const isReady = container && window.ApiClient;
 
-        // Double check we haven't already injected while waiting
-        if (isReady && !document.querySelector('.legit-hero-wrapper')) {
-            clearInterval(checkInterval);
+            // Double check we haven't already injected while waiting
+            if (isReady && !document.querySelector('.legit-hero-wrapper')) {
+                clearInterval(checkInterval);
 
-            const wrapper = document.createElement('div');
-            wrapper.classList.add('legit-hero-wrapper');
-            wrapper.innerHTML = createMediaBarHTML(items);
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('legit-hero-wrapper');
+                wrapper.innerHTML = createMediaBarHTML(items);
 
-            container.insertBefore(wrapper, container.firstChild);
-            container.classList.add('has-legit-hero'); // Enable CSS spacing
+                container.insertBefore(wrapper, container.firstChild);
+                container.classList.add('has-legit-hero'); // Enable CSS spacing
 
-            logger.log('injectMediaBar: Injected successfully');
-            startCarousel();
+                logger.log('injectMediaBar: Injected Home Carousel successfully');
+                startCarousel();
 
-        } else if (isReady && document.querySelector('.legit-hero-wrapper')) {
-            // Already injected by another thread
-            clearInterval(checkInterval);
-        }
-    }, 1000);
+            } else if (isReady && document.querySelector('.legit-hero-wrapper')) {
+                // Already injected by another thread
+                clearInterval(checkInterval);
+            }
+        }, 1000);
 
-    setTimeout(() => {
-        clearInterval(checkInterval);
-        logger.log('injectMediaBar: Timeout reached');
-    }, 15000);
+        setTimeout(() => {
+            if (checkInterval) clearInterval(checkInterval); // Clear if it was set
+            logger.log('injectMediaBar: Timeout reached');
+        }, 15000);
+    }
+
+    // --- DETAIL PAGE LOGIC ---
+    else if (isDetailPage) {
+        // Wait slightly for DOM to settle
+        setTimeout(() => injectDetailHero(), 500);
+    }
 }
 
 // --- JELLYSEERR INJECTION ---
@@ -3390,6 +3400,139 @@ function init() {
     injectCustomFooter();
     initNavScroll(); // Start scroll listener
 
+}
+
+
+// --- DETAIL PAGE HERO REPLACEMENT ---
+
+async function fetchNextUp(seriesId, userId) {
+    try {
+        const url = `/Shows/NextUp?SeriesId=${seriesId}&UserId=${userId}&Limit=1&Fields=MediaStreams,UserData`;
+        const result = await window.ApiClient.getJSON(url);
+        return result.Items && result.Items.length > 0 ? result.Items[0] : null;
+    } catch (err) {
+        // Silent fail (might not be a series)
+        return null;
+    }
+}
+
+async function injectDetailHero() {
+    // 1. Check if we are on a details page
+    const hash = window.location.hash;
+    if (!hash.includes('details') || !hash.includes('id=')) return;
+
+    // Extract ID
+    const urlParams = new URLSearchParams(hash.split('?')[1]);
+    const itemId = urlParams.get('id');
+    if (!itemId) return;
+
+    // 2. Wait for Container
+    const pageId = '#itemDetailPage';
+    let container = document.querySelector(pageId);
+    if (!container) return; // Wait for retry
+
+    // Prevent double injection
+    if (container.classList.contains('has-legit-detail-hero')) return;
+
+    // 3. Fetch Data
+    const auth = await getAuth();
+    if (!auth) return;
+
+    const item = await window.ApiClient.getItem(auth.UserId, itemId);
+
+    // Series Logic: Fetch Next Up for the "Continue" button
+    let nextUpItem = null;
+    if (item.Type === 'Series') {
+        nextUpItem = await fetchNextUp(itemId, auth.UserId);
+    }
+
+    // 4. Build Hero HTML
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('legit-detail-hero');
+    wrapper.innerHTML = createDetailHeroHTML(item, nextUpItem);
+
+    // 5. Inject & Cleanup
+    // Insert at top of page, CSS will handle hiding the duplicates
+    container.insertBefore(wrapper, container.firstChild);
+    container.classList.add('has-legit-detail-hero');
+
+    logger.log('injectDetailHero: Injected for', item.Name);
+}
+
+function createDetailHeroHTML(item, nextUp) {
+    // Backdrop (High Res)
+    const backdropUrl = item.BackdropImageTags && item.BackdropImageTags.length > 0
+        ? `/Items/${item.Id}/Images/Backdrop/0?maxWidth=3840&quality=80`
+        : '';
+
+    // Logo
+    const logoUrl = item.ImageTags && item.ImageTags.Logo
+        ? `/Items/${item.Id}/Images/Logo?maxWidth=800&quality=90`
+        : null;
+
+    // Meta
+    const rating = item.OfficialRating || '';
+    const year = item.ProductionYear || '';
+    const ended = item.EndDate ? ` - ${new Date(item.EndDate).getFullYear()}` : (item.Status === 'Continuing' ? ' - Present' : '');
+    const communityRating = item.CommunityRating ? item.CommunityRating.toFixed(1) : '';
+    const genres = item.Genres ? item.Genres.slice(0, 3).join(' • ') : '';
+    const description = item.Overview || '';
+
+    // Buttons
+    let actionBtnText = 'Start Watching';
+    let actionBtnId = item.Id;
+    let actionIcon = 'play_arrow';
+
+    // Series Logic
+    if (nextUp) {
+        actionBtnId = nextUp.Id;
+        const s = nextUp.ParentIndexNumber;
+        const e = nextUp.IndexNumber;
+
+        const userData = nextUp.UserData || {};
+        if (userData.PlaybackPositionTicks > 0) {
+            const pct = Math.round((userData.PlaybackPositionTicks / nextUp.RunTimeTicks) * 100);
+            actionBtnText = `Continue S${s}:E${e} - ${pct}%`;
+        } else {
+            actionBtnText = `Start Watching S${s}:E${e}`;
+        }
+    } else if (item.UserData && item.UserData.PlaybackPositionTicks > 0) {
+        actionBtnText = 'Resume';
+    }
+
+    // Is Favorite?
+    const isFav = item.UserData && item.UserData.IsFavorite;
+    const favIcon = isFav ? 'bookmark' : 'bookmark_border';
+    const favClass = isFav ? 'active' : '';
+
+    return `
+        <div class="hero-backdrop" style="background-image: url('${backdropUrl}')"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content detail-hero-content">
+            ${logoUrl ? `<img src="${logoUrl}" class="hero-logo" alt="${item.Name}">` : `<h1 class="hero-title">${item.Name}</h1>`}
+            
+            <div class="hero-meta-line">
+                ${rating ? `<span class="badge-rating">${rating}</span>` : ''}
+                <span class="meta-year">${year}${ended}</span>
+                ${communityRating ? `<span class="meta-star"><span class="material-icons">star</span> ${communityRating}</span>` : ''}
+                <span class="meta-genres">${genres}</span>
+            </div>
+
+            <div class="hero-actions">
+                <button class="btn-hero-primary" onclick="window.legitFlixPlay('${actionBtnId}')">
+                    <span class="material-icons">${actionIcon}</span> ${actionBtnText}
+                </button>
+                <button class="btn-hero-bookmark ${favClass}" onclick="window.legitFlixToggleFav('${item.Id}', this)">
+                    <span class="material-icons">${favIcon}</span>
+                </button>
+                <button class="btn-hero-bookmark" title="More">
+                    <span class="material-icons">more_vert</span>
+                </button>
+            </div>
+
+            <div class="hero-desc">${description}</div>
+        </div>
+    `;
 }
 
 init();

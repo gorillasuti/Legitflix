@@ -3933,6 +3933,73 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Stop animation instantly */
 }
 
+/* =========================================================================
+   DETAIL PAGE HERO REPLACEMENT
+   ========================================================================= */
+
+/* Hide Default Jellyfin Elements when Custom Hero is active */
+.has-legit-detail-hero .detailLogo,
+.has-legit-detail-hero .detailPagePrimaryContainer,
+.has-legit-detail-hero .itemBackdrop,
+.has-legit-detail-hero .detailRibbon,
+/* Double check */
+.has-legit-detail-hero .mainDetailButtons {
+    display: none !important;
+}
+
+/* Hero Container */
+.legit-detail-hero {
+    position: relative !important;
+    width: 100%;
+    height: 80vh !important;
+    /* Slightly shorter than Home */
+    z-index: 1;
+    overflow: hidden !important;
+    margin-bottom: -200px;
+    /* Pull content up drastically */
+    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+.legit-detail-hero .hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center top;
+}
+
+.legit-detail-hero .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.9) 0%,
+            rgba(0, 0, 0, 0.6) 40%,
+            transparent 100%);
+}
+
+.legit-detail-hero .hero-content {
+    /* Reuse existing .hero-content, but maybe closer to left edge */
+    left: 4%;
+    top: 40%;
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Ensure content below is visible on top of fade */
+.detailPageSecondaryContainer {
+    position: relative;
+    z-index: 5;
+    padding-top: 0 !important;
+    /* Reset default padding */
+}
+
+/* Fix vertical spacing */
+#itemDetailPage {
+    padding-top: 0 !important;
+}
+
 .carousel-paused .hero-indicator.active {
     width: 56px;
     /* Ensure expanded width stays */
