@@ -1464,70 +1464,97 @@
     }
 
     /**
+     * Inject global style overrides to forcefully hide elements and fix background
+     */
+    function injectOverridesStyles() {
+        const styleId = 'lf-series-overrides';
+        if (document.getElementById(styleId)) return;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* Force hide original elements */
+            .itemDetailPage #itemBackdrop,
+            .itemDetailPage .detailPageWrapperContainer,
+            .itemDetailPage .detailRibbon,
+            .itemDetailPage .detailPagePrimaryContent,
+            .itemDetailPage .detailPagePrimaryContainer,
+            .itemDetailPage .detailPageSecondaryContainer,
+            .itemDetailPage .detailImageContainer,
+            .itemDetailPage #listChildrenCollapsible,
+            .itemDetailPage #childrenCollapsible,
+            .itemDetailPage .nextUpSection,
+            .itemDetailPage #castCollapsible,
+            .itemDetailPage #guestCastCollapsible,
+            .itemDetailPage #similarCollapsible,
+            .itemDetailPage .itemDetailsCastSection,
+            .itemDetailPage .similarSection,
+            .itemDetailPage #additionalPartsCollapsible,
+            .itemDetailPage #specialsCollapsible,
+            .itemDetailPage #musicVideosCollapsible,
+            .itemDetailPage #scenesCollapsible,
+            .itemDetailPage .moreFromSeasonSection,
+            .itemDetailPage .moreFromArtistSection,
+            .itemDetailPage .programGuideSection,
+            .itemDetailPage #seriesTimerScheduleSection,
+            .itemDetailPage #seriesScheduleSection,
+            .itemDetailPage #lyricsSection {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            /* Force background and reset padding on main containers */
+            .itemDetailPage,
+            .itemDetailPage.page,
+            .backgroundContainer,
+            [data-role="page"].itemDetailPage {
+                background-image: none !important;
+                background-color: var(--clr-bg-main, #141414) !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                margin-top: 0 !important;
+            }
+
+            /* Ensure wrapper starts at top */
+            #${CONFIG.containerId}-wrapper {
+                position: relative;
+                z-index: 10;
+                width: 100%;
+                min-height: 100vh;
+                background-color: var(--clr-bg-main, #141414);
+            }
+        `;
+        document.head.appendChild(style);
+        log('Injected global style overrides');
+    }
+
+    /**
+     * Remove style overrides
+     */
+    function removeOverridesStyles() {
+        const style = document.getElementById('lf-series-overrides');
+        if (style) style.remove();
+    }
+
+    /**
      * Hide original Jellyfin page elements
      */
     function hideOriginalElements() {
-        // Hide all original Jellyfin detail page elements
-        const selectors = [
-            // Main content areas
-            '.detailRibbon',
-            '.detailPagePrimaryContent',
-            '.detailPagePrimaryContainer',
-            '.detailPageSecondaryContainer',
-            '.detailImageContainer',
-            '.detailPageWrapperContainer', // Added wrapper container
-            '#itemBackdrop',               // Added backdrop
+        injectOverridesStyles();
 
-            // Seasons/Episodes sections
-            '#listChildrenCollapsible',
-            '#childrenCollapsible',
-            '.nextUpSection',
-
-            // Cast & Similar
-            '#castCollapsible',
-            '#guestCastCollapsible',
-            '#similarCollapsible',
-            '.itemDetailsCastSection',
-            '.similarSection',
-
-            // Other sections
-            '#additionalPartsCollapsible',
-            '#specialsCollapsible',
-            '#musicVideosCollapsible',
-            '#scenesCollapsible',
-            '.moreFromSeasonSection',
-            '.moreFromArtistSection',
-            '.programGuideSection',
-            '#seriesTimerScheduleSection',
-            '#seriesScheduleSection',
-            '#lyricsSection'
-        ];
-
-        selectors.forEach(sel => {
-            document.querySelectorAll(sel).forEach(el => {
-                // Use setProperty for important priority
-                el.style.setProperty('display', 'none', 'important');
-            });
-        });
-
-        // Remove the backdrop image from the page background and reset padding
+        // Also manually clear any inline styles on the main container just in case
         const itemDetailPage = document.querySelector('.itemDetailPage');
         if (itemDetailPage) {
             itemDetailPage.style.backgroundImage = 'none';
             itemDetailPage.style.backgroundColor = 'var(--clr-bg-main, #141414)';
-            itemDetailPage.style.paddingTop = '0';
-            itemDetailPage.style.paddingBottom = '0';
+            itemDetailPage.style.padding = '0';
         }
-
-        // Also clear any backdrop containers
-        document.querySelectorAll('.backdropImage, .detailPageBackdrop, [class*="backdrop"]').forEach(el => {
-            if (!el.closest('.lf-series-container')) {
-                el.style.backgroundImage = 'none';
-                el.style.opacity = '0';
-            }
-        });
-
-        log('Original Jellyfin elements hidden');
     }
 
     /**
@@ -1540,6 +1567,7 @@
                 currentSeriesId = null;
                 const container = document.getElementById(CONFIG.containerId);
                 if (container) container.remove();
+                removeOverridesStyles(); // Remove our custom styles
             }
             return;
         }
