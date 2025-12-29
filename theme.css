@@ -3765,9 +3765,9 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Aligned with Close (Y / Top) and Play (X / Left) */
 .video-mute-overlay {
     position: absolute;
-    top: 20px;
+    top: 20px !important;
     /* Aligns with Close Y */
-    left: 40px;
+    left: 40px !important;
     /* Aligns with Play X */
     z-index: 20;
 }

@@ -3152,12 +3152,8 @@ function init() {
         // --- EVENTS ---
 
         // Helper to switch video
-        window.legitFlixSwitchTrailer = (vidId) => {
-            const iframe = document.getElementById('mainInfoIframe');
-            if (iframe) {
-                iframe.src = createEmbedUrl(vidId, 1);
-            }
-        };
+        // Helper to switch video (ALREADY DEFINED ABOVE - Removing Duplicate)
+        // window.legitFlixSwitchTrailer = ... (Removed to fix ReferenceError)
 
         // CLOSE
         const close = () => {
