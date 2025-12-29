@@ -2823,8 +2823,9 @@ function init() {
         };
 
         const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Standard Embed, relaxed params to avoid errors
-            return `https://www.youtube.com/embed/${videoId}?autoplay=${autoPlay}&controls=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=1&playsinline=1&origin=${window.location.origin}`;
+            // Invidious (Open Source) - fixes 'Video Unavailable' and removes Ads
+            // 'local=true' proxies traffic through the instance (privacy)
+            return `https://yewtu.be/embed/${videoId}?autoplay=${autoPlay}&controls=1&local=true&listen=0&quality=dash`;
         };
 
         // 1. Collect Movie Trailers
