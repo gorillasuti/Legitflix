@@ -420,42 +420,60 @@ function createMediaBarHTML(items) {
                     </div>
                 </div>
             </div>
+            </div>
         `;
     }).join('');
 
-    return `<div id="legit-hero-carousel" class="hero-carousel-container">${slides}</div>`;
+    // --- TRACKER HTML ---
+    const indicators = items.map((_, i) => `<div class="hero-indicator ${i === 0 ? 'active' : ''}" data-index="${i}"><div class="fill"></div></div>`).join('');
+    const trackerHtml = `<div class="hero-indicators">${indicators}</div>`;
+
+    return `<div id="legit-hero-carousel" class="hero-carousel-container">${slides}${trackerHtml}</div>`;
 }
 
-// --- CAROUSEL LOGIC (Fixed) ---
+// --- CAROUSEL LOGIC (Fixed & Enhanced) ---
 let carouselInterval = null;
 
 function startCarousel() {
     logger.log('startCarousel: Attempting to start...');
 
-    // Stop any existing interval properly
     if (carouselInterval) {
-        logger.log('startCarousel: Clearing old interval');
         clearInterval(carouselInterval);
         carouselInterval = null;
     }
 
     const slides = document.querySelectorAll('.hero-slide');
-    if (slides.length === 0) {
-        logger.warn('startCarousel: No slides found!');
-        return;
-    }
+    const indicators = document.querySelectorAll('.hero-indicator');
+
+    if (slides.length === 0) return;
 
     logger.log(`startCarousel: Starting new interval with ${slides.length} slides.`);
 
     let currentIndex = 0;
     const rotate = () => {
-        // Double check existence in case DOM changed
         if (slides.length === 0) return;
 
+        // 1. Update Slides
         slides.forEach(s => s.classList.remove('active'));
-
         currentIndex = (currentIndex + 1) % slides.length;
         slides[currentIndex].classList.add('active');
+
+        // 2. Update Indicators
+        if (indicators.length > 0) {
+            indicators.forEach((ind, i) => {
+                ind.classList.remove('active');
+                if (i < currentIndex) {
+                    ind.classList.add('completed');
+                } else {
+                    ind.classList.remove('completed');
+                }
+
+                if (i === currentIndex) {
+                    ind.classList.add('active');
+                    ind.classList.remove('completed');
+                }
+            });
+        }
     };
 
     carouselInterval = setInterval(rotate, 8000); // 8 seconds per slide
