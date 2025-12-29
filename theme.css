@@ -2103,14 +2103,15 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
    ========================================================================= */
 
 .hero-carousel-container {
-    position: relative;
-    /* Fix: In-flow positioning */
+    position: relative !important;
+    /* Force Relative */
     width: 100%;
-    height: 75vh;
-    /* Fixed height, not full screen */
+    height: 75vh !important;
+    /* Force Height */
     max-height: 800px;
     z-index: 1;
-    overflow: hidden;
+    overflow: hidden !important;
+    /* Force Clipping */
     margin-bottom: 20px;
     border-radius: 0;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -3899,8 +3900,10 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden;
+    /* Fix: Clip internal explosions */
     opacity: 0;
     transform: scale(1.02);
     /* Start slightly zoomed */
