@@ -554,8 +554,9 @@ async function injectMediaBar() {
     const isHomePage = hash.includes('home') || hash === '' || hash.includes('startup');
     if (!isHomePage) return;
 
-    // Remove old
-    document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove());
+    // Remove old wrappers to preventing stacking
+    document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
+    document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
 
     const items = await fetchMediaBarItems();
     if (items.length === 0) return;
@@ -568,9 +569,12 @@ async function injectMediaBar() {
 
         const isReady = container && window.ApiClient;
 
-        if (isReady) {
+        // Double check we haven't already injected while waiting
+        if (isReady && !document.querySelector('.legit-hero-wrapper')) {
             clearInterval(checkInterval);
+
             const wrapper = document.createElement('div');
+            wrapper.classList.add('legit-hero-wrapper');
             wrapper.innerHTML = createMediaBarHTML(items);
 
             container.insertBefore(wrapper, container.firstChild);
@@ -579,6 +583,9 @@ async function injectMediaBar() {
             logger.log('injectMediaBar: Injected successfully');
             startCarousel();
 
+        } else if (isReady && document.querySelector('.legit-hero-wrapper')) {
+            // Already injected by another thread
+            clearInterval(checkInterval);
         }
     }, 1000);
 
