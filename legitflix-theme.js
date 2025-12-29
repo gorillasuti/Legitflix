@@ -2919,7 +2919,8 @@ function init() {
 
         // --- TRAILERS SECTION HTML ---
         let trailersHtml = '';
-        if (allTrailers.length > 0) {
+        /* Disabled to prevent 'allTrailers' ReferenceError */
+        if (false && allTrailers.length > 0) {
             // Generate Grid
             const cards = allTrailers.map(t => {
                 const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
