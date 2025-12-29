@@ -825,6 +825,42 @@ h4,
     transform: scale(1.02);
 }
 
+/* --- GLOBAL SCROLLBAR (Apple Style) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+    /* No bg as requested */
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    /* Creates floating effect */
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+    /* Remove arrows */
+    width: 0;
+    height: 0;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
 /* Nav Links Container */
 .legit-nav-links {
     display: none;
@@ -3288,35 +3324,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 
-    /* Apple Style Scrollbar */
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-/* Custom Scrollbar WebKit */
-.info-modal-content::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-    background: transparent;
-}
-
-.info-modal-content::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 4px;
-}
-
-.info-modal-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    /* Padding around thumb */
-    background-clip: content-box;
-}
-
-.info-modal-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-    border: 2px solid transparent;
-    background-clip: content-box;
+    /* Global scrollbar applies now */
 }
 
 .legitflix-info-modal.visible .info-modal-content {

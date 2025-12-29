@@ -2804,108 +2804,24 @@ function init() {
 
         if (!details) return;
 
-        // --- TRAILER LOGIC ---
+        // --- TRAILER LOGIC (Paused for Local Data) ---
+        // User is setting up TinymediaManager (TMM) / AMTD.
+        // For now, we clean this up and disable unstable fetch.
+
         let mainTrailerUrl = null;
-        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`; // Keep high quality
-        let allTrailers = []; // Store all found trailers { title, url, type }
-
-        // Helper to normalize YT URL
-        const getYoutubeId = (url) => {
-            if (!url) return null;
-            if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
-            if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-            if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
-            return null;
-        };
-
-        const createEmbedUrl = (videoId, autoPlay = 0) => {
-            // Fallback to standard YouTube. Invidious/Piped are too unstable for this user.
-            // Using standard embed with origin to try and satisfy CORS/Privacy.
-            return `https://www.youtube.com/embed/${videoId}?autoplay=${autoPlay}&controls=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=1&playsinline=1&origin=${window.location.origin}`;
-        };
-
-        // 1. Fetch Local Trailers (Native Jellyfin Items)
-        // This supports the "Download" workflow. If they exist, we stream them directly.
-        let localTrailers = [];
-        try {
-            const trailerRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Trailer&Limit=1`, {
-                headers: { 'X-Emby-Token': auth.AccessToken || auth }
-            });
-            const trailerJson = await trailerRes.json();
-            if (trailerJson.Items && trailerJson.Items.length > 0) {
-                localTrailers = trailerJson.Items;
-            }
-        } catch (e) {
-            console.log('[LegitFlix] Failed to fetch local trailers:', e);
-        }
-
-        // 2. Collect Remote Movie Trailers
-        if (details.RemoteTrailers) {
-            details.RemoteTrailers.forEach(t => {
-                const vid = getYoutubeId(t.Url);
-                if (vid) allTrailers.push({ title: 'Main Trailer', id: vid, type: 'Movie', isRemote: true });
-            });
-        }
-
-        // 3. Collect Series Trailers (Iterate ALL Seasons)
-        if (details.Type === 'Series') {
-            try {
-                // Fetch Seasons
-                const seasonRes = await fetch(`/Users/${userId}/Items?ParentId=${details.Id}&IncludeItemTypes=Season&Fields=RemoteTrailers`, {
-                    headers: { 'X-Emby-Token': auth.AccessToken || auth }
-                });
-                const seasons = await seasonRes.json();
-
-                if (seasons.Items) {
-                    seasons.Items.forEach(s => {
-                        if (s.RemoteTrailers) {
-                            s.RemoteTrailers.forEach(t => {
-                                const vid = getYoutubeId(t.Url);
-                                if (vid) {
-                                    allTrailers.push({
-                                        title: s.Name, // e.g. "Season 1"
-                                        id: vid,
-                                        type: 'Season',
-                                        isRemote: true
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log('[LegitFlix] Failed to fetch Season trailers:', e);
-            }
-        }
-
-        // 4. Determine Content Source
-        let mainContent = null;
         let mainVidId = null;
+        let allTrailers = [];
+        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
 
-        // PRIORITY 1: Local Native Trailer (Best Quality, No Ads, "Native")
-        if (localTrailers.length > 0) {
-            const t = localTrailers[0];
-            // Access Token needed for stream URL usually, or just straight /Videos/ID/stream
-            // We append Api Key if needed? Usually cookie handles it, but let's be safe.
-            const streamUrl = `/Videos/${t.Id}/stream?static=true&MediaSourceId=${t.Id}&playSessionId=${Date.now()}&api_key=${auth.AccessToken || auth}`;
-            mainContent = { type: 'native', url: streamUrl, id: t.Id };
-            // Add to list?
-            allTrailers.unshift({ title: 'Native Trailer', id: t.Id, type: 'Native', isRemote: false, url: streamUrl });
-        }
-        // PRIORITY 2: Remote YouTube
-        else if (allTrailers.length > 0) {
-            // Default to first
-            mainVidId = allTrailers[0].id;
-
-            // If Series, prefer Season 1
-            const s1 = allTrailers.find(t => t.title === 'Season 1');
-            if (s1) mainVidId = s1.id;
-
-            mainContent = { type: 'youtube', url: createEmbedUrl(mainVidId, 1), id: mainVidId };
-        }
+        /* 
+           FUTURE: When local trailers are ready, Jellyfin usually exposes them as:
+           1. "LocalTrailer" in MediaSources?
+           2. Or standard "RemoteTrailers" if TMM populates them with valid URLs.
+           
+           For now, we default to Backdrop + Play Button.
+        */
 
         // --- METADATA ---
-
         const year = details.ProductionYear || '';
         const rating = details.OfficialRating || '';
         const duration = details.RunTimeTicks ? Math.round(details.RunTimeTicks / 600000000) + 'm' : '';
@@ -2956,34 +2872,20 @@ function init() {
         // --- MODAL HTML ---
         const modal = document.createElement('div');
         modal.className = 'legitflix-info-modal';
-
-        let playerHtml = '';
-        if (mainContent) {
-            if (mainContent.type === 'native') {
-                playerHtml = `
-                    <video id="mainInfoVideo" class="info-video-iframe" autoplay loop muted playsinline>
-                        <source src="${mainContent.url}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                `;
-            } else {
-                playerHtml = `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainContent.url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            }
-        } else {
-            playerHtml = `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`;
-        }
-
         modal.innerHTML = `
             <div class="info-modal-backdrop"></div>
             <div class="info-modal-content">
                 <button class="btn-close-modal"><span class="material-icons">close</span></button>
                 
-                <div class="info-video-container ${mainContent ? 'has-video' : 'no-video'}">
+                <div class="info-video-container ${mainTrailerUrl ? 'has-video' : 'no-video'}">
                     <div class="iframe-wrapper">
-                         ${playerHtml}
+                         ${mainTrailerUrl
+                ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`
+                : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
+            }
                     </div>
                     
-                    ${mainContent ? `
+                    ${mainTrailerUrl ? `
                     <div class="video-mute-overlay">
                         <button class="btn-mute-toggle"><span class="material-icons">volume_off</span></button>
                     </div>` : ''}
@@ -3000,7 +2902,7 @@ function init() {
                              <button class="btn-my-list ${details.UserData?.IsFavorite ? 'active' : ''}" id="btnInfoFav">
                                 <span class="material-icons">${details.UserData?.IsFavorite ? 'check' : 'add'}</span> My List
                             </button>
-                            ${mainContent && mainContent.type === 'youtube' ? `<button class="btn-watch-trailer" onclick="window.open('https://www.youtube.com/watch?v=${mainContent.id}', '_blank')">
+                            ${mainVidId ? `<button class="btn-watch-trailer" onclick="window.open('https://www.youtube.com/watch?v=${mainVidId}', '_blank')">
                                 <span class="material-icons">open_in_new</span> Trailer
                             </button>` : ''}
                         </div>
@@ -3008,46 +2910,42 @@ function init() {
                 </div>
 
                 <div class="info-details-container">
-                    <div class="info-metadata-grid">
-                        <div class="info-meta-left">
-                            <div class="info-meta-line">
-                                <span class="info-match-score">98% Match</span>
-                                <span class="info-year">${year}</span>
-                                <span class="info-rating">${rating}</span>
-                                <span class="info-duration">${duration}</span>
-                                ${details.Type === 'Series' ? '<span class="info-quality">HD</span>' : ''}
-                            </div>
-                            <div class="info-desc">${desc}</div>
+                    <div class="info-col-left" style="flex: 1;">
+                        <div class="info-meta-row">
+                            <span class="info-year">${year}</span>
+                            ${rating ? `<span class="info-rating">${rating}</span>` : ''}
+                            <span class="info-duration">${duration}</span>
+                            <span class="info-quality">HD</span>
                         </div>
-                        <div class="info-meta-right">
-                             <div class="meta-row"><span class="label">Cast:</span> <span class="value">${cast}</span></div>
-                             <div class="meta-row"><span class="label">Genres:</span> <span class="value">${genres}</span></div>
-                             <div class="meta-row"><span class="label">This show is:</span> <span class="value">${tags}</span></div>
-                        </div>
+                        <p class="info-desc">${desc}</p>
                     </div>
                     
-                    ${trailersHtml}
+                    <!-- Moved detailed metadata to bottom section as requested -->
+                </div>
+                
+                ${trailersHtml}
+
+                <!-- NEW: About Section (Bottom) -->
+                <div class="info-about-section">
+                    <h3>About ${details.Name}</h3>
                     
-                    <div class="info-about-section">
-                        <h3>About ${details.Name}</h3>
-                        ${director ? `<div class="about-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
-                        ${cast ? `<div class="about-row"><span class="label">Cast:</span> <span class="value">${cast}</span></div>` : ''}
-                        ${writers ? `<div class="about-row"><span class="label">Writers:</span> <span class="value">${writers}</span></div>` : ''}
-                        ${genres ? `<div class="about-row"><span class="label">Genres:</span> <span class="value">${genres}</span></div>` : ''}
-                        ${tags ? `<div class="about-row"><span class="label">This title is:</span> <span class="value">${tags}</span></div>` : ''}
-                        ${rating ? `
-                            <div class="maturity-row">
-                                <span class="label">Maturity Rating:</span>
-                                <div class="maturity-box">
-                                   <div class="rating-badge">${rating}</div>
-                                   <div class="rating-text">Recommended for ages ${rating.replace(/\+/g, '')} and up</div>
-                                </div>
-                            </div>
-                        ` : ''}
+                    ${director ? `<div class="about-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
+                    ${cast ? `<div class="about-row"><span class="label">Cast:</span> <span class="value">${cast}</span></div>` : ''}
+                    ${writers ? `<div class="about-row"><span class="label">Writers:</span> <span class="value">${writers}</span></div>` : ''}
+                    ${genres ? `<div class="about-row"><span class="label">Genres:</span> <span class="value">${genres}</span></div>` : ''}
+                    ${tags ? `<div class="about-row"><span class="label">This title is:</span> <span class="value">${tags}</span></div>` : ''}
+                    
+                    <div class="about-row maturity-row">
+                        <span class="label">Maturity Rating:</span>
+                        <div class="maturity-box">
+                             <span class="rating-badge">${rating || 'NR'}</span>
+                             <span class="rating-text">Recommended for ages ${rating ? rating.replace(/\D/g, '') + '+' : 'all'}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
+
         document.body.appendChild(modal);
         document.body.classList.add('legitflix-no-scroll'); // LOCK SCROLL
 
@@ -3056,74 +2954,43 @@ function init() {
 
         // --- EVENTS ---
 
-        // Helper to switch video (Only for Iframe mode usually)
+        // Helper to switch video
         window.legitFlixSwitchTrailer = (vidId) => {
-            const container = modal.querySelector('.iframe-wrapper');
-            // Force switch to iframe if previously native
-            container.innerHTML = `<iframe id="mainInfoIframe" class="info-video-iframe" src="${createEmbedUrl(vidId, 1)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-
-            // Re-attach mute logic if needed, or just hide mute button
-            const mb = modal.querySelector('.btn-mute-toggle');
-            if (mb) mb.style.display = 'none'; // Simplify for now
+            const iframe = document.getElementById('mainInfoIframe');
+            if (iframe) {
+                iframe.src = createEmbedUrl(vidId, 1);
+            }
         };
+
+        // CLOSE
+        const close = () => {
+            modal.classList.remove('visible');
+            document.body.classList.remove('legitflix-no-scroll'); // UNLOCK SCROLL
+            setTimeout(() => modal.remove(), 300);
+        };
+        modal.querySelector('.info-modal-backdrop').onclick = close;
+        modal.querySelector('.btn-close-modal').onclick = close;
 
         // Mute Logic
-        const btnMute = modal.querySelector('.btn-mute-toggle');
-        if (btnMute) {
-            btnMute.onclick = () => {
-                const vid = modal.querySelector('#mainInfoVideo');
-                const iframe = modal.querySelector('#mainInfoIframe');
+        if (mainTrailerUrl) {
+            const btnMute = modal.querySelector('.btn-mute-toggle');
+            if (btnMute) {
+                let isMuted = true;
+                const iframe = modal.querySelector('iframe');
+                // Enable JS API if not already
+                if (!iframe.src.includes('enablejsapi')) iframe.src += "&enablejsapi=1";
 
-                if (vid) {
-                    vid.muted = !vid.muted;
-                    btnMute.innerHTML = vid.muted
-                        ? '<span class="material-icons">volume_off</span>'
-                        : '<span class="material-icons">volume_up</span>';
-                } else if (iframe) {
-                    // Best effort for iframe
-                    iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
-                    btnMute.style.display = 'none';
-                }
-            };
-        }
-
-        // Close Logic
-        const closeModal = () => {
-            const vid = modal.querySelector('#mainInfoVideo');
-            if (vid) {
-                vid.pause();
-                vid.src = "";
+                btnMute.onclick = () => {
+                    isMuted = !isMuted;
+                    btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
+                    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute', args: [] }), '*');
+                };
             }
-            modal.classList.remove('visible');
-            setTimeout(() => modal.remove(), 300);
-            document.body.classList.remove('legitflix-no-scroll');
-        };
-
-        modal.querySelector('.btn-close-modal').addEventListener('click', closeModal);
-        modal.querySelector('.info-modal-backdrop').addEventListener('click', closeModal);
-
-        // Fav Button Logic (Simple toggle visual)
-        const btnFav = modal.querySelector('#btnInfoFav');
-        if (btnFav) {
-            btnFav.onclick = async () => {
-                const isFav = btnFav.classList.contains('active');
-                // Optimistic update
-                btnFav.classList.toggle('active');
-                const icon = btnFav.querySelector('.material-icons');
-                icon.textContent = isFav ? 'add' : 'check';
-
-                // API Call
-                try {
-                    const method = isFav ? 'DELETE' : 'POST';
-                    await fetch(`/Users/${auth.User.Id}/FavoriteItems/${id}`, {
-                        method: method,
-                        headers: { 'X-Emby-Token': auth.AccessToken }
-                    });
-                } catch (e) {
-                    console.error('Fav error', e);
-                }
-            };
         }
+
+        // Fav Button
+        // Reuse toggleState logic or simpler fetch
+        // ...
     }
 
     injectCustomFooter();
