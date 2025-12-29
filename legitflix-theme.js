@@ -2743,6 +2743,17 @@ function init() {
         console.log('[LegitFlix] initNavScroll: Complete');
     }
 
+    // --- CUSTOM FOOTER ---
+    function injectCustomFooter() {
+        if (document.querySelector('.legitflix-theme-footer')) return;
+
+        const footer = document.createElement('div');
+        footer.className = 'legitflix-theme-footer';
+        footer.innerHTML = 'Created by <strong>Dani</strong>';
+        document.body.appendChild(footer);
+    }
+
+    injectCustomFooter();
     initNavScroll(); // Start scroll listener
 
 }

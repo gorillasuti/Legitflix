@@ -47,49 +47,21 @@
 }
 
 /* --- DYNAMIC NAV BLUR --- */
-/* --- DYNAMIC NAV BLUR (Gradient Fade) --- */
 .skinHeader {
+    transition: background 0.4s ease, backdrop-filter 0.4s ease, mask-image 0.4s ease;
+    -webkit-transition: background 0.4s ease, -webkit-backdrop-filter 0.4s ease, -webkit-mask-image 0.4s ease;
     background: transparent !important;
-    transition: background 0.4s ease;
-    overflow: visible !important;
-    /* Ensure popups are not clipped */
-}
-
-/* Pseudo-element for the Blur + Mask */
-.skinHeader::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 120% !important;
-    /* Extend below header for soft fade */
-    z-index: -1 !important;
-    /* Behind content */
-
-    /* Dark Glass Background - More transparent */
-    background: rgba(20, 20, 20, 0.6) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-
-    /* Smooth fade out at the bottom */
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 100%) !important;
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0) 100%) !important;
-
-    opacity: 0 !important;
-    transition: opacity 0.4s ease !important;
-    pointer-events: none !important;
-    will-change: opacity, backdrop-filter !important;
+    /* Default transparent */
 }
 
 /* When Scrolled > 10vh */
 .legitflix-nav-scrolled {
-    background: transparent !important;
-    box-shadow: none !important;
-}
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 
-.legitflix-nav-scrolled::before {
-    opacity: 1 !important;
+    /* Use box-shadow for soft bottom edge instead of mask (mask clips child content!) */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================================================
@@ -3155,4 +3127,35 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     font-size: 20px !important;
     /* Match other icons */
     color: white !important;
+}
+
+/* --- CUSTOM FOOTER --- */
+.legitflix-theme-footer {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
+    z-index: 9999;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.legitflix-theme-footer:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.legitflix-theme-footer strong {
+    font-weight: 600;
+    color: var(--clr-accent, #00a4dc);
 }
