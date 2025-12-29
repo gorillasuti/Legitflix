@@ -2567,9 +2567,14 @@ function init() {
 
         if (btnInfo) {
             btnInfo.addEventListener('click', (e) => {
+                console.log('[LegitFlix] Info Button Clicked for:', id);
                 e.preventDefault();
                 e.stopPropagation();
-                openInfoModal(id);
+                if (window.openInfoModal) {
+                    window.openInfoModal(id);
+                } else {
+                    console.error('[LegitFlix] window.openInfoModal is not defined!');
+                }
             });
         }
 
@@ -2783,7 +2788,7 @@ function init() {
     }
 
     // --- INFO MODAL (Netflix Style) ---
-    async function openInfoModal(id) {
+    window.openInfoModal = async function (id) {
         console.log('[LegitFlix] Opening Info Modal for:', id);
 
         // Remove existing modal if any

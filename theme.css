@@ -2674,10 +2674,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- PROMO BANNER COMPONENT (Crunchyroll Style) --- */
 
 .legitflix-promo-container {
-    width: webkit-fill-available;
-    width: -webkit-fill-available;
-    padding: 0 44.875px;
-    max-width: 1600px;
+    width: -webkit-fill-available !important;
+    padding: 0 3%;
     margin: 3rem auto;
     display: flex;
     flex-direction: column;
