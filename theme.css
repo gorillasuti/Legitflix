@@ -2180,7 +2180,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .hero-content {
     position: absolute;
-    top: 37.5%;
+    top: 42.5%;
     /* Moved up closer to nav */
     left: 4%;
     transform: translateY(-50%);
@@ -2574,7 +2574,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Vertical section containers */
 .verticalSection.emby-scroller-container,
 .verticalSection {
-    display: flex !important;
     flex-direction: column !important;
     align-content: flex-start;
     justify-content: flex-start;
@@ -2675,7 +2674,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- PROMO BANNER COMPONENT (Crunchyroll Style) --- */
 
 .legitflix-promo-container {
-    width: 85%;
+    width: webkit-fill-available;
+    padding: 0 44.875px;
     max-width: 1600px;
     margin: 3rem auto;
     display: flex;
