@@ -3903,230 +3903,89 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Slight staggered delay */
 }
 
-/* --- HERO METADATA REFINEMENTS --- */
-.legit-hero-meta {
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    gap: 12px !important;
-    margin-bottom: 16px !important;
+/* --- NEW HERO STYLES (Fire Force Theme) --- */
+.hero-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
     font-size: 1.1rem;
     color: #e5e5e5;
     font-weight: 500;
-}
-
-/* --- HERO CAROUSEL CORE --- */
-.hero-carousel-container {
-    position: relative;
-    width: 100%;
-    height: 85vh;
-    /* Large immersive header */
-    max-height: 800px;
-    min-height: 500px;
-    overflow: hidden;
-    margin-bottom: -100px;
-    /* Overlap content below slightly */
-}
-
-.hero-slide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
-    z-index: 1;
-}
-
-.hero-slide.active {
-    opacity: 1;
-    z-index: 2;
-}
-
-.hero-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center top;
-}
-
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%),
-        linear-gradient(to top, #141414 0%, transparent 50%);
-}
-
-.hero-content {
-    position: absolute;
-    bottom: 25%;
-    /* Push up from bottom */
-    left: 4%;
-    /* Align left */
-    width: 45%;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.hero-logo {
-    max-width: 400px;
-    max-height: 200px;
-    width: 100%;
-    /* Responsive */
-    object-fit: contain;
-    object-position: left bottom;
-    margin-bottom: 20px;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
-}
-
-.hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.hero-desc {
-    font-size: 1.1rem;
-    line-height: 1.5;
-    color: #e5e5e5;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    margin-bottom: 20px;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    max-width: 90%;
 }
 
-.hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 10px;
+.hero-badge-age {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #e5e5e5;
 }
 
-/* Specific Hero Buttons */
-.hero-content .btn-play {
+.hero-meta-divider {
+    color: var(--clr-accent);
+    /* Orange Dot */
+    font-size: 0.8em;
+}
+
+.btn-hero-primary {
     background: var(--clr-accent) !important;
     color: white !important;
     border: none;
     border-radius: var(--radius-pill);
+    /* Reuse Pill Radius */
     padding: 12px 32px;
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 800;
+    /* Bold like design */
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(255, 106, 0, 0.4);
-    transition: transform 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s, background 0.2s;
+    letter-spacing: 0.5px;
 }
 
-.hero-content .btn-play:hover {
+.btn-hero-primary:hover {
     transform: scale(1.05);
-    background: var(--clr-accent-hover) !important;
+    filter: brightness(1.1);
 }
 
-.hero-button-info {
-    background: rgba(100, 100, 100, 0.4);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    /* Circle button as seen in some designs, or user request? */
-    /* Wait, user request image showed "More Info" as text maybe? Or icon? */
-    /* Previous code used icon. Let's stick to icon circle or pill. */
-    /* "Info button is not seen" -> likely hidden or transparent. */
+.btn-hero-primary .material-icons {
+    font-size: 1.4rem;
+    /* Slightly larger icon */
+}
+
+.btn-hero-bookmark {
+    background: transparent;
+    border: 2px solid var(--clr-accent);
+    /* Orange Outline */
+    color: var(--clr-accent);
+    border-radius: 12px;
+    /* Slightly rounded box, not circle */
     width: 48px;
     height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: 0.2s;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
 }
 
-.hero-button-info:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
-}
-
-.hero-button-info .material-icons-outlined {
-    font-size: 28px;
-}
-
-.hero-meta-divider {
-    color: #a3a3a3;
-    font-size: 0.8em;
-}
-
-.hero-meta-text {
-    /* Standard text info (Sub|Dub, Genres) */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.hero-rating-badge {
-    border: 1px solid white;
-    padding: 2px 8px;
-    font-size: 0.9rem;
-    font-weight: 700;
+.btn-hero-bookmark:hover {
+    background: rgba(255, 165, 0, 0.1);
+    /* Subtle orange tint */
+    transform: scale(1.05);
     color: white;
-    background: rgba(0, 0, 0, 0.3);
-    /* Slight dim bg */
+    border-color: white;
 }
 
-/* --- CAROUSEL INDICATORS (Refined Stories Style) --- */
-.carousel-indicators {
-    position: absolute;
-    bottom: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
-    z-index: 20;
-    width: auto;
-    max-width: 800px;
-}
-
-.indicator-segment {
-    width: 60px;
-    /* Specific pill width like image */
-    height: 6px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.indicator-fill {
-    height: 100%;
-    width: 0%;
+.btn-hero-bookmark.active {
     background: var(--clr-accent);
-    /* Orange */
-    border-radius: 4px;
-    /* Transition handled by JS */
-}
-
-.indicator-segment.completed .indicator-fill {
-    width: 100% !important;
-    background: #e0e0e0;
-    /* Bright grey for history */
-}
-
-/* Active one is orange */
-.indicator-segment.active .indicator-fill {
-    background: var(--clr-accent) !important;
+    color: white;
 }

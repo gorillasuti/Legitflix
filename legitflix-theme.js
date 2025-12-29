@@ -228,10 +228,10 @@ async function fetchMediaBarItems(retryCount = 0) {
         return [];
     }
 
-    const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres';
+    const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres,MediaStreams,UserData';
 
-    // User Request: "Latest 6 items after promo (3)" -> Reverting to Random first as requested due to breakage
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=Random&Limit=${CONFIG.heroLimit}&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
+    // User Request: "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
         const response = await fetch(url, {
@@ -253,7 +253,27 @@ async function fetchMediaBarItems(retryCount = 0) {
         const allItems = data.Items || [];
         logger.log('fetchMediaBarItems: Downloaded items', allItems.length);
 
-        return shuffleArray(allItems);
+        // Safety: If fewer than 3 items, just show what we have (or empty).
+        // If > 3, slice 3 to 9 (Next 6).
+        const validItems = allItems.length > 3 ? allItems.slice(3, 9) : allItems;
+
+        // --- ENRICHMENT: Fetch NEXT UP for Series ---
+        for (const item of validItems) {
+            if (item.Type === 'Series') {
+                try {
+                    const nextUpUrl = `/Shows/${item.Id}/NextUp?Limit=1&UserId=${auth.UserId}&Fields=UserData`;
+                    const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                    const nextUpData = await nextUpRes.json();
+                    if (nextUpData && nextUpData.Items && nextUpData.Items.length > 0) {
+                        item._nextUp = nextUpData.Items[0]; // Attach to item for UI
+                    }
+                } catch (e) {
+                    logger.warn('fetchMediaBarItems: Failed to fetch NextUp for ' + item.Id, e);
+                }
+            }
+        }
+
+        return validItems;
     } catch (error) {
         logger.error('fetchMediaBarItems: API Error', error);
         if (retryCount < 3) {
@@ -274,25 +294,70 @@ function createMediaBarHTML(items) {
         const activeClass = index === 0 ? 'active' : '';
 
 
-        // IMDb Rating
-        let ratingHtml = item.CommunityRating ? `<span class="star-rating">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
+        // --- METADATA CALCULATIONS ---
 
-        // Ends At Calculation
+        // 1. Sub | Dub Detection
+        let audioLangs = new Set();
+        let subLangs = new Set();
+        if (item.MediaStreams) {
+            item.MediaStreams.forEach(stream => {
+                if (stream.Type === 'Audio' && stream.Language) audioLangs.add(stream.Language);
+                if (stream.Type === 'Subtitle' && stream.Language) subLangs.add(stream.Language);
+            });
+        }
+        // Simple heuristic: If multiple audio, likely Dub? Or if language matches user? 
+        // For now, just show "Sub | Dub" if both exist, or specific.
+        // User requested strict text "Sub | Dub" if applicable.
+        const hasSub = subLangs.size > 0;
+        const hasDub = audioLangs.size > 1; // Assuming >1 audio track (Original + Dub) implies Dub availability
+        const subDubText = (hasSub && hasDub) ? 'Sub | Dub' : (hasSub ? 'Sub' : 'Dub');
+
+        // 2. Ends At
         let endsAtHtml = '';
         if (item.RunTimeTicks && item.Type !== 'Series') {
             const ms = item.RunTimeTicks / 10000;
             const endTime = new Date(Date.now() + ms);
             const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            endsAtHtml = `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">Ends at ${timeStr}</span>`;
+        }
 
-            endsAtHtml = `<span class="ends-at">Ends at ${timeStr}</span>`;
-        } else if (item.Type === 'Series') {
-            endsAtHtml = `<span class="ends-at">${item.ChildCount ? item.ChildCount + ' Seasons' : 'Series'}</span>`;
+        // 3. Rating
+        const ratingStar = item.CommunityRating ? `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
+
+        // --- DYNAMIC BUTTON LOGIC ---
+        let btnText = 'START WATCHING';
+        let btnSubText = ''; // For S1 E1 or Percentage
+        let actionId = item.Id;
+
+        if (item.Type === 'Series') {
+            if (item._nextUp) {
+                // Resume Series
+                const s = item._nextUp.ParentIndexNumber;
+                const e = item._nextUp.IndexNumber;
+                btnText = 'CONTINUE';
+                btnSubText = `S${s} E${e}`;
+                actionId = item._nextUp.Id; // Play the EPISODE, not the Series
+            } else {
+                // New Series
+                btnSubText = 'S1 E1';
+            }
+        } else {
+            // Movie - Resume?
+            const ticks = item.UserData?.PlaybackPositionTicks || 0;
+            const total = item.RunTimeTicks || 1;
+            if (ticks > 0) {
+                const pct = Math.round((ticks / total) * 100);
+                if (pct > 2 && pct < 90) { // Valid resume range
+                    btnText = 'CONTINUE';
+                    btnSubText = ` - ${pct}%`;
+                }
+            }
         }
 
         const title = item.Name;
         const desc = item.Overview || '';
-        const playOnClick = `window.legitFlixPlay('${item.Id}')`;
-        const infoOnClick = `window.openInfoModal('${item.Id}')`;
+        const playOnClick = `window.legitFlixPlay('${actionId}')`;
+        const infoOnClick = `window.openInfoModal('${item.Id}')`; // Always open Modal for Series/Movie parent
 
         // Logo vs Text Logic
         const hasLogo = item.ImageTags && item.ImageTags.Logo;
@@ -306,17 +371,30 @@ function createMediaBarHTML(items) {
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
                     ${titleHtml}
-                    <div class="hero-meta">
-                        ${ratingHtml}
-                        <span class="year">${item.ProductionYear || ''}</span>
+                    
+                    <div class="hero-meta-line">
+                        <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
+                        <span class="hero-meta-divider">•</span>
+                        <span class="hero-meta-text">${subDubText}</span>
+                        <span class="hero-meta-divider">•</span>
+                        <span class="hero-meta-text">${item.Genres ? item.Genres.slice(0, 3).join(', ') : 'Anime'}</span>
+                        ${ratingStar}
                         ${endsAtHtml}
                     </div>
+
                     <p class="hero-desc">${desc}</p>
+                    
                     <div class="hero-actions">
-                        <button class="btn-play" onclick="${playOnClick}">
-                            <i class="material-icons">play_arrow</i> PLAY
+                        <button class="btn-hero-primary" onclick="${playOnClick}">
+                            <i class="material-icons">play_arrow</i> 
+                            <span>${btnText} ${btnSubText}</span>
                         </button>
-                        <button class="hero-button-info" onclick="window.openInfoModal('${item.Id}')" title="More Info">
+                        
+                        <button class="btn-hero-bookmark" onclick="window.legitFlixToggleFav('${item.Id}', this)" title="Add to Favorites">
+                            <span class="material-icons-outlined">bookmark_border</span>
+                        </button>
+
+                         <button class="hero-button-info" onclick="${infoOnClick}" title="More Info">
                             <span class="material-icons-outlined">info</span>
                         </button>
                     </div>
