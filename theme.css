@@ -3248,6 +3248,11 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     box-shadow: none;
 }
 
+/* Scroll Lock */
+.legitflix-no-scroll {
+    overflow: hidden !important;
+}
+
 .legitflix-info-modal.visible {
     transform: none;
     opacity: 1 !important;
@@ -3266,8 +3271,11 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .info-modal-content {
     position: relative;
-    width: 850px;
-    max-width: 100%;
+    /* Fixed Dimensions as requested */
+    width: 775px !important;
+    height: 850px !important;
+    max-width: 95vw;
+    max-height: 95vh;
     z-index: 2147483647 !important;
     /* Max Int to force top */
     background: #141414;
@@ -3287,6 +3295,83 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     transform: scale(1);
     opacity: 1 !important;
     visibility: visible !important;
+}
+
+/* --- TRAILERS SECTION --- */
+.info-trailers-section {
+    padding: 0 40px 40px 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+}
+
+.info-trailers-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 30px 0 20px 0;
+    color: white;
+}
+
+.trailers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.trailer-card {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.trailer-card:hover {
+    transform: scale(1.05);
+}
+
+.trailer-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.trailer-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.trailer-thumb .play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.trailer-card:hover .play-overlay {
+    opacity: 1;
+}
+
+.trailer-thumb .material-icons {
+    font-size: 48px;
+    color: white;
+}
+
+.trailer-title {
+    font-size: 0.95rem;
+    color: #cecece;
+    font-weight: 500;
+}
+
+.trailer-card:hover .trailer-title {
+    color: white;
 }
 
 /* Close Button */

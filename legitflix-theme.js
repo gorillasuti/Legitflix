@@ -2811,10 +2811,31 @@ function init() {
         if (!details) return;
 
         // --- TRAILER LOGIC ---
-        let trailerUrl = null;
-        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`;
+        let mainTrailerUrl = null;
+        let backdropUrl = `/Items/${details.Id}/Images/Backdrop/0?quality=90&maxWidth=1920`; // Keep high quality
+        let allTrailers = []; // Store all found trailers { title, url, type }
 
-        // SERIES: Attempt to fetch Season 1 Trailer first (User Request)
+        // Helper to normalize YT URL
+        const getYoutubeId = (url) => {
+            if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
+            if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+            return null;
+        };
+
+        const createEmbedUrl = (videoId, autoPlay = 0) => {
+            // Standard Embed, relaxed params to avoid errors
+            return `https://www.youtube.com/embed/${videoId}?autoplay=${autoPlay}&controls=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=1&playsinline=1&origin=${window.location.origin}`;
+        };
+
+        // 1. Collect Movie Trailers
+        if (details.RemoteTrailers) {
+            details.RemoteTrailers.forEach(t => {
+                const vid = getYoutubeId(t.Url);
+                if (vid) allTrailers.push({ title: 'Main Trailer', id: vid, type: 'Movie' });
+            });
+        }
+
+        // 2. Collect Series Trailers (Iterate ALL Seasons)
         if (details.Type === 'Series') {
             try {
                 // Fetch Seasons
@@ -2823,39 +2844,37 @@ function init() {
                 });
                 const seasons = await seasonRes.json();
 
-                if (seasons.Items && seasons.Items.length > 0) {
-                    // Try to find Season 1, or just take the first one
-                    const season1 = seasons.Items.find(s => s.IndexNumber === 1) || seasons.Items[0];
-                    if (season1 && season1.RemoteTrailers && season1.RemoteTrailers.length > 0) {
-                        const s1Trailer = season1.RemoteTrailers.find(t => t.Url.includes('youtube') || t.Url.includes('youtu.be'));
-                        if (s1Trailer) {
-                            console.log('[LegitFlix] Found Season 1 Trailer:', s1Trailer.Url);
-                            // Set logic below will process this
-                            details.RemoteTrailers = [s1Trailer];
+                if (seasons.Items) {
+                    seasons.Items.forEach(s => {
+                        if (s.RemoteTrailers) {
+                            s.RemoteTrailers.forEach(t => {
+                                const vid = getYoutubeId(t.Url);
+                                if (vid) {
+                                    allTrailers.push({
+                                        title: s.Name, // e.g. "Season 1"
+                                        id: vid,
+                                        type: 'Season'
+                                    });
+                                }
+                            });
                         }
-                    }
+                    });
                 }
             } catch (e) {
-                console.log('[LegitFlix] Failed to fetch Season 1 trailer:', e);
+                console.log('[LegitFlix] Failed to fetch Season trailers:', e);
             }
         }
 
-        if (details.RemoteTrailers && details.RemoteTrailers.length > 0) {
-            // Find YouTube URL
-            const validTrailer = details.RemoteTrailers.find(t => t.Url.includes('youtube') || t.Url.includes('youtu.be'));
-            if (validTrailer) {
-                // Extract ID
-                let videoId = null;
-                if (validTrailer.Url.includes('v=')) videoId = validTrailer.Url.split('v=')[1].split('&')[0];
-                else if (validTrailer.Url.includes('youtu.be/')) videoId = validTrailer.Url.split('youtu.be/')[1].split('?')[0];
+        // 3. Determine Main Trailer (Priority: Season 1 > First Movie Trailer)
+        if (allTrailers.length > 0) {
+            // Default to first
+            let mainVid = allTrailers[0].id;
 
-                if (videoId) {
-                    // Standard Youtube Domain (fixes Err 153) + No Cookie was creating issues?
-                    // Privacy Enhanced seems to be blocked by some owners. 
-                    // Using standard www.youtube.com
-                    trailerUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}&disablekb=1&fs=0&playsinline=1&origin=${window.location.origin}`;
-                }
-            }
+            // If Series, prefer Season 1
+            const s1 = allTrailers.find(t => t.title === 'Season 1');
+            if (s1) mainVid = s1.id;
+
+            mainTrailerUrl = createEmbedUrl(mainVid, 1); // Autoplay header
         }
 
         // --- METADATA ---
@@ -2873,6 +2892,34 @@ function init() {
             ? `<img src="/Items/${details.Id}/Images/Logo?maxHeight=140&maxWidth=400&quality=90" class="info-logo" alt="${details.Name}" />`
             : `<h1 class="info-title-text">${details.Name}</h1>`;
 
+        // --- TRAILERS SECTION HTML ---
+        let trailersHtml = '';
+        if (allTrailers.length > 0) {
+            // Generate Grid
+            const cards = allTrailers.map(t => {
+                const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
+                // Onclick: replace main iframe
+                return `
+                    <div class="trailer-card" onclick="window.legitFlixSwitchTrailer('${t.id}')">
+                        <div class="trailer-thumb">
+                            <img src="${img}" alt="${t.title}" loading="lazy">
+                            <div class="play-overlay"><span class="material-icons">play_circle_outline</span></div>
+                        </div>
+                        <div class="trailer-title">${t.title}</div>
+                    </div>
+                `;
+            }).join('');
+
+            trailersHtml = `
+                <div class="info-trailers-section">
+                    <h3>Trailers & More</h3>
+                    <div class="trailers-grid">
+                        ${cards}
+                    </div>
+                </div>
+            `;
+        }
+
         // --- MODAL HTML ---
         const modal = document.createElement('div');
         modal.className = 'legitflix-info-modal';
@@ -2881,14 +2928,18 @@ function init() {
             <div class="info-modal-content">
                 <button class="btn-close-modal"><span class="material-icons">close</span></button>
                 
-                <div class="info-video-container ${trailerUrl ? 'has-video' : 'no-video'}">
-                    ${trailerUrl
-                ? `<iframe class="info-video-iframe" src="${trailerUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                           <div class="video-mute-overlay">
-                               <button class="btn-mute-toggle"><span class="material-icons">volume_off</span></button>
-                           </div>`
+                <div class="info-video-container ${mainTrailerUrl ? 'has-video' : 'no-video'}">
+                    <div class="iframe-wrapper">
+                         ${mainTrailerUrl
+                ? `<iframe id="mainInfoIframe" class="info-video-iframe" src="${mainTrailerUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`
                 : `<div class="info-backdrop-fallback" style="background-image: url('${backdropUrl}')"></div>`
             }
+                    </div>
+                    
+                    ${mainTrailerUrl ? `
+                    <div class="video-mute-overlay">
+                        <button class="btn-mute-toggle"><span class="material-icons">volume_off</span></button>
+                    </div>` : ''}
                     
                     <div class="video-overlay-gradient"></div>
 
@@ -2927,51 +2978,51 @@ function init() {
                          ${director ? `<div class="info-row"><span class="label">Director:</span> <span class="value">${director}</span></div>` : ''}
                     </div>
                 </div>
+                
+                ${trailersHtml}
             </div>
         `;
 
         document.body.appendChild(modal);
+        document.body.classList.add('legitflix-no-scroll'); // LOCK SCROLL
 
         // Add Visible Class for Animation
         requestAnimationFrame(() => modal.classList.add('visible'));
 
         // --- EVENTS ---
 
+        // Helper to switch video
+        window.legitFlixSwitchTrailer = (vidId) => {
+            const iframe = document.getElementById('mainInfoIframe');
+            if (iframe) {
+                iframe.src = createEmbedUrl(vidId, 1);
+            }
+        };
+
         // CLOSE
         const close = () => {
             modal.classList.remove('visible');
+            document.body.classList.remove('legitflix-no-scroll'); // UNLOCK SCROLL
             setTimeout(() => modal.remove(), 300);
         };
         modal.querySelector('.info-modal-backdrop').onclick = close;
         modal.querySelector('.btn-close-modal').onclick = close;
 
-        // MUTE TOGGLE (Youtube API or just simple overlay blocking? 
-        // We used mute=1 in URL. Youtube iframe API needed for real toggle, 
-        // OR we just reload iframe with mute=0, but that restarts video.
-        // Better: Just provide basic "Unmute" that reloads with mute=0 if needed, 
-        // OR rely on user controls. But we hid controls.
-        // Best simple approach: "Replay at start with sound" or similar. 
-        // Actually, without postMessage API, we can't toggle mute easily. 
-        // Let's implement postMessage toggle.
-
-        if (trailerUrl) {
-            const iframe = modal.querySelector('iframe');
+        // Mute Logic
+        if (mainTrailerUrl) {
             const btnMute = modal.querySelector('.btn-mute-toggle');
-            let isMuted = true;
+            if (btnMute) {
+                let isMuted = true;
+                const iframe = modal.querySelector('iframe');
+                // Enable JS API if not already
+                if (!iframe.src.includes('enablejsapi')) iframe.src += "&enablejsapi=1";
 
-            // Need to enable JS API
-            iframe.src += "&enablejsapi=1";
-
-            btnMute.onclick = () => {
-                isMuted = !isMuted;
-                btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
-                // Send postMessage
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    event: 'command',
-                    func: isMuted ? 'mute' : 'unMute',
-                    args: []
-                }), '*');
-            };
+                btnMute.onclick = () => {
+                    isMuted = !isMuted;
+                    btnMute.querySelector('span').textContent = isMuted ? 'volume_off' : 'volume_up';
+                    iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute', args: [] }), '*');
+                };
+            }
         }
 
         // Fav Button
