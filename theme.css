@@ -2101,28 +2101,19 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* =========================================================================
    HERO CAROUSEL STYLES
    ========================================================================= */
-
 .hero-carousel-container {
     position: relative !important;
-    /* Force Relative */
     width: 100%;
     height: 85vh !important;
-    /* User Request: Bigger */
     z-index: 1;
     overflow: hidden !important;
     /* Force Clipping */
-    margin-bottom: -25vh;
-    /* Pull categories UP into the hero */
+    margin-bottom: -5vh;
     border-radius: 0;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-
-    /* Fade out bottom - Smoother blend */
     mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
 }
 
-/* Push content down so it starts below the hero area */
-/* Push content down - logic removed as container is now relative */
 .has-legit-hero {
     padding-top: 0 !important;
     background: transparent !important;
@@ -2130,7 +2121,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     z-index: 5;
 }
 
-/* Ensure content below carousel sits on top */
 .homeSectionsContainer,
 .verticalSection {
     position: relative;
@@ -3875,8 +3865,13 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .btn-hero-bookmark.active {
-    background: var(--clr-accent);
-    color: white;
+    background: transparent;
+    /* No BG fill */
+    background-color: rgba(var(--accent), 0.1);
+    /* Optional styling */
+    color: var(--clr-accent);
+    /* Icon becomes orange */
+    border-color: var(--clr-accent);
 }
 
 /* Smoother, Friendlier Animation */
@@ -3910,12 +3905,10 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* --- HERO TRACKER (Indicators) --- */
 .hero-indicators {
     position: absolute;
-    /* Align with content (left 4%) */
     left: 4%;
-    /* Buttons are inside hero-content (bottom 25%). */
     bottom: 20%;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     /* Spacing */
     z-index: 20;
 }

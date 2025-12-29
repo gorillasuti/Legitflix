@@ -159,8 +159,22 @@ window.legitFlixToggleFav = async function (id, btn) {
     // Toggle UI state immediately
     const wasActive = btn.classList.contains('active');
     btn.classList.toggle('active');
-    const icon = btn.querySelector('.material-icons');
-    if (icon) icon.textContent = wasActive ? 'add' : 'check';
+
+    // Support both filled and outlined classes
+    const icon = btn.querySelector('.material-icons, .material-icons-outlined');
+
+    if (icon) {
+        // Toggle between Filled and Outlined
+        icon.textContent = wasActive ? 'bookmark_border' : 'bookmark';
+        // Force Filled style if active
+        if (!wasActive) {
+            icon.classList.remove('material-icons-outlined');
+            icon.classList.add('material-icons');
+        } else {
+            icon.classList.add('material-icons-outlined');
+            icon.classList.remove('material-icons');
+        }
+    }
 
     try {
         await window.ApiClient.updateFavoriteStatus(auth.UserId, id, !wasActive);
@@ -169,7 +183,16 @@ window.legitFlixToggleFav = async function (id, btn) {
         logger.error('Fav update failed', e);
         // Revert UI on failure
         btn.classList.toggle('active');
-        if (icon) icon.textContent = wasActive ? 'check' : 'add';
+        if (icon) {
+            icon.textContent = wasActive ? 'bookmark' : 'bookmark_border';
+            if (wasActive) {
+                icon.classList.remove('material-icons-outlined');
+                icon.classList.add('material-icons');
+            } else {
+                icon.classList.add('material-icons-outlined');
+                icon.classList.remove('material-icons');
+            }
+        }
     }
 };
 
