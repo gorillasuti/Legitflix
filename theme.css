@@ -3758,3 +3758,114 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .info-row .value:hover {
     text-decoration: underline;
 }
+
+/* --- REFINED MODAL STYLES (User Request) --- */
+
+/* 1. Mute Button Alignment */
+/* Aligned with Close (Y / Top) and Play (X / Left) */
+.video-mute-overlay {
+    position: absolute;
+    top: 20px;
+    /* Aligns with Close Y */
+    left: 40px;
+    /* Aligns with Play X */
+    z-index: 20;
+}
+
+.btn-mute-toggle {
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.btn-mute-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    border-color: white;
+}
+
+/* 2. Hero Content Positioning */
+/* Ensures Play button (first child) aligns with Mute X */
+.info-hero-content {
+    position: absolute;
+    bottom: 50px;
+    left: 40px;
+    width: 55%;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.info-title-text {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+
+.info-logo {
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* 3. Improved Transition / Gradient Fade */
+.video-overlay-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    /* Taller height for smoother transition */
+    background: linear-gradient(to bottom,
+            rgba(20, 20, 20, 0) 0%,
+            rgba(20, 20, 20, 0.1) 20%,
+            rgba(20, 20, 20, 0.5) 60%,
+            #141414 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 4. Close Button Position Match */
+.btn-close-modal {
+    position: absolute;
+    top: 20px;
+    /* Matches Mute Y */
+    right: 20px;
+    z-index: 20;
+    background: rgba(20, 20, 20, 0.6);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.btn-close-modal:hover {
+    background: white;
+    color: black;
+    transform: rotate(90deg);
+}
+
+/* Ensure Logo doesn't get cut off */
+.info-logo {
+    max-height: 140px;
+    width: auto;
+    object-position: left bottom;
+}

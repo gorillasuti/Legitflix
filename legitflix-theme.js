@@ -2981,8 +2981,8 @@ function init() {
             if (s1) mainVidId = s1.id;
 
             // Standard YouTube Embed (With Ads/Cookies/Strict Policy for max compatibility)
-            // Added mute=1 to ensure autoplay works on modern browsers
-            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
+            // Added params to strip UI: autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}
+            mainTrailerUrl = `https://www.youtube.com/embed/${mainVidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${mainVidId}`;
         }
 
         // 5. Native Native Check (for Button)
@@ -3010,15 +3010,30 @@ function init() {
             : `<h1 class="info-title-text">${details.Name}</h1>`;
 
         // --- TRAILERS SECTION HTML ---
+        // --- SWITCH TRAILER HELPER ---
+        window.legitFlixSwitchTrailer = function (vidId) {
+            const iframe = document.getElementById('mainInfoIframe');
+            const container = document.querySelector('.info-video-container');
+            const fallback = document.querySelector('.info-backdrop-fallback');
+
+            if (iframe) {
+                // Standard YouTube Embed (With Ads/Cookies/Strict Policy)
+                // Updated with stripped UI params
+                iframe.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${vidId}`;
+                container.classList.remove('no-video');
+                container.classList.add('has-video');
+            }
+        };
+
         // --- TRAILERS GRID HTML ---
         let trailersHtml = '';
         if (allTrailers.length > 0) {
             // Generate Grid
             const cards = allTrailers.map(t => {
                 const img = `https://img.youtube.com/vi/${t.id}/mqdefault.jpg`;
-                // External Link as requested
+                // Switch Video as requested
                 return `
-                    <div class="trailer-card" onclick="window.open('https://www.youtube.com/watch?v=${t.id}', '_blank')">
+                    <div class="trailer-card" onclick="window.legitFlixSwitchTrailer('${t.id}')">
                         <div class="trailer-thumb">
                             <img src="${img}" alt="${t.title}" loading="lazy">
                             <div class="play-overlay"><span class="material-icons">play_circle_outline</span></div>
