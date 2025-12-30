@@ -1346,7 +1346,7 @@
             this.injectModal();
             const modal = document.getElementById(this.modalId);
 
-            // Show modal (animation handled by CSS/JS class)
+            // Show modal
             modal.classList.remove('hide');
             modal.classList.add('opened');
             modal.dataset.episodeId = episodeId;
@@ -1371,8 +1371,8 @@
                              style="animation: 180ms ease-out 0s 1 normal both running scaleup; max-width: 800px; margin: 5vh auto; background: var(--color-background-secondary, #1c1c1c); border-radius: var(--radius-lg, 12px);">
                             
                             <div class="formDialogHeader" style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <button is="paper-icon-button-light" class="btnCancel autoSize paper-icon-button-light" tabindex="-1" title="Back" style="background:none; border:none; color:inherit; cursor:pointer;">
-                                    <span class="material-icons arrow_back" aria-hidden="true">arrow_back</span>
+                                <button class="btnCancel" tabindex="-1" title="Back" style="background:none; border:none; color:inherit; cursor:pointer; padding: 8px; border-radius: 50%;">
+                                    <span class="material-icons" aria-hidden="true" style="font-size: 24px;">arrow_back</span>
                                 </button>
                                 <h3 class="formDialogHeaderTitle" style="margin: 0 0 0 16px; font-size: 1.2rem; font-weight: 600;">Subtitles</h3>
                             </div>
@@ -1387,20 +1387,27 @@
                                     </div>
 
                                     <!-- SEARCH -->
-                                    <h2 style="font-size: 1rem; margin-bottom: 1rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
+                                    <h2 style="font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
                                     
-                                    <form class="subtitleSearchForm" style="display: flex; gap: 10px; align-items: flex-end;">
+                                    <!-- TARGET INFO BOX -->
+                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc);">
+                                        Fetching episode info...
+                                    </div>
+
+                                    <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
                                         <div class="selectContainer flex-grow" style="flex: 1;">
-                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.8rem; margin-bottom: 4px; opacity: 0.7;">Language</label>
-                                            <select is="emby-select" id="selectLanguage" class="emby-select-withcolor emby-select" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Language</label>
+                                            
+                                            <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
+                                            <select id="selectLanguage" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 1rem; cursor: pointer; appearance: none; -webkit-appearance: none;">
                                                 <option value="eng">English</option>
                                                 <option value="spa">Spanish</option>
                                                 <option value="fre">French</option>
                                                 <option value="ger">German</option>
                                                 <option value="ita">Italian</option>
                                                 <option value="por">Portuguese</option>
-                                                <option value="rus">Russian</option>
                                                 <option value="pol">Polish</option>
+                                                <option value="rus">Russian</option>
                                                 <option value="dut">Dutch</option>
                                                 <option value="swe">Swedish</option>
                                                 <option value="nor">Norwegian</option>
@@ -1417,14 +1424,23 @@
                                                 <option value="chi">Chinese</option>
                                                 <option value="jpn">Japanese</option>
                                                 <option value="kor">Korean</option>
+                                                <option value="gre">Greek</option>
+                                                <option value="ind">Indonesian</option>
+                                                <option value="may">Malay</option>
+                                                <option value="fas">Persian</option>
+                                                <option value="ukr">Ukrainian</option>
+                                                <option value="hrv">Croatian</option>
+                                                <option value="slv">Slovenian</option>
+                                                <option value="bul">Bulgarian</option>
+                                                <option value="srp">Serbian</option>
                                             </select>
                                         </div>
-                                        <button type="submit" class="raised btnSubmit block button-submit emby-button" style="background: var(--color-primary, #00a4dc); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                                        <button type="submit" class="raised btnSubmit block button-submit emby-button" style="background: var(--clr-accent, #00a4dc); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                                             Search
                                         </button>
                                     </form>
 
-                                    <div class="subtitleResults" id="lfSubtitleSearchResults" style="margin-top: 20px;"></div>
+                                    <div class="subtitleResults" id="lfSubtitleSearchResults" style="margin-top: 24px;"></div>
                                 </div>
                             </div>
                         </div>
@@ -1432,16 +1448,54 @@
                     <style>
                         .lf-modal-overlay {
                             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                            background: rgba(0,0,0,0.8); z-index: 10000;
+                            background: rgba(0,0,0,0.85); z-index: 10000;
                             display: flex; align-items: flex-start; justify-content: center;
                             overflow-y: auto;
+                            backdrop-filter: blur(5px);
                         }
                         .lf-modal-overlay.hide { display: none !important; }
-                        .listItem { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-                        .listItemBody { flex: 1; margin: 0 10px; }
-                        .secondary { font-size: 0.85rem; opacity: 0.7; }
-                        .btnDelete, .btnDownload { background: none; border: none; color: white; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
-                        .btnDelete:hover, .btnDownload:hover { opacity: 1; }
+                        
+                        .listItem { 
+                            display: flex; align-items: center; padding: 14px; 
+                            background: rgba(255,255,255,0.03);
+                            border-bottom: 1px solid rgba(255,255,255,0.05); 
+                            border-radius: 4px;
+                            margin-bottom: 4px;
+                        }
+                        .listItem:hover {
+                            background: rgba(255,255,255,0.06);
+                        }
+                        .listItemBody { flex: 1; margin: 0 16px; }
+                        .secondary { font-size: 0.85rem; opacity: 0.6; margin-top: 4px; }
+                        
+                        .btnDelete { 
+                            background: rgba(233, 30, 99, 0.15) !important; 
+                            border: 1px solid rgba(233, 30, 99, 0.3) !important; 
+                            color: #ff4081 !important; 
+                            cursor: pointer; 
+                            border-radius: 4px;
+                            padding: 8px;
+                            display: flex;
+                        }
+                        .btnDelete:hover { 
+                            background: rgba(233, 30, 99, 0.25) !important; 
+                        }
+                        
+                        .btnDownload { 
+                            background: rgba(255,255,255,0.1) !important; 
+                            border: none !important; 
+                            color: white !important; 
+                            cursor: pointer; 
+                            border-radius: 4px;
+                            padding: 8px;
+                            display: flex;
+                        }
+                        .btnDownload:hover { background: rgba(255,255,255,0.2) !important; }
+
+                        /* Custom Scrollbar for Modal */
+                        .smoothScrollY::-webkit-scrollbar { width: 8px; }
+                        .smoothScrollY::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+                        .smoothScrollY::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
                     </style>
                 </div>
             `;
@@ -1450,6 +1504,8 @@
 
         async loadCurrentSubtitles(episodeId) {
             const listContainer = document.querySelector('#lfCurrentSubsList');
+            const infoBox = document.querySelector('#lfSubtitleTargetInfo');
+
             listContainer.innerHTML = '<div style="padding: 10px; opacity: 0.6;">Fetching subtitles...</div>';
 
             try {
@@ -1458,6 +1514,22 @@
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
                 const data = await response.json();
+
+                // Update Info Box
+                if (infoBox) {
+                    const seasonName = data.SeasonName || (data.ParentIndexNumber ? `Season ${data.ParentIndexNumber}` : '');
+                    const epNum = data.IndexNumber ? `E${data.IndexNumber}` : '';
+                    const fullCode = (data.ParentIndexNumber && data.IndexNumber)
+                        ? `S${String(data.ParentIndexNumber).padStart(2, '0')}E${String(data.IndexNumber).padStart(2, '0')}`
+                        : epNum;
+
+                    infoBox.innerHTML = `
+                        <div style="font-weight: 600; color: var(--clr-text-main); font-size: 1rem;">${data.Name}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7; margin-top: 2px;">
+                            ${data.SeriesName || ''} • ${seasonName} • ${fullCode}
+                        </div>
+                    `;
+                }
 
                 // Get streams
                 const streams = (data.MediaSources?.[0]?.MediaStreams || []).filter(s => s.Type === 'Subtitle');
@@ -1471,12 +1543,12 @@
                     <div class="listItem">
                         <span class="material-icons" style="opacity: 0.7;">closed_caption</span>
                         <div class="listItemBody">
-                            <div>${s.DisplayTitle || s.Title || s.Language || 'Unknown'}</div>
-                            <div class="secondary">${s.IsExternal ? 'External' : 'Embedded'} • ${s.Codec || ''}</div>
+                            <div style="font-weight: 500;">${s.DisplayTitle || s.Title || s.Language || 'Unknown'}</div>
+                            <div class="secondary">${s.IsExternal ? 'External' : 'Embedded'} • ${s.Codec || ''} • ${s.IsForced ? 'Forced' : 'Default'}</div>
                         </div>
                         ${s.IsExternal ? `
                         <button class="btnDelete" data-index="${s.Index}" title="Delete">
-                            <span class="material-icons">delete</span>
+                            <span class="material-icons" style="font-size: 18px;">delete</span>
                         </button>` : ''}
                     </div>
                 `).join('');
@@ -1489,6 +1561,7 @@
             } catch (e) {
                 log('Error loading subtitles:', e);
                 listContainer.innerHTML = `<div style="color: #ff5252;">Error loading subtitles: ${e.message}</div>`;
+                if (infoBox) infoBox.textContent = 'Error loading episode info.';
             }
         },
 
@@ -1511,10 +1584,13 @@
 
                 resultsContainer.innerHTML = data.map(sub => `
                     <div class="listItem">
-                        <span class="material-icons" style="opacity: 0.7;">download</span>
                         <div class="listItemBody">
-                            <div>${sub.Name}</div>
-                            <div class="secondary">${sub.ProviderName} • ${sub.Format || ''} • ${sub.Author || 'Unknown'}</div>
+                            <div style="font-weight: 500;">${sub.Name}</div>
+                            <div class="secondary">
+                                <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${sub.Format || 'SRT'}</span>
+                                <span style="margin-left: 8px;">${sub.ProviderName || 'Unknown Provider'}</span>
+                                <span style="margin-left: 8px;">Downloads: ${sub.DownloadCount || 0}</span>
+                            </div>
                         </div>
                         <button class="btnDownload" data-id="${sub.Id}" title="Download">
                             <span class="material-icons">cloud_download</span>
@@ -1536,7 +1612,8 @@
         async download(episodeId, subtitleId) {
             const resultsContainer = document.querySelector('#lfSubtitleSearchResults');
             // Optimistic UI
-            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.6;">Downloading...</div>';
+            const btn = resultsContainer.querySelector(`button[data-id="${subtitleId}"]`);
+            if (btn) btn.innerHTML = '<span class="material-icons spinning">sync</span>';
 
             try {
                 const auth = await getAuth();
@@ -1546,17 +1623,18 @@
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
 
-                resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #4caf50;">Download successful! Refreshing list...</div>';
+                if (btn) {
+                    btn.innerHTML = '<span class="material-icons" style="color: #4caf50;">check_circle</span>';
+                }
 
                 // Refresh list
                 setTimeout(() => {
                     this.loadCurrentSubtitles(episodeId);
-                    resultsContainer.innerHTML = '';
-                }, 1500);
+                }, 1000);
 
             } catch (e) {
                 log('Download error:', e);
-                resultsContainer.innerHTML = `<div style="color: #ff5252;">Download failed: ${e.message}</div>`;
+                if (btn) btn.innerHTML = '<span class="material-icons" style="color: #ff5252;">error</span>';
             }
         },
 
