@@ -805,6 +805,18 @@
             opacity: 0;
         }
 
+        /* Success Marked State (Green Tick) */
+        .lf-episode-card.is-success-marked .lf-episode-checkbox {
+            opacity: 1;
+            transform: scale(1);
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+        .lf-episode-card.is-success-marked .lf-episode-checkbox .material-icons {
+            opacity: 1;
+            transform: scale(1);
+        }
+
 
         /* ============================================
            CAST SECTION
