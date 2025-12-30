@@ -1395,8 +1395,8 @@
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
-                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; margin-bottom: 0px !important;">
-                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; opacity: 0.8;">Language</label>
+                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Language</label>
                                             
                                             <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
                                             <select id="selectLanguage" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 1rem; cursor: pointer; appearance: none; -webkit-appearance: none;">
@@ -1560,7 +1560,9 @@
                 listContainer.querySelectorAll('.btnDelete').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const index = e.currentTarget.dataset.index;
-                        this.deleteSubtitle(episodeId, index, e.currentTarget);
+                        if (confirm('Are you sure you want to delete this subtitle?')) {
+                            this.deleteSubtitle(episodeId, index, e.currentTarget);
+                        }
                     });
                 });
 
@@ -2372,86 +2374,51 @@
         currentSeriesId = seriesId;
         log('Detected Series page:', seriesId);
 
-        await handleSeriesPage(seriesId);
-    }
-
-    /**
-     * Helper to get YouTube ID from URL
-     */
-    function getYoutubeId(url) {
-        if (!url) return null;
-        // Matches legitflix-theme.js logic
-        if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
-        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
-        return null;
-    }
-
-    /**
-     * Handle Series Page Logic
-     */
-    async function handleSeriesPage(seriesId) {
         try {
-            const auth = await getAuth();
-            if (!auth) return;
+            // Fetch all data
+            const [seriesData, seasons, similar] = await Promise.all([
+                fetchSeriesData(seriesId),
+                fetchSeasons(seriesId),
+                fetchSimilar(seriesId)
+            ]);
 
-            // Fetch series data
-            const seriesUrl = `/Users/${auth.UserId}/Items/${seriesId}?Fields=RemoteTrailers,People,Studios,Genres,Overview,ProductionYear,OfficialRating,RunTimeTicks,Tags,ImageTags,ProviderIds`;
-            const seriesRes = await fetch(seriesUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
-            const seriesData = await seriesRes.json();
-
-            // Fetch Seasons
-            const seasonsUrl = `/Users/${auth.UserId}/Items?ParentId=${seriesId}&IncludeItemTypes=Season&Fields=RemoteTrailers`;
-            const seasonsRes = await fetch(seasonsUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
-            const seasonsData = await seasonsRes.json();
-            const seasons = seasonsData.Items || [];
-
-            // Fetch first season episodes
-            let episodes = [];
-            if (seasons.length > 0) {
-                episodes = await fetchEpisodes(seriesId, seasons[0].Id);
+            if (!seriesData || seasons.length === 0) {
+                log('Failed to fetch series data');
+                isInjecting = false;
+                return;
             }
 
-            // Get Trailer ID (Matches legitflix-theme.js logic)
+            // Fetch episodes for first season
+            const firstSeason = seasons[0];
+            const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+
+            // Format people for display
+            const people = formatPeople(seriesData.people);
+
+            // Store trailer info for button
             let trailerYtId = null;
-            let allTrailers = [];
-
-            // 1. Series Remote Trailers
-            if (seriesData.RemoteTrailers) {
-                seriesData.RemoteTrailers.forEach(t => {
-                    const vid = getYoutubeId(t.Url);
-                    if (vid) allTrailers.push({ title: 'Main Trailer', id: vid });
-                });
+            if (seriesData.remoteTrailers && seriesData.remoteTrailers.length > 0) {
+                trailerYtId = getYoutubeId(seriesData.remoteTrailers[0].Url);
             }
 
-            // 2. Season Remote Trailers
-            seasons.forEach(s => {
-                if (s.RemoteTrailers) {
-                    s.RemoteTrailers.forEach(t => {
-                        const vid = getYoutubeId(t.Url);
-                        if (vid) allTrailers.push({ title: s.Name, id: vid });
-                    });
-                }
-            });
+            // Find or create injection point
+            let targetContainer = document.querySelector('.itemDetailPage .view-content') ||
+                document.querySelector('.itemDetailPage') ||
+                detailPage;
 
-            // 3. Priority: Season 1 > First available
-            if (allTrailers.length > 0) {
-                trailerYtId = allTrailers[0].id;
-                const s1 = allTrailers.find(t => t.title === 'Season 1');
-                if (s1) trailerYtId = s1.id;
+            // Hide original elements
+            hideOriginalElements();
+
+            // Create wrapper if not exists
+            let wrapper = document.getElementById(CONFIG.containerId + '-wrapper');
+            if (!wrapper) {
+                wrapper = document.createElement('div');
+                wrapper.id = CONFIG.containerId + '-wrapper';
+                // Insert at the TOP of the detail page
+                targetContainer.insertBefore(wrapper, targetContainer.firstChild);
             }
 
-            // Data for rendering
-            const people = seriesData.People || [];
-
-            // Similar Items
-            const similar = await fetchSimilar(seriesId);
-
-            // Prepare Container
-            const wrapper = prepareContainer();
-            if (!wrapper) return;
-
-            // Render
+            // Render our UI
             renderSeriesDetailPage({
                 series: seriesData,
                 seasons: seasons,
@@ -2576,15 +2543,13 @@
                 } else {
                     // PLAY TRAILER
                     log('Trailer clicked, YT ID:', trailerYtId);
-
                     if (trailerIframe && trailerContainer) {
-                        // Update Iframe Attributes
+                        // Update Iframe Attributes (Exact match)
                         trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
                         trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
-                        // Exact URL from legitflix-theme.js (The "Working Version")
-                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}`;
-
+                        // Exact URL
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
                         trailerIframe.src = embedUrl;
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
