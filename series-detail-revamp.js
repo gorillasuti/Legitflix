@@ -921,6 +921,42 @@
     }
 
     /**
+     * Create language selector HTML
+     */
+    function createLanguageSelector() {
+        const savedLang = localStorage.getItem('legitflix-lang-pref') || 'en';
+        const languages = [
+            { code: 'en', name: 'English' },
+            { code: 'ja', name: 'Japanese' },
+            { code: 'es', name: 'Spanish' },
+            { code: 'fr', name: 'French' },
+            { code: 'de', name: 'German' }
+        ];
+
+        const selected = languages.find(l => l.code === savedLang) || languages[0];
+
+        const options = languages.map(l => `
+            <div class="lf-filter-dropdown__option ${l.code === savedLang ? 'is-selected' : ''}" data-lang="${l.code}">
+                <span>${l.name}</span>
+                ${l.code === savedLang ? '<span class="material-icons">check</span>' : ''}
+            </div>
+        `).join('');
+
+        return `
+            <div class="lf-filter-dropdown" id="lfLangSelector">
+                <button class="lf-filter-btn" title="Audio/Subtitle Language">
+                    <span class="material-icons">language</span>
+                    <span id="lfLangText">${selected.name}</span>
+                    <span class="material-icons">expand_more</span>
+                </button>
+                <div class="lf-filter-dropdown__menu">
+                    ${options}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * Create season selector HTML
      * @param {Array} seasons - Array of season objects
      * @param {number} selectedIndex - Currently selected season index
@@ -1001,6 +1037,7 @@
                 <div class="lf-episodes-header">
                     ${createSeasonSelector(seasons)}
                     <div class="lf-filter-controls">
+                        ${createLanguageSelector()}
                         <div class="lf-filter-dropdown" id="lfSortDropdown">
                             <button class="lf-filter-btn">
                                 <span class="material-icons">sort</span>
@@ -1127,6 +1164,38 @@
             button?.addEventListener('click', () => seasonSelector.classList.toggle('is-open'));
         }
 
+        // Language Selector
+        const langSelector = container.querySelector('#lfLangSelector');
+        if (langSelector) {
+            const btn = langSelector.querySelector('.lf-filter-btn');
+            btn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                container.querySelector('#lfSortDropdown')?.classList.remove('is-open');
+                container.querySelector('#lfFilterDropdown')?.classList.remove('is-open');
+                langSelector.classList.toggle('is-open');
+            });
+
+            langSelector.querySelectorAll('.lf-filter-dropdown__option').forEach(opt => {
+                opt.addEventListener('click', function () {
+                    const lang = this.dataset.lang;
+                    const label = this.textContent.trim();
+
+                    container.querySelector('#lfLangText').textContent = label;
+
+                    langSelector.querySelectorAll('.lf-filter-dropdown__option').forEach(o => o.classList.remove('is-selected'));
+                    this.classList.add('is-selected');
+                    langSelector.classList.remove('is-open');
+
+                    // Save Preference
+                    localStorage.setItem('legitflix-lang-pref', lang);
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!langSelector?.contains(e.target)) langSelector?.classList.remove('is-open');
+            });
+        }
+
         // Sort dropdown
         const sortDropdown = container.querySelector('#lfSortDropdown');
         if (sortDropdown) {
@@ -1134,6 +1203,7 @@
             button?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 container.querySelector('#lfFilterDropdown')?.classList.remove('is-open');
+                container.querySelector('#lfLangSelector')?.classList.remove('is-open');
                 sortDropdown.classList.toggle('is-open');
             });
 
@@ -1154,7 +1224,6 @@
                         grid.innerHTML = '';
                         cards.forEach(card => grid.appendChild(card));
                     }
-                    log('Sort changed:', sortType);
                 });
             });
         }
@@ -1166,6 +1235,7 @@
             button?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 container.querySelector('#lfSortDropdown')?.classList.remove('is-open');
+                container.querySelector('#lfLangSelector')?.classList.remove('is-open');
                 filterDropdown.classList.toggle('is-open');
             });
 
@@ -1194,7 +1264,6 @@
                             card.style.display = 'none';
                         }
                     });
-                    log('Filter changed:', filterType);
                 });
             });
         }
@@ -1218,7 +1287,7 @@
         // Season selection UI (Update text & close)
         if (seasonSelector) {
             seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
-                opt.addEventListener('click', function () {
+                opt.addEventListener('click', async function () {
                     // Update selected state
                     seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(o => o.classList.remove('is-selected'));
                     this.classList.add('is-selected');
@@ -1229,6 +1298,42 @@
                     if (dest) dest.textContent = buttonText;
 
                     seasonSelector.classList.remove('is-open');
+
+                    // Fetch & Render Content
+                    const seasonId = this.dataset.seasonId;
+                    const grid = container.querySelector('.lf-episode-grid');
+                    if (grid) {
+                        // Safe update of grid content
+                        grid.innerHTML = '<div style="color:var(--clr-text-muted); text-align:center; padding:40px; grid-column:1/-1;">Loading episodes...</div>';
+                        try {
+                            const hash = window.location.hash;
+                            const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
+
+                            if (seriesId) {
+                                const episodes = await fetchEpisodes(seriesId, seasonId);
+                                const newGridHtml = createEpisodeGrid(episodes);
+
+                                // Extract inner HTML to avoid nested grids
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = newGridHtml;
+                                const innerContent = tempDiv.querySelector('.lf-episode-grid').innerHTML;
+
+                                grid.innerHTML = innerContent;
+
+                                // Re-attach card listeners
+                                grid.querySelectorAll('.lf-episode-card').forEach(card => {
+                                    card.addEventListener('click', () => {
+                                        const epId = card.dataset.episodeId;
+                                        if (window.legitFlixPlay) window.legitFlixPlay(epId);
+                                        else window.location.href = `#!/details?id=${epId}`;
+                                    });
+                                });
+                            }
+                        } catch (e) {
+                            grid.innerHTML = '<div style="text-align:center; color:red;">Error loading episodes</div>';
+                            console.error(e);
+                        }
+                    }
                 });
             });
         }
