@@ -1395,7 +1395,7 @@
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
-                                        <div class="selectContainer flex-grow" style="flex: 1;">
+                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
                                             <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Language</label>
                                             
                                             <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
@@ -1435,7 +1435,7 @@
                                                 <option value="srp">Serbian</option>
                                             </select>
                                         </div>
-                                        <button type="submit" class="raised btnSubmit block button-submit emby-button" style="background: var(--clr-accent, #00a4dc); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                                        <button type="submit" class="raised btnSubmit block button-submit emby-button" style="background: var(--clr-accent, #00a4dc); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; margin-bottom: 0;">
                                             Search
                                         </button>
                                     </form>
@@ -1487,8 +1487,12 @@
                             color: white !important; 
                             cursor: pointer; 
                             border-radius: 4px;
-                            padding: 8px;
+                            padding: 8px 16px;
                             display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-weight: 500;
+                            font-size: 0.9rem;
                         }
                         .btnDownload:hover { background: rgba(255,255,255,0.2) !important; }
 
@@ -1594,6 +1598,7 @@
                         </div>
                         <button class="btnDownload" data-id="${sub.Id}" title="Download">
                             <span class="material-icons">cloud_download</span>
+                            <span>Download</span>
                         </button>
                     </div>
                 `).join('');
@@ -1691,19 +1696,32 @@
                     const type = this.dataset.type; // 'audio' or 'subtitle'
                     const lang = this.dataset.lang;
 
-                    // Update selection in UI (per section)
+                    // Update selected state in UI (per section)
                     const section = this.closest('.lf-lang-section');
-                    section.querySelectorAll('.lf-filter-dropdown__option').forEach(o => o.classList.remove('is-selected'));
-                    this.classList.add('is-selected');
+                    section.querySelectorAll('.lf-filter-dropdown__option').forEach(o => {
+                        o.classList.remove('is-selected');
+                        const check = o.querySelector('.material-icons');
+                        if (check && check.textContent === 'check') check.remove();
+                    });
 
-                    // Save Preference
-                    if (type === 'audio') {
-                        localStorage.setItem('legitflix-audio-pref', lang);
-                        log('Audio preference saved:', lang);
-                    } else {
-                        localStorage.setItem('legitflix-sub-pref', lang);
-                        log('Subtitle preference saved:', lang);
+                    this.classList.add('is-selected');
+                    // Add checkmark if not present
+                    if (!this.querySelector('.material-icons')) {
+                        const check = document.createElement('span');
+                        check.className = 'material-icons';
+                        check.textContent = 'check';
+                        this.appendChild(check);
                     }
+
+                    // Save preference
+                    if (type === 'audio') localStorage.setItem('legitflix-audio-pref', lang);
+                    if (type === 'subtitle') localStorage.setItem('legitflix-sub-pref', lang);
+
+                    console.log(`[DEBUG] Language selected: ${type} -> ${lang}`);
+
+                    // Actually switch stream?
+                    // We might need to reload or notify playback logic vs simple pref save
+                    // For now we just update UI as requested
                 });
             });
 
