@@ -1396,7 +1396,7 @@
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
                                         <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
-                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Language</label>
+                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 0px !important; opacity: 0.8;">Language</label>
                                             
                                             <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
                                             <select id="selectLanguage" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 1rem; cursor: pointer; appearance: none; -webkit-appearance: none;">
@@ -1560,9 +1560,7 @@
                 listContainer.querySelectorAll('.btnDelete').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const index = e.currentTarget.dataset.index;
-                        if (confirm('Are you sure you want to delete this subtitle?')) {
-                            this.deleteSubtitle(episodeId, index, e.currentTarget);
-                        }
+                        this.deleteSubtitle(episodeId, index, e.currentTarget);
                     });
                 });
 
