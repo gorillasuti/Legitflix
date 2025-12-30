@@ -2604,26 +2604,28 @@
                         }
 
                         // Setup Blocking Detection
-                        // If we don't get ANY message from the iframe in 3.5s, assume blocked
-                        // (YouTube API sends messages on load)
+                        // If we don't get ANY message from the iframe in 5s, assume blocked
                         let receivedMessage = false;
 
                         messageHandler = (event) => {
-                            // Check source (if possible) or just assume any YT message validates it
-                            // YouTube messages are usually strings like '{"event":"infoDelivery"...}'
-                            if (typeof event.data === 'string' && event.data.includes('infoDelivery')) {
-                                receivedMessage = true;
-                                clearTimeout(blockedTimeout);
+                            // YouTube API sends messages as JSON strings
+                            if (typeof event.data === 'string') {
+                                // We accept any valid-looking JSON message from the player
+                                // Common events: infoDelivery, initialDelivery, onReady, apiInfo
+                                if (event.data.includes('"event"') || event.data.includes('"id"')) {
+                                    receivedMessage = true;
+                                    clearTimeout(blockedTimeout);
+                                }
                             }
                         };
                         window.addEventListener('message', messageHandler);
 
                         blockedTimeout = setTimeout(() => {
                             if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
-                                log('Possible block detected: No YT API message received');
+                                log('Possible block detected: No YT API message received in 5s');
                                 showBlockedModal();
                             }
-                        }, 3500);
+                        }, 5000);
                     }
                 }
             });
