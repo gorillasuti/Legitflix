@@ -2496,41 +2496,32 @@
             return;
         }
 
-        if (isInjecting) return;
-
         const seriesId = getSeriesIdFromUrl();
-        // Strict check: Must have ID and NOT be skipped
-        if (!seriesId || seriesId === currentSeriesId) return;
+        if (!seriesId || seriesId === currentSeriesId || isInjecting) return;
 
-        // Wait for page container - STRICT SELECTION
-        // Do NOT use [data-type="Series"] alone as it matches cards on Home Page
+        // Wait for page container
         const detailPage = document.querySelector('.itemDetailPage') ||
+            document.querySelector('[data-type="Series"]') ||
             document.querySelector('.detailPageContent');
-
-        if (!detailPage) {
-            // log('[LF-Series] No detail container found, waiting...');
-            return;
-        }
+        if (!detailPage) return;
 
         // Check if it's actually a Series (not Movie/Episode)
-        // Verify via API to be 100% sure
+        const typeElement = document.querySelector('[data-type]');
+        const itemType = typeElement?.dataset?.type;
+
+        // We need to verify this is a Series via API since DOM may not be reliable
         const auth = await getAuth();
-        if (!auth || !isSeriesDetailPage()) return;
+        if (!auth) return;
 
         try {
             const checkUrl = `/Users/${auth.UserId}/Items/${seriesId}`;
             const checkRes = await fetch(checkUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
-
-            if (!checkRes.ok) throw new Error('Item check failed');
-
             const itemData = await checkRes.json();
 
             if (itemData.Type !== 'Series') {
-                log('[LF-Series] Item is not a Series (' + itemData.Type + '), skipping.');
-                return; // Strictly exit if not Series
+                return; // Not a series, don't inject
             }
         } catch (e) {
-            log('[LF-Series] Error checking item type:', e);
             return;
         }
 
@@ -2545,12 +2536,6 @@
                 fetchSeasons(seriesId),
                 fetchSimilar(seriesId)
             ]);
-
-            if (!isSeriesDetailPage()) {
-                log('Navigated away during fetch, aborting render');
-                isInjecting = false;
-                return;
-            }
 
             if (!seriesData || seasons.length === 0) {
                 log('Failed to fetch series data');
