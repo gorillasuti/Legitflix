@@ -2535,22 +2535,23 @@
                         <span>Watch Trailer</span>
                      `;
 
-                    // Hide Mute
-                    if (muteBtn) {
-                        muteBtn.style.display = 'none';
-                        muteBtn.classList.remove('is-muted');
-                    }
+                    // Allow UI to show
+                    resetHideTimer();
+
+                    // Hide Mute (since we removed logic, ensure it's hidden)
+                    if (muteBtn) muteBtn.style.display = 'none';
+
                 } else {
                     // PLAY TRAILER
                     log('Trailer clicked, YT ID:', trailerYtId);
                     if (trailerIframe && trailerContainer) {
-                        // Update Iframe Attributes (Exact match)
+                        // Update Iframe Attributes - Simple
                         trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-                        trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
-                        // Exact URL
-                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
+                        // Simple Embed URL (No JS API to avoid blocking)
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&playlist=${trailerYtId}&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1`;
                         trailerIframe.src = embedUrl;
+
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
 
@@ -2563,33 +2564,14 @@
                             <span>Stop Trailer</span>
                         `;
 
-                        // Show mute button
-                        if (muteBtn) {
-                            muteBtn.style.display = 'flex';
-                            muteBtn.classList.add('is-muted');
-                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                        }
+                        // Hide mute button (not supported without JS API in this rollback)
+                        if (muteBtn) muteBtn.style.display = 'none';
                     }
                 }
             });
 
-            // Mute Button Logic
-            if (muteBtn) {
-                muteBtn.addEventListener('click', () => {
-                    const isMuted = muteBtn.classList.contains('is-muted');
-                    if (trailerIframe.contentWindow) {
-                        if (isMuted) {
-                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-                            muteBtn.classList.remove('is-muted');
-                            muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
-                        } else {
-                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
-                            muteBtn.classList.add('is-muted');
-                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                        }
-                    }
-                });
-            }
+            // Remove Mute Button Listener Logic (Commented out/Removed)
+            // if (muteBtn) { ... }
 
         } else if (trailerBtn && !trailerYtId) {
             // No trailer available - hide or disable button
