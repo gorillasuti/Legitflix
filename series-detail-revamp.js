@@ -973,21 +973,40 @@
     /**
      * Create language selector HTML
      */
-    function createLanguageSelector() {
-        console.log('[DEBUG] createLanguageSelector called');
+    function createLanguageSelector(audioStreams = [], subtitleStreams = [], targetEpisodeId = null) {
+        console.log('[DEBUG] createLanguageSelector called with:', { audio: audioStreams.length, subs: subtitleStreams.length, targetId: targetEpisodeId });
+
         const savedAudio = localStorage.getItem('legitflix-audio-pref') || 'en';
         const savedSub = localStorage.getItem('legitflix-sub-pref') || 'en';
 
-        const languages = [
-            { code: 'en', name: 'English' },
-            { code: 'ja', name: 'Japanese' },
-            { code: 'es', name: 'Spanish' },
-            { code: 'fr', name: 'French' },
-            { code: 'de', name: 'German' }
-        ];
+        const mapStreamToOption = (stream) => ({
+            code: stream.Language || 'und',
+            name: stream.Language || stream.Title || 'Unknown',
+            displayTitle: stream.DisplayTitle || stream.Title || stream.Language || 'Unknown'
+        });
+
+        const uniqueStreams = (streams) => {
+            const seen = new Set();
+            if (!streams || streams.length === 0) return [];
+            return streams.map(mapStreamToOption).filter(s => {
+                if (seen.has(s.code)) return false;
+                seen.add(s.code);
+                return true;
+            });
+        };
+
+        const availableAudio = uniqueStreams(audioStreams);
+        const availableSubs = uniqueStreams(subtitleStreams);
+
+        // Fallbacks
+        const audioOptions = availableAudio.length > 0 ? availableAudio : [{ code: 'en', name: 'English' }];
+        const subOptions = availableSubs.length > 0 ? availableSubs : [{ code: 'en', name: 'English' }];
+
+        // Placeholder for old languages array removal
+        const languages = [];
 
         // Helper to create options
-        const createOptions = (type, current) => languages.map(l => `
+        const createOptions = (type, list, current) => list.map(l => `
             <div class="lf-filter-dropdown__option ${l.code === current ? 'is-selected' : ''}" 
                  data-type="${type}" data-lang="${l.code}">
                 <span>${l.name}</span>
@@ -1005,15 +1024,15 @@
                 <div class="lf-filter-dropdown__menu lf-lang-menu">
                     <div class="lf-lang-section">
                         <div class="lf-dropdown-section-title">Audio</div>
-                        ${createOptions('audio', savedAudio)}
+                        ${createOptions('audio', audioOptions, savedAudio)}
                     </div>
                     <div class="lf-lang-separator"></div>
                     <div class="lf-lang-section">
                         <div class="lf-dropdown-section-title">Subtitles</div>
-                        ${createOptions('subtitle', savedSub)}
+                        ${createOptions('subtitle', subOptions, savedSub)}
                     </div>
                     <div class="lf-lang-footer">
-                        <button class="lf-edit-subs-btn" id="lfEditSubsBtn">
+                        <button class="lf-edit-subs-btn" id="lfEditSubsBtn" ${targetEpisodeId ? `data-episode-id="${targetEpisodeId}"` : ''}>
                             <span class="material-icons">edit</span>
                             <span>Edit Subtitles</span>
                         </button>
@@ -1116,7 +1135,7 @@
                 <div class="lf-episodes-header">
                     ${createSeasonSelector(seasons)}
                     <div class="lf-filter-controls">
-                        ${createLanguageSelector(audioStreams, subtitleStreams)}
+                        ${createLanguageSelector(audioStreams, subtitleStreams, targetEpisodeId)}
                         <div class="lf-filter-dropdown" id="lfSortDropdown">
                             <button class="lf-filter-btn">
                                 <span class="material-icons">sort</span>
@@ -1279,24 +1298,37 @@
 
             // Edit Subtitles Button
             const editSubsBtn = langSelector.querySelector('#lfEditSubsBtn');
-            editSubsBtn?.addEventListener('click', async () => {
+            editSubsBtn?.addEventListener('click', async function () {
+                // Check if we have a specific episode ID (from First Unwatched logic)
+                // Otherwise fallback to Series ID from URL
+                const episodeId = this.dataset.episodeId;
                 const hash = window.location.hash;
                 const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
-                if (seriesId) {
+
+                const targetId = episodeId || seriesId; // Prefer Episode ID for subtitle editing
+
+                if (targetId) {
+                    console.log('[DEBUG] Opening Subtitle Editor for ID:', targetId);
                     // 1. Try generic Emby/Jellyfin command first
                     if (window.SubtitleEditor) {
-                        window.SubtitleEditor.show(seriesId);
+                        window.SubtitleEditor.show(targetId);
                     }
                     // 2. Try to find the module directly if global is missing
                     else {
                         try {
-                            // This is a guess based on standard Jellyfin web modules
-                            // We might need to just use the route if we can't find the module
-                            const mod = await import('scripts/subtitleeditor');
-                            if (mod && mod.show) mod.show(seriesId);
-                            else window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                            // Try multiple common paths for the module
+                            let mod = null;
+                            try { mod = await import('scripts/subtitleeditor'); } catch (e) { }
+                            if (!mod) try { mod = await import('controllers/subtitleeditor'); } catch (e) { }
+
+                            if (mod && mod.show) {
+                                mod.show(seriesId);
+                            } else {
+                                console.log('SubtitleEditor module not found, falling back to route');
+                                window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                            }
                         } catch (e) {
-                            console.log('Could not load SubtitleEditor module, using route fallback');
+                            console.log('Error loading SubtitleEditor, using route fallback', e);
                             window.location.hash = `!/subtitleeditor?id=${seriesId}`;
                         }
                     }
@@ -1447,6 +1479,7 @@
                                 grid.style.setProperty('display', 'grid', 'important');
                                 grid.style.setProperty('grid-template-columns', 'repeat(auto-fill, minmax(280px, 1fr))', 'important');
                                 grid.style.setProperty('gap', '20px', 'important');
+                                grid.style.setProperty('width', '100%', 'important');
                                 console.log('[DEBUG] Grid Styles Applied:', grid.style.cssText);
 
                                 // Re-attach card listeners
@@ -1603,7 +1636,7 @@
         if (!auth) return [];
 
         try {
-            const fields = 'Overview,PrimaryImageAspectRatio,UserData,RunTimeTicks';
+            const fields = 'Overview,PrimaryImageAspectRatio,UserData,RunTimeTicks,MediaSources';
             const url = `/Shows/${seriesId}/Episodes?SeasonId=${seasonId}&UserId=${auth.UserId}&Fields=${fields}`;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
@@ -1617,6 +1650,7 @@
                 overview: ep.Overview || '',
                 thumbnailUrl: ep.ImageTags?.Primary ? `/Items/${ep.Id}/Images/Primary?fillHeight=180&fillWidth=320&quality=90` : '',
                 runTimeTicks: ep.RunTimeTicks || 0,
+                MediaSources: ep.MediaSources || [], // Pass through MediaSources
                 userData: {
                     PlayedPercentage: ep.UserData?.PlayedPercentage || 0,
                     Played: ep.UserData?.Played || false
