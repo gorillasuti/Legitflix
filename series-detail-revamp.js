@@ -1099,13 +1099,24 @@
      * @param {Array} episodes - Episodes for current season
      */
     function createEpisodesSection(seasons, episodes) {
+        // Extract streams from the first episode if available
+        let audioStreams = [];
+        let subtitleStreams = [];
+        if (episodes && episodes.length > 0 && episodes[0].MediaSources && episodes[0].MediaSources.length > 0) {
+            const source = episodes[0].MediaSources[0]; // Usually use the first source
+            if (source.MediaStreams) {
+                audioStreams = source.MediaStreams.filter(s => s.Type === 'Audio');
+                subtitleStreams = source.MediaStreams.filter(s => s.Type === 'Subtitle');
+            }
+        }
+
         return `
             <hr class="lf-section-divider">
             <section class="lf-content-section" id="lfEpisodesSection">
                 <div class="lf-episodes-header">
                     ${createSeasonSelector(seasons)}
                     <div class="lf-filter-controls">
-                        ${createLanguageSelector()}
+                        ${createLanguageSelector(audioStreams, subtitleStreams)}
                         <div class="lf-filter-dropdown" id="lfSortDropdown">
                             <button class="lf-filter-btn">
                                 <span class="material-icons">sort</span>
@@ -1433,9 +1444,9 @@
 
                                 // FORCE GRID LAYOUT (Fixes stacking issue)
                                 console.log('[DEBUG] Forcing Grid Layout Styles');
-                                grid.style.display = 'grid';
-                                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-                                grid.style.gap = '20px';
+                                grid.style.setProperty('display', 'grid', 'important');
+                                grid.style.setProperty('grid-template-columns', 'repeat(auto-fill, minmax(280px, 1fr))', 'important');
+                                grid.style.setProperty('gap', '20px', 'important');
                                 console.log('[DEBUG] Grid Styles Applied:', grid.style.cssText);
 
                                 // Re-attach card listeners
@@ -1519,7 +1530,8 @@
         if (!auth) return null;
 
         try {
-            const fields = 'Overview,Genres,Studios,OfficialRating,CommunityRating,ImageTags,BackdropImageTags,People,RemoteTrailers,ChildCount';
+            // Added MediaSources to fields to get stream info (usually on episodes, but checking series)
+            const fields = 'Overview,Genres,Studios,OfficialRating,CommunityRating,ImageTags,BackdropImageTags,People,RemoteTrailers,ChildCount,MediaSources';
             const url = `/Users/${auth.UserId}/Items/${seriesId}?Fields=${fields}`;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
