@@ -599,18 +599,13 @@ async function injectMediaBar() {
         // Remove old wrappers (cleanup)
         document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
         document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
-        document.querySelectorAll('.lf-custom-sections-wrapper').forEach(el => el.remove());
 
-        // Fetch Data for Hero & Custom Rows
         const items = await fetchMediaBarItems();
-        const views = await fetchUserViews();
-        const auth = await getAuth();
-
-        if (items.length === 0 && views.length === 0) return;
+        if (items.length === 0) return;
 
         // Attempt injection
-        let checkInterval = null;
-        checkInterval = setInterval(async () => {
+        let checkInterval = null; // Declare checkInterval here
+        checkInterval = setInterval(() => {
             let container = document.querySelector('.homeSectionsContainer');
             if (!container) container = document.querySelector('.mainAnimatedPages');
             if (!container) container = document.querySelector('#indexPage .pageContent');
@@ -621,142 +616,29 @@ async function injectMediaBar() {
             if (isReady && !document.querySelector('.legit-hero-wrapper')) {
                 clearInterval(checkInterval);
 
-                // 1. Inject Hero
-                if (items.length > 0) {
-                    const wrapper = document.createElement('div');
-                    wrapper.classList.add('legit-hero-wrapper');
-                    wrapper.innerHTML = createMediaBarHTML(items);
-                    container.insertBefore(wrapper, container.firstChild);
-                    container.classList.add('has-legit-hero');
-                    logger.log('injectMediaBar: Injected Home Carousel successfully');
-                    startCarousel();
-                }
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('legit-hero-wrapper');
+                wrapper.innerHTML = createMediaBarHTML(items);
 
-                // 2. Inject Custom Rows (Latest)
-                if (views.length > 0 && auth) {
-                    const sectionsWrapper = document.createElement('div');
-                    sectionsWrapper.className = 'lf-custom-sections-wrapper';
+                container.insertBefore(wrapper, container.firstChild);
+                container.classList.add('has-legit-hero'); // Enable CSS spacing
 
-                    // Insert after Hero
-                    const hero = container.querySelector('.legit-hero-wrapper');
-                    if (hero) hero.insertAdjacentElement('afterend', sectionsWrapper);
-                    else container.insertBefore(sectionsWrapper, container.firstChild);
-
-                    // CSS to hide defaults
-                    if (!document.getElementById('lf-hide-defaults')) {
-                        const style = document.createElement('style');
-                        style.id = 'lf-hide-defaults';
-                        style.textContent = `.section0, .section1, .section2, .section3, .section4 { display: none; }`;
-                        document.head.appendChild(style);
-                    }
-
-                    // Build Rows
-                    for (const view of views) {
-                        if (view.CollectionType === 'boxsets') continue;
-                        try {
-                            const limit = 10;
-                            const url = `/Users/${auth.UserId}/Items?ParentId=${view.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=${limit}&Fields=PrimaryImageAspectRatio,Overview,UserData,CommunityRating,ProductionYear`;
-                            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
-                            const data = await res.json();
-
-                            if (data.Items && data.Items.length > 0) {
-                                const sectionHtml = `
-                                    <div class="verticalSection sectionTitleContainer">
-                                        <h2 class="sectionTitle sectionTitle-cards">Latest ${view.Name}</h2>
-                                    </div>
-                                    <div class="itemsContainer scrollSlider focuscontainer-x" style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 2rem; scroll-behavior: smooth;">
-                                        ${createNativeCards(data.Items)}
-                                        ${createViewAllCard(view.Id, view.Name)}
-                                    </div>
-                                 `;
-                                const div = document.createElement('div');
-                                div.className = 'verticalSection lf-custom-section';
-                                div.innerHTML = sectionHtml;
-                                sectionsWrapper.appendChild(div);
-                            }
-                        } catch (e) { logger.error('Error fetching view', e); }
-                    }
-
-                    // Hide Original Sections (JS cleanup)
-                    const originals = document.querySelectorAll('.verticalSection');
-                    originals.forEach(sec => {
-                        if (sec.classList.contains('lf-custom-section') || sec.closest('.legit-hero-wrapper')) return;
-                        const title = sec.querySelector('.sectionTitle');
-                        if (title && title.textContent.includes('Latest')) sec.style.display = 'none';
-                    });
-                }
+                logger.log('injectMediaBar: Injected Home Carousel successfully');
+                startCarousel();
 
             } else if (isReady && document.querySelector('.legit-hero-wrapper')) {
+                // Already injected by another thread
                 clearInterval(checkInterval);
             }
         }, 1000);
 
         setTimeout(() => {
-            if (checkInterval) clearInterval(checkInterval);
+            if (checkInterval) clearInterval(checkInterval); // Clear if it was set
             logger.log('injectMediaBar: Timeout reached');
         }, 15000);
     }
-}
-// Remove injectCustomHomeSections definition below
 
-function createNativeCards(items) {
-    return items.map(item => {
-        const title = item.Name;
-        const imgUrl = `/Items/${item.Id}/Images/Primary?fillHeight=320&fillWidth=213&quality=90`;
-        const action = `window.legitFlixShowItem('${item.Id}')`;
 
-        // Indicators
-        const isPlayed = item.UserData?.Played;
-        const playedPct = item.UserData?.PlayedPercentage;
-        const unplayedCount = item.UserData?.UnplayedItemCount;
-
-        let indicatorHtml = '';
-        if (isPlayed) {
-            indicatorHtml = '<div class="fplayedIndicator indicator"><i class="material-icons">check</i></div>';
-        } else if (playedPct > 0) {
-            indicatorHtml = `<div class="itemProgressBar"><div class="itemProgressBarForeground" style="width:${playedPct}%"></div></div>`;
-        } else if (unplayedCount > 0) {
-            indicatorHtml = `<div class="countIndicator indicator">${unplayedCount}</div>`;
-        }
-
-        // Standard Jellyfin Card Structure for Hover Compatibility
-        return `
-            <div class="card overflowPortraitCard card-hoverable card-withuserdata" data-id="${item.Id}" style="min-width: 160px; width: 14vw; max-width: 220px;">
-                <div class="cardBox cardBox-bottompadded">
-                    <div class="cardScalable">
-                        <div class="cardPadder cardPadder-overflowPortrait"></div>
-                        <a class="cardContent cardImageContainer coveredImage itemAction" href="#!/details?id=${item.Id}" onclick="return false;" style="background-image: url('${imgUrl}'); cursor: pointer;">
-                            ${indicatorHtml}
-                        </a>
-                    </div>
-                    <div class="cardFooter">
-                        <div class="cardText cardTextCentered cardText-first">${title}</div>
-                        <div class="cardText cardTextCentered cardText-secondary">${item.ProductionYear || ''}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function createViewAllCard(viewId, viewName) {
-    const targetUrl = `#!/items?parentId=${viewId}&sortBy=DateCreated&sortOrder=Descending`;
-    return `
-        <div class="card overflowPortraitCard card-hoverable" style="min-width: 160px; width: 14vw; max-width: 220px;">
-            <div class="cardBox cardBox-bottompadded">
-                <div class="cardScalable">
-                    <div class="cardPadder cardPadder-overflowPortrait"></div>
-                    <a class="cardContent cardImageContainer coveredImage itemAction" href="${targetUrl}" style="background-color: var(--button-background, rgba(255,255,255,0.05)); display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer;">
-                        <span class="material-icons" style="font-size: 3rem; margin-bottom: 0.5rem; color: var(--theme-primary-color, #00a4dc);">arrow_forward</span>
-                        <span style="font-weight: 600;">View All</span>
-                    </a>
-                </div>
-                 <div class="cardFooter">
-                    <div class="cardText cardTextCentered cardText-first">${viewName}</div>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 // --- JELLYSEERR INJECTION ---
@@ -2391,84 +2273,209 @@ window.ensurePasswordForm = function () {
 // The hashchange cleanup logic is removed as the new monitor loop handles state.
 
 
-// --- REBUILD HOME SECTIONS (Rename & Custom Content) ---
-async function processHomeSections() {
+// --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
+function renameMyList() {
+    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
+        let text = el.innerText.trim();
+        const lowerText = text.toLowerCase();
+        let newText = null;
+
+        // 1. My List / My Media -> Categories
+        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
+            newText = 'Categories';
+        }
+        // 2. Next Up -> History
+        else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
+            newText = 'History';
+        }
+        // 3. Recently Added in [Type] -> Latest [Type]
+        else if (lowerText.startsWith('recently added in ')) {
+            // "Recently Added in " is 18 chars
+            const type = text.substring(18);
+            newText = `Latest ${type}`;
+        }
+
+        // Also update the link if it exists for tooltip/accessibility
+        const parent = el.closest('.sectionHeader, .sectionTitleContainer');
+        if (parent) {
+            const link = parent.querySelector('a');
+            if (link) link.setAttribute('title', newText);
+        }
+    }
+    });
+}
+
+// --- ENRICH "LATEST" SECTIONS (Custom Content + View All) ---
+let _usersViewCache = null;
+
+async function enrichLatestSections() {
+    // 1. Find potential sections (Latest X) - Created by renameMyList
+    const sections = Array.from(document.querySelectorAll('.verticalSection'));
+    const targetSections = sections.filter(sec => {
+        const titleEl = sec.querySelector('.sectionTitle, .sectionTitle-cards');
+        return titleEl && titleEl.innerText.startsWith('Latest ') && !sec.dataset.enriched;
+    });
+
+    if (targetSections.length === 0) return;
+
+    // 2. Ensure Views Cache
+    if (!_usersViewCache) {
+        _usersViewCache = await fetchUserViews();
+    }
+    if (!_usersViewCache || _usersViewCache.length === 0) return;
+
     const auth = await getAuth();
     if (!auth) return;
 
-    // Standard Jellyfin Sections
-    const sections = document.querySelectorAll('.verticalSection');
+    // 3. Process Each Section
+    for (const section of targetSections) {
+        const titleEl = section.querySelector('.sectionTitle, .sectionTitle-cards');
+        const title = titleEl.innerText;
+        const libraryName = title.substring(7); // Remove "Latest "
 
-    for (const section of sections) {
-        // Find Title Element
-        const titleEl = section.querySelector('.sectionTitle');
-        if (!titleEl) continue;
+        // Match Library
+        const library = _usersViewCache.find(v => v.Name === libraryName);
+        if (!library) continue;
 
-        let text = titleEl.innerText.trim();
-        const lowerText = text.toLowerCase();
+        section.dataset.enriched = 'true'; // Mark as processed immediately
 
-        // 1. Rename "My Media" -> "Categories"
-        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
-            titleEl.innerText = 'Categories';
-        }
-        // 2. Rename "Next Up" -> "History"
-        else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
-            titleEl.innerText = 'History';
-        }
-        // 3. REBUILD "Recently Added" -> "Latest [Type]"
-        else if (lowerText.startsWith('recently added in ')) {
-            const libraryName = text.substring(18); // "Recently Added in Anime" -> "Anime"
-            const newTitle = `Latest ${libraryName}`;
+        // 4. Fetch Correct Data (Series/Movie only, Include Watched)
+        // User Request: Last 10 uploaded, Series/Movie (no episodes), Keep Watched
+        const url = `/Users/${auth.UserId}/Items?ParentId=${library.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=10&Fields=PrimaryImageAspectRatio,Overview,ProductionYear,Status,CommunityRating&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb`;
 
-            // Avoid re-processing if already done
-            if (section.dataset.processed === libraryName) continue;
-            section.dataset.processed = libraryName; // Mark as done
+        try {
+            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
+            const data = await res.json();
+            const items = data.Items || [];
 
-            titleEl.innerText = newTitle;
+            if (items.length === 0) continue;
 
-            // Update Link Tooltip
-            const link = section.querySelector('a');
-            if (link) link.setAttribute('title', newTitle);
+            // 5. Build New HTML
+            // Standard Card Structure
+            const cardsHtml = items.map(item => {
+                const imgUrl = `/Items/${item.Id}/Images/Primary?fillHeight=300&fillWidth=200&quality=90`;
+                const name = item.Name;
+                const year = item.ProductionYear || '';
+                const rating = item.CommunityRating ? `⭐ ${item.CommunityRating.toFixed(1)}` : '';
+                const isPlayed = item.UserData?.Played; // Not hiding it, just knowing
 
-            // FETCH & INJECT CUSTOM CONTENT
-            // We need the View ID. Often hard to get from DOM.
-            // But we can search by Name in user views.
-            try {
-                const views = await fetchUserViews();
-                const targetView = views.find(v => v.Name === libraryName);
+                return `
+                    <div class="card overflowPortraitCard card-hoverable card-withuserdata" data-id="${item.Id}" data-type="${item.Type}">
+                        <div class="cardBox cardBox-bottompadded">
+                            <div class="cardScalable">
+                                <div class="cardPadder cardPadder-overflowPortrait"></div>
+                                <a class="cardImageContainer cardContent itemAction lazy" 
+                                   href="#/details?id=${item.Id}"
+                                   data-src="${imgUrl}"
+                                   style="background-image: url('${imgUrl}');">
+                                </a>
+                                <div class="cardOverlayContainer itemAction" href="#/details?id=${item.Id}">
+                                    <button is="emby-playbutton" type="button" class="cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light cardOverlayFab-primary" data-action="play">
+                                        <span class="material-icons">play_arrow</span>
+                                    </button>
+                                </div>
+                                ${isPlayed ? '<div class="indicator playedIndicator"><i class="material-icons">check</i></div>' : ''}
+                            </div>
+                            <div class="cardText cardTextCentered cardText-first">
+                                <a href="#/details?id=${item.Id}" class="textActionButton">${name}</a>
+                            </div>
+                            <div class="cardText cardTextCentered cardText-secondary">
+                                ${year} ${rating ? ' • ' + rating : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
-                if (targetView) {
-                    const limit = 10;
-                    const url = `/Users/${auth.UserId}/Items?ParentId=${targetView.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=${limit}&Fields=PrimaryImageAspectRatio,Overview,UserData,CommunityRating,ProductionYear`;
+            // 6. "View All" Button Card
+            const viewAllUrl = `#!/items?parentId=${library.Id}&sortOrder=Descending&sortBy=DateCreated`;
+            const viewAllHtml = `
+                <div class="card overflowPortraitCard card-hoverable view-all-card">
+                     <div class="cardBox cardBox-bottompadded">
+                        <div class="cardScalable">
+                            <div class="cardPadder cardPadder-overflowPortrait"></div>
+                            <a class="cardImageContainer cardContent itemAction" href="${viewAllUrl}" 
+                               style="background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                                <span class="material-icons" style="font-size: 3rem; opacity: 0.7; margin-bottom: 8px;">arrow_forward</span>
+                                <span style="font-weight: 600; opacity: 0.9;">View All</span>
+                            </a>
+                        </div>
+                         <div class="cardText cardTextCentered cardText-first">
+                             <a href="${viewAllUrl}" class="textActionButton">Go to ${libraryName}</a>
+                         </div>
+                    </div>
+                </div>
+            `;
 
-                    const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
-                    const data = await res.json();
+            // 7. Inject
+            const container = section.querySelector('.itemsContainer');
+            if (container) {
+                container.innerHTML = cardsHtml + viewAllHtml;
 
-                    if (data.Items && data.Items.length > 0) {
-                        // Find Container
-                        const itemsContainer = section.querySelector('.itemsContainer');
-                        if (itemsContainer) {
-                            // CLEAR existing content (Episodes/Mixed)
-                            itemsContainer.innerHTML = '';
-
-                            // Inject Custom Cards
-                            itemsContainer.innerHTML = createNativeCards(data.Items) + createViewAllCard(targetView.Id, targetView.Name);
-
-                            // Reset Scroll
-                            itemsContainer.scrollLeft = 0;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('[LegitFlix] Failed to rebuild section:', libraryName, e);
+                // Trigger scroll logic update if possible
+                const scroller = container.closest('[is="emby-scroller"]');
+                if (scroller && scroller.refreshSize) scroller.refreshSize();
             }
+
+        } catch (e) {
+            console.error('[LegitFlix] Failed to enrich section: ' + libraryName, e);
         }
     }
 }
 
-// Loop to handle lazy loading of sections
-setInterval(processHomeSections, 2000);
-setTimeout(processHomeSections, 100);
+// Run initially and on mutation
+renameMyList();
+enrichLatestSections();
+
+// --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
+function fixMixedCards() {
+    // Find Backdrops that should be Posters (Movies/Series)
+    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
+    const cards = document.querySelectorAll(selector);
+
+    cards.forEach(card => {
+        // 1. Swap Card Class (Backdrop -> Portrait)
+        // This fixes dimensions and grid layout
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
+
+        // 2. Swap Padder Class
+        const padder = card.querySelector('.cardPadder-overflowBackdrop');
+        if (padder) {
+            padder.classList.remove('cardPadder-overflowBackdrop');
+            padder.classList.add('cardPadder-overflowPortrait');
+        }
+
+        // 3. Swap Image URL (Thumb -> Primary)
+        // This gets the correct Poster image from server
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const style = imgContainer.getAttribute('style') || '';
+            // Improved Lazy-Loader Fighting Logic
+            const swapImage = () => {
+                const s = imgContainer.getAttribute('style') || '';
+                if (s.includes('Images/Thumb')) {
+                    // Replace Thumb with Primary
+                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
+                    if (s !== ns) imgContainer.setAttribute('style', ns);
+                }
+            };
+
+            // Run immediately
+            swapImage();
+
+            // Observe for lazy loader changes
+            if (!imgContainer._observerAttached) {
+                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
+                imgContainer._observerAttached = true;
+            }
+        }
+    });
+}
+
+// Run initially and on mutation
+renameMyList();
+fixMixedCards();
 // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
 let _promoInjectionInProgress = false; // Guard for race conditions
 let _injectedBanner = false; // Track if banner already injected
@@ -3073,6 +3080,7 @@ const observer = new MutationObserver((mutations) => {
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
     renameMyList();
+    enrichLatestSections();
     fixMixedCards();
     injectPromoBanner();
     tagNativeSections();
