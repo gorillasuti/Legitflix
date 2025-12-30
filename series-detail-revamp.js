@@ -2793,6 +2793,7 @@
                 container.classList.add('is-selection-mode');
                 container.querySelectorAll('.lf-episode-card').forEach(c => c.classList.add('is-selecting-mode'));
                 if (bulkText) bulkText.textContent = `Mark Selected (${selectedEpisodes.size})`;
+                updateBulkButtonState(); // Call helper to set initial text
                 if (bulkIcon) bulkIcon.textContent = 'check_circle';
                 if (bulkBtn) bulkBtn.classList.add('lf-btn--primary');
             } else {
@@ -2808,6 +2809,35 @@
             }
         };
 
+        // Helper to update button text based on selection state
+        const updateBulkButtonState = () => {
+            if (!bulkText) return;
+
+            // Check if all selected are already watched
+            let allWatched = true;
+            if (selectedEpisodes.size > 0) {
+                for (let id of selectedEpisodes) {
+                    const card = container.querySelector(`.lf-episode-card[data-episode-id="${id}"]`);
+                    // Check our class or data attribute if present (using class is easiest sync)
+                    if (!card.classList.contains('is-watched')) {
+                        allWatched = false;
+                        break;
+                    }
+                }
+
+                if (allWatched) {
+                    bulkText.textContent = `Mark Unwatched (${selectedEpisodes.size})`;
+                    bulkBtn.dataset.actionType = 'unwatch';
+                } else {
+                    bulkText.textContent = `Mark Watched (${selectedEpisodes.size})`;
+                    bulkBtn.dataset.actionType = 'watch';
+                }
+            } else {
+                bulkText.textContent = `Mark Watched (0)`;
+                bulkBtn.dataset.actionType = 'watch';
+            }
+        };
+
         // Card Selection Logic
         const toggleCardSelection = (card, id) => {
             if (selectedEpisodes.has(id)) {
@@ -2817,13 +2847,13 @@
                 selectedEpisodes.add(id);
                 card.classList.add('is-selected');
             }
-            if (bulkText) bulkText.textContent = `Mark Selected (${selectedEpisodes.size})`;
+            updateBulkButtonState();
         };
 
         // Bulk Action Listener
         if (bulkBtn) {
             bulkBtn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent immediate triggering of click-outside
+                e.stopPropagation();
                 const auth = await getAuth();
                 if (!auth || !window.ApiClient) {
                     console.error('API Client or Auth missing');
@@ -2832,7 +2862,7 @@
                 }
 
                 if (!isSelectionMode) {
-                    // "Mark Season Watched" INSTANT ACTION (No confirmation)
+                    // "Mark Season Watched" INSTANT ACTION
                     const allCards = container.querySelectorAll('.lf-episode-card');
                     if (allCards.length === 0) return;
 
@@ -2841,7 +2871,6 @@
                     try {
                         const updates = Array.from(allCards).map(card => {
                             const itemId = card.dataset.episodeId;
-                            // Optimistic update (Green tick)
                             card.classList.add('is-success-marked');
                             return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
                         });
@@ -2849,7 +2878,6 @@
                         await Promise.all(updates);
                         if (bulkText) bulkText.textContent = 'Done!';
 
-                        // Short delay to show success state then refresh
                         setTimeout(() => {
                             refreshCurrentSeason();
                             if (bulkText) bulkText.textContent = 'Mark Season Watched';
@@ -2860,23 +2888,37 @@
                         allCards.forEach(c => c.classList.remove('is-success-marked'));
                     }
                 } else {
-                    // "Mark Selected" action (Manual selection mode)
+                    // BULK SELECTION ACTION
                     if (selectedEpisodes.size === 0) {
                         toggleSelectionMode(false);
                         return;
                     }
 
-                    if (bulkText) bulkText.textContent = 'Updating...';
+                    const actionType = bulkBtn.dataset.actionType || 'watch';
+                    bulkText.textContent = 'Updating...';
+
                     try {
-                        // Optimistic UI for selected
-                        selectedEpisodes.forEach(id => {
-                            const card = container.querySelector(`.lf-episode-card[data-episode-id="${id}"]`);
-                            if (card) card.classList.add('is-success-marked');
+                        const updates = Array.from(selectedEpisodes).map(itemId => {
+                            if (actionType === 'unwatch') {
+                                // Mark Unplayed
+                                return window.ApiClient.markUnplayed(auth.UserId, itemId);
+                            } else {
+                                // Mark Played
+                                return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
+                            }
                         });
 
-                        const updates = Array.from(selectedEpisodes).map(itemId => {
-                            return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
+                        // Optimistic UI
+                        selectedEpisodes.forEach(id => {
+                            const card = container.querySelector(`.lf-episode-card[data-episode-id="${id}"]`);
+                            if (card) {
+                                card.classList.add('is-success-marked');
+                                // Update watched status immediately for visual feedback before refresh
+                                if (actionType === 'unwatch') card.classList.remove('is-watched');
+                                else card.classList.add('is-watched');
+                            }
                         });
+
                         await Promise.all(updates);
 
                         if (bulkText) bulkText.textContent = 'Done!';
@@ -2885,9 +2927,13 @@
                             refreshCurrentSeason();
                         }, 1000);
                     } catch (e) {
-                        log('Error marking selected:', e);
+                        log('Error processing bulk action:', e);
                         if (bulkText) bulkText.textContent = 'Error!';
-                        container.querySelectorAll('.is-success-marked').forEach(c => c.classList.remove('is-success-marked'));
+                        // Remove success marks
+                        selectedEpisodes.forEach(id => {
+                            const card = container.querySelector(`.lf-episode-card[data-episode-id="${id}"]`);
+                            if (card) card.classList.remove('is-success-marked');
+                        });
                     }
                 }
             });
