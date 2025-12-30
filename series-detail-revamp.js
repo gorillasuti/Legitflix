@@ -924,7 +924,10 @@
      * Create language selector HTML
      */
     function createLanguageSelector() {
-        const savedLang = localStorage.getItem('legitflix-lang-pref') || 'en';
+        console.log('[DEBUG] createLanguageSelector called');
+        const savedAudio = localStorage.getItem('legitflix-audio-pref') || 'en';
+        const savedSub = localStorage.getItem('legitflix-sub-pref') || 'en';
+
         const languages = [
             { code: 'en', name: 'English' },
             { code: 'ja', name: 'Japanese' },
@@ -933,27 +936,42 @@
             { code: 'de', name: 'German' }
         ];
 
-        const selected = languages.find(l => l.code === savedLang) || languages[0];
-
-        const options = languages.map(l => `
-            <div class="lf-filter-dropdown__option ${l.code === savedLang ? 'is-selected' : ''}" data-lang="${l.code}">
+        // Helper to create options
+        const createOptions = (type, current) => languages.map(l => `
+            <div class="lf-filter-dropdown__option ${l.code === current ? 'is-selected' : ''}" 
+                 data-type="${type}" data-lang="${l.code}">
                 <span>${l.name}</span>
-                ${l.code === savedLang ? '<span class="material-icons">check</span>' : ''}
+                ${l.code === current ? '<span class="material-icons">check</span>' : ''}
             </div>
         `).join('');
 
-        return `
-            <div class="lf-filter-dropdown" id="lfLangSelector">
-                <button class="lf-filter-btn" title="Audio/Subtitle Language">
-                    <span class="material-icons">language</span>
-                    <span id="lfLangText">${selected.name}</span>
+        const html = `
+            <div class="lf-filter-dropdown lf-lang-selector" id="lfLangSelector">
+                <button class="lf-filter-btn" title="Audio & Subtitles">
+                    <span class="material-icons">subtitles</span>
+                    <span id="lfLangText">Audio & Subs</span>
                     <span class="material-icons">expand_more</span>
                 </button>
-                <div class="lf-filter-dropdown__menu">
-                    ${options}
+                <div class="lf-filter-dropdown__menu lf-lang-menu">
+                    <div class="lf-lang-section">
+                        <div class="lf-dropdown-section-title">Audio</div>
+                        ${createOptions('audio', savedAudio)}
+                    </div>
+                    <div class="lf-lang-separator"></div>
+                    <div class="lf-lang-section">
+                        <div class="lf-dropdown-section-title">Subtitles</div>
+                        ${createOptions('subtitle', savedSub)}
+                    </div>
+                    <div class="lf-lang-footer">
+                        <button class="lf-edit-subs-btn" id="lfEditSubsBtn">
+                            <span class="material-icons">edit</span>
+                            <span>Edit Subtitles</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
+        return html;
     }
 
     /**
@@ -1157,6 +1175,7 @@
     // EVENT HANDLERS
     // =========================================================================
     function attachEventListeners(container) {
+        console.log('[DEBUG] attachEventListeners called');
         // Season dropdown toggle
         const seasonSelector = container.querySelector('#lfSeasonSelector');
         if (seasonSelector) {
@@ -1306,6 +1325,8 @@
         if (seasonSelector) {
             seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
                 opt.addEventListener('click', async function () {
+                    console.log('[DEBUG] Season Option Clicked:', this.dataset.seasonId);
+
                     // Update selected state
                     seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(o => o.classList.remove('is-selected'));
                     this.classList.add('is-selected');
@@ -1320,15 +1341,21 @@
                     // Fetch & Render Content
                     const seasonId = this.dataset.seasonId;
                     const grid = container.querySelector('.lf-episode-grid');
+                    console.log('[DEBUG] Target Grid Element:', grid);
+
                     if (grid) {
                         // Safe update of grid content
                         grid.innerHTML = '<div style="color:var(--clr-text-muted); text-align:center; padding:40px; grid-column:1/-1;">Loading episodes...</div>';
                         try {
                             const hash = window.location.hash;
                             const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
+                            console.log('[DEBUG] Series ID from URL:', seriesId);
 
                             if (seriesId) {
+                                console.log('[DEBUG] Fetching episodes for season:', seasonId);
                                 const episodes = await fetchEpisodes(seriesId, seasonId);
+                                console.log('[DEBUG] Episodes fetched:', episodes.length);
+
                                 const newGridHtml = createEpisodeGrid(episodes);
 
                                 // Extract inner HTML to avoid nested grids
@@ -1336,12 +1363,15 @@
                                 tempDiv.innerHTML = newGridHtml;
                                 const innerContent = tempDiv.querySelector('.lf-episode-grid').innerHTML;
 
+                                console.log('[DEBUG] Updating grid innerHTML...');
                                 grid.innerHTML = innerContent;
 
                                 // FORCE GRID LAYOUT (Fixes stacking issue)
+                                console.log('[DEBUG] Forcing Grid Layout Styles');
                                 grid.style.display = 'grid';
                                 grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
                                 grid.style.gap = '20px';
+                                console.log('[DEBUG] Grid Styles Applied:', grid.style.cssText);
 
                                 // Re-attach card listeners
                                 grid.querySelectorAll('.lf-episode-card').forEach(card => {
@@ -1354,8 +1384,10 @@
                             }
                         } catch (e) {
                             grid.innerHTML = '<div style="text-align:center; color:red;">Error loading episodes</div>';
-                            console.error(e);
+                            console.error('[DEBUG] Error loading episodes:', e);
                         }
+                    } else {
+                        console.error('[DEBUG] Episode Grid not found in DOM!');
                     }
                 });
             });
