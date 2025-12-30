@@ -2501,7 +2501,6 @@
 
         // Wait for page container
         const detailPage = document.querySelector('.itemDetailPage') ||
-            document.querySelector('[data-type="Series"]') ||
             document.querySelector('.detailPageContent');
         if (!detailPage) return;
 
@@ -2511,7 +2510,7 @@
 
         // We need to verify this is a Series via API since DOM may not be reliable
         const auth = await getAuth();
-        if (!auth) return;
+        if (!auth || !isSeriesDetailPage()) return;
 
         try {
             const checkUrl = `/Users/${auth.UserId}/Items/${seriesId}`;
@@ -2536,6 +2535,12 @@
                 fetchSeasons(seriesId),
                 fetchSimilar(seriesId)
             ]);
+
+            if (!isSeriesDetailPage()) {
+                log('Navigated away during fetch, aborting render');
+                isInjecting = false;
+                return;
+            }
 
             if (!seriesData || seasons.length === 0) {
                 log('Failed to fetch series data');

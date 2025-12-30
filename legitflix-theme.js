@@ -2165,22 +2165,8 @@
                 headers: { 'X-Emby-Token': auth.AccessToken }
             });
             const data = await response.json();
-            let allItems = data.Items || [];
-            log('fetchMediaBarItems: Downloaded items', allItems.length);
 
-            // Filter Strict: Only Series/Movie + Deduplicate
-            const seenIds = new Set();
-            allItems = allItems.filter(item => {
-                if (item.Type !== 'Series' && item.Type !== 'Movie') return false;
-                if (seenIds.has(item.Id)) return false;
-                seenIds.add(item.Id);
-                return true;
-            });
-
-            // Safety: If fewer than 3 items, just show what we have (or empty).
-            // If > 3, slice 3 to 9 (Next 6).
-            const validItems = allItems.length > 3 ? allItems.slice(3, 9) : allItems;
-            return validItems.map(item => ({
+            return (data.Items || []).map(item => ({
                 Id: item.Id,
                 Name: item.Name,
                 posterUrl: item.ImageTags?.Primary ? `/Items/${item.Id}/Images/Primary?fillHeight=225&fillWidth=150&quality=90` : ''
