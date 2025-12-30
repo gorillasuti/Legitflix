@@ -2624,29 +2624,18 @@
 
                 try {
                     // Check Series Played Status
-                    // Refactored to access the exposed 'userData' from fetchSeriesData
                     let isSeriesPlayed = seriesData.userData?.Played || false;
 
-                    log('[WatchBtn] Series Played?', isSeriesPlayed, seriesData.userData);
-
                     // Fetch Next Up - CORRECTED ENDPOINT
-                    // Was: /Shows/${seriesId}/NextUp -> 404
-                    // Now: /Shows/NextUp?SeriesId=${seriesId}
                     const nextUpUrl = `/Shows/NextUp?SeriesId=${seriesId}&Limit=1&UserId=${auth.UserId}`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
 
                     var nextUpData;
                     if (!nextUpRes.ok) {
-                        log('[WatchBtn] NextUp fetch failed:', nextUpRes.status);
-                        // If 404, it might mean no next up items, so proceed with empty list
-                        // But strictly 404 on this endpoint usually means empty list in some setups
-                        // or invalid series. Use empty items to fall through to logic.
                         nextUpData = { Items: [] };
                     } else {
                         nextUpData = await nextUpRes.json();
                     }
-
-                    log('[WatchBtn] NextUp Data:', nextUpData);
 
                     if (nextUpData.Items && nextUpData.Items.length > 0) {
                         const nextEp = nextUpData.Items[0];

@@ -2295,137 +2295,19 @@ function renameMyList() {
             newText = `Latest ${type}`;
         }
 
-        // Also update the link if it exists for tooltip/accessibility
-        const parent = el.closest('.sectionHeader, .sectionTitleContainer');
-        if (parent) {
-            const link = parent.querySelector('a');
-            if (link) link.setAttribute('title', newText);
-        }
-    }
-    });
-}
-
-// --- ENRICH "LATEST" SECTIONS (Custom Content + View All) ---
-let _usersViewCache = null;
-
-async function enrichLatestSections() {
-    // 1. Find potential sections (Latest X) - Created by renameMyList
-    const sections = Array.from(document.querySelectorAll('.verticalSection'));
-    const targetSections = sections.filter(sec => {
-        const titleEl = sec.querySelector('.sectionTitle, .sectionTitle-cards');
-        return titleEl && titleEl.innerText.startsWith('Latest ') && !sec.dataset.enriched;
-    });
-
-    if (targetSections.length === 0) return;
-
-    // 2. Ensure Views Cache
-    if (!_usersViewCache) {
-        _usersViewCache = await fetchUserViews();
-    }
-    if (!_usersViewCache || _usersViewCache.length === 0) return;
-
-    const auth = await getAuth();
-    if (!auth) return;
-
-    // 3. Process Each Section
-    for (const section of targetSections) {
-        const titleEl = section.querySelector('.sectionTitle, .sectionTitle-cards');
-        const title = titleEl.innerText;
-        const libraryName = title.substring(7); // Remove "Latest "
-
-        // Match Library
-        const library = _usersViewCache.find(v => v.Name === libraryName);
-        if (!library) continue;
-
-        section.dataset.enriched = 'true'; // Mark as processed immediately
-
-        // 4. Fetch Correct Data (Series/Movie only, Include Watched)
-        // User Request: Last 10 uploaded, Series/Movie (no episodes), Keep Watched
-        const url = `/Users/${auth.UserId}/Items?ParentId=${library.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=10&Fields=PrimaryImageAspectRatio,Overview,ProductionYear,Status,CommunityRating&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb`;
-
-        try {
-            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
-            const data = await res.json();
-            const items = data.Items || [];
-
-            if (items.length === 0) continue;
-
-            // 5. Build New HTML
-            // Standard Card Structure
-            const cardsHtml = items.map(item => {
-                const imgUrl = `/Items/${item.Id}/Images/Primary?fillHeight=300&fillWidth=200&quality=90`;
-                const name = item.Name;
-                const year = item.ProductionYear || '';
-                const rating = item.CommunityRating ? `⭐ ${item.CommunityRating.toFixed(1)}` : '';
-                const isPlayed = item.UserData?.Played; // Not hiding it, just knowing
-
-                return `
-                    <div class="card overflowPortraitCard card-hoverable card-withuserdata" data-id="${item.Id}" data-type="${item.Type}">
-                        <div class="cardBox cardBox-bottompadded">
-                            <div class="cardScalable">
-                                <div class="cardPadder cardPadder-overflowPortrait"></div>
-                                <a class="cardImageContainer cardContent itemAction lazy" 
-                                   href="#/details?id=${item.Id}"
-                                   data-src="${imgUrl}"
-                                   style="background-image: url('${imgUrl}');">
-                                </a>
-                                <div class="cardOverlayContainer itemAction" href="#/details?id=${item.Id}">
-                                    <button is="emby-playbutton" type="button" class="cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light cardOverlayFab-primary" data-action="play">
-                                        <span class="material-icons">play_arrow</span>
-                                    </button>
-                                </div>
-                                ${isPlayed ? '<div class="indicator playedIndicator"><i class="material-icons">check</i></div>' : ''}
-                            </div>
-                            <div class="cardText cardTextCentered cardText-first">
-                                <a href="#/details?id=${item.Id}" class="textActionButton">${name}</a>
-                            </div>
-                            <div class="cardText cardTextCentered cardText-secondary">
-                                ${year} ${rating ? ' • ' + rating : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // 6. "View All" Button Card
-            const viewAllUrl = `#!/items?parentId=${library.Id}&sortOrder=Descending&sortBy=DateCreated`;
-            const viewAllHtml = `
-                <div class="card overflowPortraitCard card-hoverable view-all-card">
-                     <div class="cardBox cardBox-bottompadded">
-                        <div class="cardScalable">
-                            <div class="cardPadder cardPadder-overflowPortrait"></div>
-                            <a class="cardImageContainer cardContent itemAction" href="${viewAllUrl}" 
-                               style="background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                                <span class="material-icons" style="font-size: 3rem; opacity: 0.7; margin-bottom: 8px;">arrow_forward</span>
-                                <span style="font-weight: 600; opacity: 0.9;">View All</span>
-                            </a>
-                        </div>
-                         <div class="cardText cardTextCentered cardText-first">
-                             <a href="${viewAllUrl}" class="textActionButton">Go to ${libraryName}</a>
-                         </div>
-                    </div>
-                </div>
-            `;
-
-            // 7. Inject
-            const container = section.querySelector('.itemsContainer');
-            if (container) {
-                container.innerHTML = cardsHtml + viewAllHtml;
-
-                // Trigger scroll logic update if possible
-                const scroller = container.closest('[is="emby-scroller"]');
-                if (scroller && scroller.refreshSize) scroller.refreshSize();
+        if (newText) {
+            el.innerText = newText;
+            // Also update the link if it exists for tooltip/accessibility
+            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
+            if (parent) {
+                const link = parent.querySelector('a');
+                if (link) link.setAttribute('title', newText);
             }
-
-        } catch (e) {
-            console.error('[LegitFlix] Failed to enrich section: ' + libraryName, e);
         }
-    }
+    });
 }
-
 // Run initially and on mutation
 renameMyList();
-enrichLatestSections();
 
 // --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
 function fixMixedCards() {
@@ -3080,7 +2962,6 @@ const observer = new MutationObserver((mutations) => {
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
     renameMyList();
-    enrichLatestSections();
     fixMixedCards();
     injectPromoBanner();
     tagNativeSections();

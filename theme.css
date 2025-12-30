@@ -798,6 +798,30 @@ h4,
 
 /* =========== LEFT SIDE NAVIGATION (Hamburger + Logo + Links) =========== */
 
+/* =========================================================================
+   FIX: LANDSCAPE ITEMS IN POSTER GRID (HOME PAGE)
+   ========================================================================= */
+/* Forces all cards in 'latest' or standard grids on home page to respect poster ratio */
+.homePage .itemsContainer.vertical-wrap .card,
+.homePage .itemsContainer .card:not(.backdropCard) {
+    /* Ensure card itself fits grid */
+    height: auto !important;
+}
+
+/* Force image aspect ratio to Poster (2:3) for items that pretend to be posters */
+/* Specifically targets cards that might be Episodes showing up in Latest */
+.homePage .sectionTitle+.itemsContainer .cardImageContainer:not(.backdropCardImageContainer),
+.homePage .horizontalSection .cardImageContainer:not(.backdropCardImageContainer) {
+    aspect-ratio: 2/3 !important;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+/* Fallback for specific episode cards in poster rows */
+.homePage .card[data-type="Episode"] .cardImageContainer {
+    aspect-ratio: 2/3 !important;
+}
+
 /* Nav Container - holds all left side items */
 .legit-nav-container {
     display: flex;
@@ -5281,4 +5305,16 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
             top: calc(50% + 15vh) !important;
         }
     }
+}
+
+/* =========================================================================
+   HOME SCREEN LAYOUT FIXES
+   ========================================================================= */
+/* Force Aspect Ratio for Episodes in Grids (Fixes Latest Section Layout) */
+.itemsContainer.vertical-wrap .card[data-type='Episode'] .cardScalable {
+    aspect-ratio: 2/3 !important;
+}
+
+.itemsContainer.vertical-wrap .card[data-type='Episode'] .cardImage {
+    object-fit: cover !important;
 }
