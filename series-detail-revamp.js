@@ -2549,7 +2549,8 @@
                         trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
                         // Use Search List Embed
-                        const embedUrl = `https://www.youtube.com/embed?listType=search&list=${query}&autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1`;
+                        const origin = window.location.origin;
+                        const embedUrl = `https://www.youtube.com/embed?listType=search&list=${query}&autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1&origin=${origin}`;
                         trailerIframe.src = embedUrl;
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
