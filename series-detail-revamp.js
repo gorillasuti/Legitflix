@@ -1260,6 +1260,42 @@
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
+    /**
+     * Enforce grid styles using MutationObserver to prevent external overrides
+     */
+    function enforceGridStyles(grid) {
+        if (!grid) return;
+
+        const applyParams = () => {
+            grid.style.setProperty('display', 'grid', 'important');
+            grid.style.setProperty('grid-template-columns', 'repeat(auto-fill, minmax(280px, 1fr))', 'important');
+            grid.style.setProperty('gap', '20px', 'important');
+            grid.style.setProperty('width', '100%', 'important');
+        };
+
+        // Apply immediately
+        applyParams();
+
+        // Watch for changes
+        const observer = new MutationObserver((mutations) => {
+            let shouldReapply = false;
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                    // Check if our styles were removed/changed (basic check)
+                    if (grid.style.display !== 'grid') shouldReapply = true;
+                }
+            });
+            if (shouldReapply) {
+                // disconnect momentarily to avoid infinite loop
+                observer.disconnect();
+                applyParams();
+                observer.observe(grid, { attributes: true, attributeFilter: ['style', 'class'] });
+            }
+        });
+
+        observer.observe(grid, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+
     // =========================================================================
     // EVENT HANDLERS
     // =========================================================================
@@ -1483,13 +1519,9 @@
                                 console.log('[DEBUG] Updating grid innerHTML...');
                                 grid.innerHTML = innerContent;
 
-                                // FORCE GRID LAYOUT (Fixes stacking issue)
-                                console.log('[DEBUG] Forcing Grid Layout Styles');
-                                grid.style.setProperty('display', 'grid', 'important');
-                                grid.style.setProperty('grid-template-columns', 'repeat(auto-fill, minmax(280px, 1fr))', 'important');
-                                grid.style.setProperty('gap', '20px', 'important');
-                                grid.style.setProperty('width', '100%', 'important');
-                                console.log('[DEBUG] Grid Styles Applied:', grid.style.cssText);
+                                // Enforce styles permanently
+                                enforceGridStyles(grid);
+                                console.log('[DEBUG] Grid Styles Enforced');
 
                                 // Re-attach card listeners
                                 grid.querySelectorAll('.lf-episode-card').forEach(card => {
@@ -1550,6 +1582,10 @@
         // Attach event listeners
         const container = document.getElementById(CONFIG.containerId);
         attachEventListeners(container);
+
+        // Enforce grid styles on initial load
+        const initialGrid = container.querySelector('.lf-episode-grid');
+        if (initialGrid) enforceGridStyles(initialGrid);
 
         log('Series detail page rendered');
     }
