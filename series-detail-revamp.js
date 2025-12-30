@@ -2813,7 +2813,6 @@
         };
 
         // Bulk Action Listener
-        // Bulk Action Listener
         if (bulkBtn) {
             bulkBtn.addEventListener('click', async (e) => {
                 e.stopPropagation(); // Prevent immediate triggering of click-outside
@@ -2836,7 +2835,7 @@
                             const itemId = card.dataset.episodeId;
                             // Optimistic update (Green tick)
                             card.classList.add('is-success-marked');
-                            return window.ApiClient.updatePlayedStatus(auth.UserId, itemId, true);
+                            return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
                         });
 
                         await Promise.all(updates);
@@ -2859,12 +2858,6 @@
                         return;
                     }
 
-                    // Optional: Keep confirm for manual selection? Or remove too? 
-                    // User said "Mark season watched ... does not need browser alert". 
-                    // I'll keep confirm for manual "Mark Selected" to be safe, unless requested otherwise.
-                    // Actually, for consistency, let's remove it if it feels redundant, but "Mark Season" is the big one.
-                    // I will leave it for now as safeguard for manual mode.
-
                     if (bulkText) bulkText.textContent = 'Updating...';
                     try {
                         // Optimistic UI for selected
@@ -2874,7 +2867,7 @@
                         });
 
                         const updates = Array.from(selectedEpisodes).map(itemId => {
-                            return window.ApiClient.updatePlayedStatus(auth.UserId, itemId, true);
+                            return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
                         });
                         await Promise.all(updates);
 
