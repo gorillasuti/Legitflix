@@ -806,35 +806,23 @@
         }
 
         /* Success Marked State (Green Tick) */
-        .lf-episode-card.is-success-marked .lf-episode-checkbox {
+        .lf-episode-card.is-success-marked .lf-episode-checkbox,
+        .lf-episode-card.is-watched .lf-episode-checkbox {
             opacity: 1;
             transform: scale(1);
             background: #4caf50;
             border-color: #4caf50;
         }
-        .lf-episode-card.is-success-marked .lf-episode-checkbox .material-icons {
+        .lf-episode-card.is-success-marked .lf-episode-checkbox .material-icons,
+        .lf-episode-card.is-watched .lf-episode-checkbox .material-icons {
             opacity: 1;
             transform: scale(1);
         }
 
-        /* Watched Badge (Permanent) */
-        .lf-watched-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(76, 175, 80, 0.9); /* Green */
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .lf-watched-badge .material-icons {
-            font-size: 16px;
+        /* Adjust hover behavior for checked items */
+         .lf-episode-card.is-watched:hover .lf-episode-card__play-icon {
+             /* Allow play icon to show on hover even if watched, to replay */
+            opacity: 1;
         }
 
 
@@ -1955,15 +1943,15 @@
                     filterDropdown.classList.remove('is-open');
 
                     // Filter episodes
+                    // Filter episodes
                     container.querySelectorAll('.lf-episode-card').forEach(card => {
-                        const progressBar = card.querySelector('.lf-episode-card__progress-bar');
-                        const progress = progressBar ? parseFloat(progressBar.style.width) : 0;
+                        const isWatched = card.classList.contains('is-watched');
 
                         if (filterType === 'all') {
                             card.style.display = '';
-                        } else if (filterType === 'watched' && progress > 0) {
+                        } else if (filterType === 'watched' && isWatched) {
                             card.style.display = '';
-                        } else if (filterType === 'unwatched' && progress === 0) {
+                        } else if (filterType === 'unwatched' && !isWatched) {
                             card.style.display = '';
                         } else {
                             card.style.display = 'none';
