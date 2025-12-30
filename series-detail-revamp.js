@@ -1482,6 +1482,14 @@
     function renderSeriesDetailPage(data, targetContainer) {
         const { series, seasons, episodes, people, similar } = data;
 
+        // Debug initial episodes data
+        if (episodes && episodes.length > 0) {
+            console.log('[DEBUG] Initial Episodes Data:', episodes[0]);
+            if (!episodes[0].MediaSources) console.warn('[DEBUG] No MediaSources in initial episodes!');
+        } else {
+            console.warn('[DEBUG] No episodes in initial data!');
+        }
+
         injectStyles();
 
         // Build complete HTML
