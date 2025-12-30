@@ -161,11 +161,10 @@
             display: flex;
             gap: 3rem;
             align-items: flex-start;
-            justify-content: space-between;
         }
 
         .lf-series-hero__description {
-            flex: 0 0 60%;
+            flex: 0 0 50%;
             color: var(--clr-text-muted);
             line-height: 1.6;
             font-size: 0.9rem;
@@ -795,21 +794,59 @@
                 align-items: flex-start;
             }
         }
+        /* Mute Button */
+        .lf-mute-btn {
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 10px;
+            z-index: 20;
+        }
+        
+        .lf-mute-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        .lf-mute-btn.is-muted {
+            color: var(--clr-accent);
+            border-color: var(--clr-accent);
+        }
+
+        /* Season Selector Disabled State */
+        .lf-season-selector.is-disabled {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .lf-season-selector.is-disabled .lf-season-selector__button {
+            cursor: default;
+        }
+        
+        .lf-season-selector.is-disabled .material-icons {
+            display: none;
+        }
     `;
 
-    // =========================================================================
-    // CSS INJECTION
-    // =========================================================================
+    /**
+     * Inject page styles
+     */
     function injectStyles() {
         if (document.getElementById(CONFIG.cssId)) return;
-
         const style = document.createElement('style');
         style.id = CONFIG.cssId;
         style.textContent = SERIES_DETAIL_CSS;
         document.head.appendChild(style);
-        log('CSS injected');
+        log('Styles injected');
     }
-
     // =========================================================================
     // UI GENERATORS
     // =========================================================================
@@ -819,22 +856,15 @@
      * @param {Object} series - Series data object
      */
     function createHeroSection(series) {
-        const backdropUrl = series.backdropUrl || '';
-        const posterUrl = series.posterUrl || '';
-        const title = series.name || 'Unknown Series';
-        const year = series.year || '';
-        const rating = series.officialRating || 'TV-14';
-        const communityRating = series.communityRating ? series.communityRating.toFixed(1) : '';
-        const episodeCount = series.episodeCount || 0;
-        const description = series.overview || '';
-        const genres = (series.genres || []).slice(0, 3).join(', ');
-        const studios = (series.studios || []).slice(0, 2).map(s => s.Name || s).join(', ');
+        if (!series) return '';
+        const { name: title, backdropUrl, posterUrl, year, communityRating, episodeCount, description, officialRating: rating } = series;
+        const genres = (series.genres || []).join(', ');
+        const studios = (series.studios || []).map(s => s.Name).join(', ');
         const cast = (series.people || []).filter(p => p.Type === 'Actor').slice(0, 3).map(p => p.Name).join(', ');
 
         return `
             <section class="lf-series-hero">
-                <div class="lf-series-hero__backdrop" id="lfHeroBackdrop"
-                    style="background-image: url('${backdropUrl}');"></div>
+                <div class="lf-series-hero__backdrop" id="lfHeroBackdrop" style="background-image: url('${backdropUrl}');"></div>
                 
                 <div class="lf-series-hero__trailer" id="lfHeroTrailer">
                     <iframe id="lfTrailerIframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
@@ -848,12 +878,12 @@
 
                         <div class="lf-series-hero__meta">
                             ${year ? `<span>${year}</span><span>•</span>` : ''}
-                            <span>${rating}</span>
+                            <span>${rating || 'TV-14'}</span>
                             ${communityRating ? `
                                 <span>•</span>
                                 <div class="lf-series-hero__rating">
                                     <span class="material-icons">star</span>
-                                    <span>${communityRating}</span>
+                                    <span>${communityRating.toFixed(1)}</span>
                                 </div>
                             ` : ''}
                             ${episodeCount ? `<span>•</span><span>${episodeCount} Episodes</span>` : ''}
@@ -871,16 +901,17 @@
                             <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart" id="lfHeartBtn">
                                 <span class="material-icons">favorite_border</span>
                             </button>
+                            <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute">
+                                <span class="material-icons">volume_off</span>
+                            </button>
                         </div>
 
                         <div class="lf-series-hero__details">
-                            <div class="lf-series-hero__description">
-                                <p class="lf-series-hero__description-text" id="lfDescriptionText">${description}</p>
-                                <button class="lf-series-hero__load-more" id="lfLoadMoreBtn">
-                                    <span>Load more</span>
-                                    <span class="material-icons">expand_more</span>
-                                </button>
-                            </div>
+                            <p class="lf-series-hero__description-text" id="lfDescriptionText">${description || ''}</p>
+                            <button class="lf-series-hero__load-more" id="lfLoadMoreBtn">
+                                <span>Load more</span>
+                                <span class="material-icons">expand_more</span>
+                            </button>
                             <div class="lf-series-hero__cast-info">
                                 ${cast ? `<div><strong>Starring:</strong> ${cast}</div>` : ''}
                                 ${genres ? `<div><strong>Genres:</strong> ${genres}</div>` : ''}
@@ -898,12 +929,16 @@
      * @param {Array} seasons - Array of season objects
      * @param {number} selectedIndex - Currently selected season index
      */
-    function createSeasonSelector(seasons, selectedIndex = 0) {
-        const selectedSeason = seasons[selectedIndex];
+    function createSeasonSelector(seasons, currentSeasonId) {
+        // Handle single season case (Disable selector)
+        const isSingleSeason = seasons.length <= 1;
+
+        // Find selected season
+        const selectedSeason = seasons.find(s => s.id === currentSeasonId) || seasons[0];
         const selectedText = selectedSeason?.name || 'Season 1';
 
         const options = seasons.map((season, i) => `
-            <div class="lf-season-selector__option ${i === selectedIndex ? 'is-selected' : ''}" 
+            <div class="lf-season-selector__option ${season.id === currentSeasonId ? 'is-selected' : ''}"
                  data-season-id="${season.id}" data-season-index="${i}">
                 <span>${season.name}</span>
                 <span class="lf-season-selector__option-count">${season.episodeCount || 0} ep</span>
@@ -911,7 +946,7 @@
         `).join('');
 
         return `
-            <div class="lf-season-selector" id="lfSeasonSelector">
+            <div class="lf-season-selector ${isSingleSeason ? 'is-disabled' : ''}" id="lfSeasonSelector">
                 <button class="lf-season-selector__button">
                     <span id="lfSelectedSeasonText">${selectedText}</span>
                     <span class="material-icons">expand_more</span>
@@ -965,13 +1000,14 @@
      * Create episodes section HTML
      * @param {Array} seasons - Season data for selector
      * @param {Array} episodes - Episodes for current season
+     * @param {string} currentSeasonId - ID of current season
      */
-    function createEpisodesSection(seasons, episodes) {
+    function createEpisodesSection(seasons, episodes, currentSeasonId) {
         return `
             <hr class="lf-section-divider">
             <section class="lf-content-section" id="lfEpisodesSection">
                 <div class="lf-episodes-header">
-                    ${createSeasonSelector(seasons)}
+                    ${createSeasonSelector(seasons, currentSeasonId)}
                     <div class="lf-filter-controls">
                         <div class="lf-filter-dropdown" id="lfSortDropdown">
                             <button class="lf-filter-btn">
@@ -1244,29 +1280,25 @@
      * @param {HTMLElement} targetContainer - Container to inject into
      */
     function renderSeriesDetailPage(data, targetContainer) {
-        const { series, seasons, episodes, people, similar } = data;
+        const { series, seasons, episodes, people, similar, currentSeasonId } = data;
 
         injectStyles();
 
         // Build complete HTML
         const html = `
-            <div class="lf-series-container" id="${CONFIG.containerId}">
-                ${createHeroSection(series)}
-                ${createEpisodesSection(seasons, episodes)}
-                ${createCastSection(people)}
-                ${createSimilarSection(similar)}
-            </div>
+            ${createHeroSection(series)}
+            ${createEpisodesSection(seasons, episodes, currentSeasonId)}
+            ${createCastSection(people)}
+            ${createSimilarSection(similar)}
         `;
 
-        // Inject into target
         targetContainer.innerHTML = html;
 
-        // Attach event listeners
-        const container = document.getElementById(CONFIG.containerId);
-        attachEventListeners(container);
-
-        log('Series detail page rendered');
+        // Note: Event listeners are attached by the main 'wireUpButtons' function
+        // so we don't need to call attachEventListeners(targetContainer) here anymore
+        // to avoid duplicate logic.
     }
+
 
     // =========================================================================
     // API INTEGRATION (For Jellyfin)
@@ -1619,12 +1651,22 @@
                 return;
             }
 
-            // Fetch episodes for first season
-            const firstSeason = seasons[0];
-            const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+            // Fetch episodes for default season (Priority: Season 1 > First available)
+            // Filter out "Specials" (usually IndexNumber 0) if possible for default view
+            let defaultSeason = seasons[0];
+            const seasonOne = seasons.find(s => s.IndexNumber === 1);
+            if (seasonOne) {
+                defaultSeason = seasonOne;
+            } else {
+                // If no Season 1, try first non-special if exists
+                const nonSpecial = seasons.find(s => s.IndexNumber !== 0);
+                if (nonSpecial) defaultSeason = nonSpecial;
+            }
 
-            // Format people for display
-            const people = formatPeople(seriesData.people);
+            const episodes = await fetchEpisodes(seriesId, defaultSeason.id);
+
+            // Format people for display (Get more for scroll)
+            const people = formatPeople(seriesData.people, 20);
 
             // Store trailer info for button
             let trailerYtId = null;
@@ -1653,6 +1695,7 @@
             renderSeriesDetailPage({
                 series: seriesData,
                 seasons: seasons,
+                currentSeasonId: defaultSeason.id, // Pass current season ID
                 episodes: episodes,
                 people: people,
                 similar: similar
@@ -1676,6 +1719,21 @@
         const container = document.getElementById(CONFIG.containerId);
         if (!container) return;
 
+        // --- PLAYBACK HELPERS ---
+        const playItem = (itemId) => {
+            if (window.PlaybackManager) {
+                window.PlaybackManager.play({
+                    items: [itemId],
+                    startPositionTicks: 0
+                });
+            } else if (window.legitFlixPlay) {
+                window.legitFlixPlay(itemId);
+            } else {
+                // Fallback to navigation if no player
+                window.location.href = `#!/details?id=${itemId}`;
+            }
+        };
+
         // Watch Now button - plays first unwatched episode
         const watchNowBtn = container.querySelector('#lfWatchNowBtn');
         if (watchNowBtn) {
@@ -1694,21 +1752,16 @@
                     if (nextUpData.Items && nextUpData.Items.length > 0) {
                         episodeId = nextUpData.Items[0].Id;
                     } else {
-                        // Play first episode
-                        const firstSeason = seasons[0];
-                        const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+                        // Play first episode of first season (find S1 again to be safe)
+                        const seasonOne = seasons.find(s => s.IndexNumber === 1) || seasons[0];
+                        const episodes = await fetchEpisodes(seriesId, seasonOne.id);
                         if (episodes.length > 0) {
                             episodeId = episodes[0].id;
                         }
                     }
 
                     if (episodeId) {
-                        // Use existing playback helper if available
-                        if (window.legitFlixPlay) {
-                            window.legitFlixPlay(episodeId);
-                        } else {
-                            window.location.href = `#!/details?id=${episodeId}`;
-                        }
+                        playItem(episodeId);
                     }
                 } catch (e) {
                     log('Error playing:', e);
@@ -1716,21 +1769,51 @@
             });
         }
 
-        // Trailer button
+        // Trailer button & Mute logic
         const trailerBtn = container.querySelector('#lfTrailerBtn');
         const trailerContainer = container.querySelector('#lfHeroTrailer');
         const trailerIframe = container.querySelector('#lfTrailerIframe');
         const backdrop = container.querySelector('#lfHeroBackdrop');
+        const muteBtn = container.querySelector('#lfMuteBtn');
 
         if (trailerBtn && trailerYtId) {
             trailerBtn.addEventListener('click', () => {
                 log('Trailer clicked, YT ID:', trailerYtId);
                 if (trailerIframe && trailerContainer) {
-                    trailerIframe.src = buildYoutubeEmbedUrl(trailerYtId);
+                    // Clean Embed URL (No controls, mute, loop, minimal UI)
+                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&playlist=${trailerYtId}&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1`;
+                    trailerIframe.src = embedUrl;
                     trailerContainer.classList.add('is-playing');
                     if (backdrop) backdrop.style.opacity = '0';
+
+                    // Show mute button
+                    if (muteBtn) {
+                        muteBtn.style.display = 'flex';
+                        muteBtn.classList.add('is-muted'); // Default is muted
+                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                    }
                 }
             });
+
+            // Mute Button Logic
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    const isMuted = muteBtn.classList.contains('is-muted');
+                    // Toggle state
+                    if (isMuted) {
+                        // Unmute
+                        trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+                        muteBtn.classList.remove('is-muted');
+                        muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+                    } else {
+                        // Mute
+                        trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+                        muteBtn.classList.add('is-muted');
+                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                    }
+                });
+            }
+
         } else if (trailerBtn && !trailerYtId) {
             // No trailer available - hide or disable button
             trailerBtn.style.opacity = '0.5';
@@ -1776,11 +1859,7 @@
             card.addEventListener('click', function () {
                 const episodeId = this.dataset.episodeId;
                 log('Episode clicked:', episodeId);
-                if (window.legitFlixPlay) {
-                    window.legitFlixPlay(episodeId);
-                } else {
-                    window.location.href = `#!/details?id=${episodeId}`;
-                }
+                playItem(episodeId);
             });
         });
 
@@ -1799,27 +1878,24 @@
             opt.addEventListener('click', async function () {
                 const seasonId = this.dataset.seasonId;
                 const seasonIndex = parseInt(this.dataset.seasonIndex);
-                log('Season changed:', seasonId);
+
+                // Update dropdown UI
+                const dropdown = this.closest('.lf-season-selector');
+                const trigger = dropdown.querySelector('.lf-season-selector__trigger span');
+                trigger.textContent = this.textContent;
+                dropdown.classList.remove('is-open');
+
+                log(`Season changed to: ${seasonIndex} (${seasonId})`);
 
                 // Fetch new episodes
                 const episodes = await fetchEpisodes(seriesId, seasonId);
 
-                // Re-render episode grid
-                const episodeGrid = container.querySelector('.lf-episode-grid');
-                if (episodeGrid) {
-                    episodeGrid.innerHTML = createEpisodeGrid(episodes).replace('<div class="lf-episode-grid">', '').replace('</div>', '');
-
-                    // Re-attach click handlers
-                    container.querySelectorAll('.lf-episode-card').forEach(card => {
-                        card.addEventListener('click', function () {
-                            const episodeId = this.dataset.episodeId;
-                            if (window.legitFlixPlay) {
-                                window.legitFlixPlay(episodeId);
-                            } else {
-                                window.location.href = `#!/details?id=${episodeId}`;
-                            }
-                        });
-                    });
+                // Re-render grid using existing container
+                const episodesGrid = container.querySelector('.lf-episodes-grid');
+                if (episodesGrid) {
+                    // Clear existing content explicitly
+                    episodesGrid.innerHTML = '';
+                    renderEpisodeGrid(episodes, episodesGrid);
                 }
             });
         });
