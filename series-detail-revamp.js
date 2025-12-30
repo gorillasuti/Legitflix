@@ -749,6 +749,63 @@
             overflow: hidden;
         }
 
+        /* BULK EDIT STYLES */
+        .lf-episode-checkbox {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease;
+            z-index: 10;
+            pointer-events: none; /* Let parent handle click */
+        }
+        
+        .lf-episode-checkbox .material-icons {
+            font-size: 18px;
+            color: white;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+        }
+
+        .lf-episode-card.is-selecting-mode .lf-episode-checkbox {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .lf-episode-card.is-selected .lf-episode-checkbox {
+            background: var(--clr-accent);
+            border-color: var(--clr-accent);
+        }
+
+        .lf-episode-card.is-selected .lf-episode-checkbox .material-icons {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .lf-episode-card.is-selected {
+            box-shadow: 0 0 0 2px var(--clr-accent);
+        }
+        
+        .lf-episode-card.is-watched .lf-episode-card__thumbnail {
+             opacity: 0.6;
+        }
+        
+        /* Disable hover play icon in selection mode */
+        .lf-episode-card.is-selecting-mode:hover .lf-episode-card__play-icon {
+            opacity: 0;
+        }
+
+
         /* ============================================
            CAST SECTION
            ============================================ */
