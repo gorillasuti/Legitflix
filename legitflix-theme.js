@@ -2391,91 +2391,84 @@ window.ensurePasswordForm = function () {
 // The hashchange cleanup logic is removed as the new monitor loop handles state.
 
 
-// --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
-function renameMyList() {
-    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
-        let text = el.innerText.trim();
+// --- REBUILD HOME SECTIONS (Rename & Custom Content) ---
+async function processHomeSections() {
+    const auth = await getAuth();
+    if (!auth) return;
+
+    // Standard Jellyfin Sections
+    const sections = document.querySelectorAll('.verticalSection');
+
+    for (const section of sections) {
+        // Find Title Element
+        const titleEl = section.querySelector('.sectionTitle');
+        if (!titleEl) continue;
+
+        let text = titleEl.innerText.trim();
         const lowerText = text.toLowerCase();
-        let newText = null;
 
-        // 1. My List / My Media -> Categories
+        // 1. Rename "My Media" -> "Categories"
         if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
-            newText = 'Categories';
+            titleEl.innerText = 'Categories';
         }
-        // 2. Next Up -> History
+        // 2. Rename "Next Up" -> "History"
         else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
-            newText = 'History';
+            titleEl.innerText = 'History';
         }
-        // 3. Recently Added in [Type] -> Latest [Type]
+        // 3. REBUILD "Recently Added" -> "Latest [Type]"
         else if (lowerText.startsWith('recently added in ')) {
-            // "Recently Added in " is 18 chars
-            const type = text.substring(18);
-            newText = `Latest ${type}`;
-        }
+            const libraryName = text.substring(18); // "Recently Added in Anime" -> "Anime"
+            const newTitle = `Latest ${libraryName}`;
 
-        if (newText) {
-            el.innerText = newText;
-            // Also update the link if it exists for tooltip/accessibility
-            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
-            if (parent) {
-                const link = parent.querySelector('a');
-                if (link) link.setAttribute('title', newText);
-            }
-        }
-    });
-}
-// Run initially and on mutation
-renameMyList();
+            // Avoid re-processing if already done
+            if (section.dataset.processed === libraryName) continue;
+            section.dataset.processed = libraryName; // Mark as done
 
-// --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
-function fixMixedCards() {
-    // Find Backdrops that should be Posters (Movies/Series)
-    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
-    const cards = document.querySelectorAll(selector);
+            titleEl.innerText = newTitle;
 
-    cards.forEach(card => {
-        // 1. Swap Card Class (Backdrop -> Portrait)
-        // This fixes dimensions and grid layout
-        card.classList.remove('overflowBackdropCard');
-        card.classList.add('overflowPortraitCard');
+            // Update Link Tooltip
+            const link = section.querySelector('a');
+            if (link) link.setAttribute('title', newTitle);
 
-        // 2. Swap Padder Class
-        const padder = card.querySelector('.cardPadder-overflowBackdrop');
-        if (padder) {
-            padder.classList.remove('cardPadder-overflowBackdrop');
-            padder.classList.add('cardPadder-overflowPortrait');
-        }
+            // FETCH & INJECT CUSTOM CONTENT
+            // We need the View ID. Often hard to get from DOM.
+            // But we can search by Name in user views.
+            try {
+                const views = await fetchUserViews();
+                const targetView = views.find(v => v.Name === libraryName);
 
-        // 3. Swap Image URL (Thumb -> Primary)
-        // This gets the correct Poster image from server
-        const imgContainer = card.querySelector('.cardImageContainer');
-        if (imgContainer) {
-            const style = imgContainer.getAttribute('style') || '';
-            // Improved Lazy-Loader Fighting Logic
-            const swapImage = () => {
-                const s = imgContainer.getAttribute('style') || '';
-                if (s.includes('Images/Thumb')) {
-                    // Replace Thumb with Primary
-                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
-                    if (s !== ns) imgContainer.setAttribute('style', ns);
+                if (targetView) {
+                    const limit = 10;
+                    const url = `/Users/${auth.UserId}/Items?ParentId=${targetView.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=${limit}&Fields=PrimaryImageAspectRatio,Overview,UserData,CommunityRating,ProductionYear`;
+
+                    const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                    const data = await res.json();
+
+                    if (data.Items && data.Items.length > 0) {
+                        // Find Container
+                        const itemsContainer = section.querySelector('.itemsContainer');
+                        if (itemsContainer) {
+                            // CLEAR existing content (Episodes/Mixed)
+                            itemsContainer.innerHTML = '';
+
+                            // Inject Custom Cards
+                            itemsContainer.innerHTML = createNativeCards(data.Items) + createViewAllCard(targetView.Id, targetView.Name);
+
+                            // Reset Scroll
+                            itemsContainer.scrollLeft = 0;
+                        }
+                    }
                 }
-            };
-
-            // Run immediately
-            swapImage();
-
-            // Observe for lazy loader changes
-            if (!imgContainer._observerAttached) {
-                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
-                imgContainer._observerAttached = true;
+            } catch (e) {
+                console.error('[LegitFlix] Failed to rebuild section:', libraryName, e);
             }
         }
-    });
+    }
 }
 
-// Run initially and on mutation
-renameMyList();
-fixMixedCards();
+// Loop to handle lazy loading of sections
+setInterval(processHomeSections, 2000);
+setTimeout(processHomeSections, 100);
 // --- INJECT DYNAMIC PROMO BANNER (Crunchyroll Style) ---
 let _promoInjectionInProgress = false; // Guard for race conditions
 let _injectedBanner = false; // Track if banner already injected
