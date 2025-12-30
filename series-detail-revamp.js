@@ -1358,7 +1358,18 @@
                     if (window.SubtitleEditor) {
                         window.SubtitleEditor.show(targetId);
                     }
-                    // 2. Try to find the module directly if global is missing
+                    // 2. Try RequireJS (Jellyfin standard)
+                    else if (window.require) {
+                        window.require(['subtitleeditor'], (SubtitleEditor) => {
+                            if (SubtitleEditor && SubtitleEditor.show) {
+                                SubtitleEditor.show(targetId);
+                            } else {
+                                // Try finding in global scope after require?
+                                console.log('SubtitleEditor loaded but API mismatch', SubtitleEditor);
+                            }
+                        });
+                    }
+                    // 3. Try to find the module directly if global is missing
                     else {
                         try {
                             // Try multiple common paths for the module
@@ -1367,14 +1378,14 @@
                             if (!mod) try { mod = await import('controllers/subtitleeditor'); } catch (e) { }
 
                             if (mod && mod.show) {
-                                mod.show(seriesId);
+                                mod.show(targetId);
                             } else {
                                 console.log('SubtitleEditor module not found, falling back to route');
-                                window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                                window.location.hash = `!/subtitleeditor?id=${targetId}`;
                             }
                         } catch (e) {
                             console.log('Error loading SubtitleEditor, using route fallback', e);
-                            window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                            window.location.hash = `!/subtitleeditor?id=${targetId}`;
                         }
                     }
                 }
@@ -1477,7 +1488,9 @@
         // Season selection UI (Update text & close)
         if (seasonSelector) {
             seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
-                opt.addEventListener('click', async function () {
+                opt.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('[DEBUG] Season Option Clicked:', this.dataset.seasonId);
 
                     // Update selected state
@@ -1586,6 +1599,19 @@
         // Enforce grid styles on initial load
         const initialGrid = container.querySelector('.lf-episode-grid');
         if (initialGrid) enforceGridStyles(initialGrid);
+
+        // Parent Observer: Watch for Grid Replacements
+        const episodesSection = container.querySelector('#lfEpisodesSection');
+        if (episodesSection) {
+            const parentObserver = new MutationObserver((mutations) => {
+                const newGrid = episodesSection.querySelector('.lf-episode-grid');
+                if (newGrid && newGrid !== initialGrid) {
+                    console.log('[DEBUG] Grid replacement detected, re-enforcing styles');
+                    enforceGridStyles(newGrid);
+                }
+            });
+            parentObserver.observe(episodesSection, { childList: true, subtree: true });
+        }
 
         log('Series detail page rendered');
     }
