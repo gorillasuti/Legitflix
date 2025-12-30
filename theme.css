@@ -1243,7 +1243,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Form Inputs */
 .formDialog .inputContainer,
 .formDialog .selectContainer {
-    margin-bottom: 16px !important;
+    margin-bottom: 0px !important;
 }
 
 .formDialog .emby-input,
