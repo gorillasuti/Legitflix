@@ -2496,31 +2496,41 @@
             return;
         }
 
-        const seriesId = getSeriesIdFromUrl();
-        if (!seriesId || seriesId === currentSeriesId || isInjecting) return;
+        if (isInjecting) return;
 
-        // Wait for page container
+        const seriesId = getSeriesIdFromUrl();
+        // Strict check: Must have ID and NOT be skipped
+        if (!seriesId || seriesId === currentSeriesId) return;
+
+        // Wait for page container - STRICT SELECTION
+        // Do NOT use [data-type="Series"] alone as it matches cards on Home Page
         const detailPage = document.querySelector('.itemDetailPage') ||
             document.querySelector('.detailPageContent');
-        if (!detailPage) return;
+
+        if (!detailPage) {
+            // log('[LF-Series] No detail container found, waiting...');
+            return;
+        }
 
         // Check if it's actually a Series (not Movie/Episode)
-        const typeElement = document.querySelector('[data-type]');
-        const itemType = typeElement?.dataset?.type;
-
-        // We need to verify this is a Series via API since DOM may not be reliable
+        // Verify via API to be 100% sure
         const auth = await getAuth();
         if (!auth || !isSeriesDetailPage()) return;
 
         try {
             const checkUrl = `/Users/${auth.UserId}/Items/${seriesId}`;
             const checkRes = await fetch(checkUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+
+            if (!checkRes.ok) throw new Error('Item check failed');
+
             const itemData = await checkRes.json();
 
             if (itemData.Type !== 'Series') {
-                return; // Not a series, don't inject
+                log('[LF-Series] Item is not a Series (' + itemData.Type + '), skipping.');
+                return; // Strictly exit if not Series
             }
         } catch (e) {
+            log('[LF-Series] Error checking item type:', e);
             return;
         }
 
