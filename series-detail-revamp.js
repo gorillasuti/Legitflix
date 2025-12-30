@@ -606,6 +606,9 @@
             color: inherit;
             transition: all 0.25s ease;
             cursor: pointer;
+            grid-column: auto !important; /* Force auto placement in grid */
+            min-width: 0; /* Prevent grid blowout */
+            width: 100%;
         }
 
         .lf-episode-card:hover {
