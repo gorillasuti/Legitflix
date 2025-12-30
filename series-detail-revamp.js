@@ -1118,11 +1118,20 @@
      * @param {Array} episodes - Episodes for current season
      */
     function createEpisodesSection(seasons, episodes) {
-        // Extract streams from the first episode if available
+        // Find first unwatched episode to use as "representative" for languages/subtitles
+        // and for the Edit Subtitles target (which usually requires a video item, not series)
+        let targetEpisode = null;
+        if (episodes && episodes.length > 0) {
+            targetEpisode = episodes.find(e => !e.userData?.Played) || episodes[0];
+        }
+
         let audioStreams = [];
         let subtitleStreams = [];
-        if (episodes && episodes.length > 0 && episodes[0].MediaSources && episodes[0].MediaSources.length > 0) {
-            const source = episodes[0].MediaSources[0]; // Usually use the first source
+        let targetEpisodeId = null;
+
+        if (targetEpisode && targetEpisode.MediaSources && targetEpisode.MediaSources.length > 0) {
+            targetEpisodeId = targetEpisode.id; // Store ID for Edit Button
+            const source = targetEpisode.MediaSources[0];
             if (source.MediaStreams) {
                 audioStreams = source.MediaStreams.filter(s => s.Type === 'Audio');
                 subtitleStreams = source.MediaStreams.filter(s => s.Type === 'Subtitle');
