@@ -1447,6 +1447,7 @@
             modal.classList.remove('hide');
             modal.classList.add('opened');
             modal.dataset.episodeId = episodeId;
+            document.body.style.overflow = 'hidden'; // Lock scroll
 
             // Load initial data for selectors
             // Verify we have seasons access
@@ -1899,16 +1900,14 @@
             modal.querySelector('.btnCancel').addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                modal.classList.add('hide');
-                modal.classList.remove('opened');
+                this.closeModal(modal);
             });
 
             // Click outside (Overlay click)
             modal.addEventListener('click', (e) => {
                 // Close if the click is NOT inside the dialog content box (.focuscontainer)
                 if (!e.target.closest('.focuscontainer')) {
-                    modal.classList.add('hide');
-                    modal.classList.remove('opened');
+                    this.closeModal(modal);
                 }
             });
 
@@ -1920,6 +1919,12 @@
                 const episodeId = modal.dataset.episodeId;
                 this.searchSubtitles(episodeId, lang);
             });
+        },
+
+        closeModal(modal) {
+            modal.classList.add('hide');
+            modal.classList.remove('opened');
+            document.body.style.overflow = ''; // Restore scroll
         }
     };
 
@@ -3184,6 +3189,7 @@
         });
 
         // Season selector - reload episodes when changed
+        const seasonOptions = container.querySelectorAll('.lf-season-selector__option');
         seasonOptions.forEach(opt => {
             opt.addEventListener('click', async function (e) {
                 e.preventDefault();
