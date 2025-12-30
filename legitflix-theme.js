@@ -276,8 +276,8 @@ async function fetchMediaBarItems(retryCount = 0) {
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres,MediaStreams,UserData';
 
-    // User Request: "Latest 10 items after promo (3)" -> Fetch 24, Slice 10 items
-    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=24&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
+    // User Request: "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
+    const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
         const response = await fetch(url, {
@@ -300,8 +300,8 @@ async function fetchMediaBarItems(retryCount = 0) {
         logger.log('fetchMediaBarItems: Downloaded items', allItems.length);
 
         // Safety: If fewer than 3 items, just show what we have (or empty).
-        // If > 3, slice 3 to 13 (Next 10).
-        const validItems = allItems.length > 3 ? allItems.slice(3, 13) : allItems;
+        // If > 3, slice 3 to 9 (Next 6).
+        const validItems = allItems.length > 3 ? allItems.slice(3, 9) : allItems;
 
         // --- ENRICHMENT: Fetch NEXT UP for Series ---
         for (const item of validItems) {
@@ -3033,6 +3033,7 @@ const observer = new MutationObserver((mutations) => {
     if (typeof renameMyList === 'function') renameMyList();
     if (typeof fixMixedCards === 'function') fixMixedCards();
     if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+    if (typeof enhanceLatestSections === 'function') enhanceLatestSections(); // NEW: Custom Latest Sections
 
     injectPromoBanner();
     tagNativeSections();
