@@ -1449,7 +1449,12 @@
             modal.dataset.episodeId = episodeId;
 
             // Load initial data for selectors
-            await this.populateSeasons(modal, episodeId);
+            // Verify we have seasons access
+            const seasonsList = (typeof seasons !== 'undefined') ? seasons :
+                (typeof data !== 'undefined' && data.seasons) ? data.seasons :
+                    window.LF_CURRENT_SEASONS || [];
+
+            await this.populateSeasons(modal, episodeId, seasonsList);
 
             // Load subtitles
             await this.loadCurrentSubtitles(episodeId);
@@ -1461,30 +1466,32 @@
             }
         },
 
-        async populateSeasons(modal, currentEpisodeId) {
+        async populateSeasons(modal, currentEpisodeId, seasonsList) {
             const seasonSelect = modal.querySelector('#lfSubSeasonSelect');
             if (!seasonSelect) return;
 
             seasonSelect.innerHTML = '';
 
-            // Use 'seasons' from renderSeriesDetailPage scope
-            seasons.forEach(s => {
+            seasonsList.forEach(s => {
                 const opt = document.createElement('option');
-                opt.value = s.Id;
-                opt.textContent = s.Name;
+                opt.value = s.id || s.Id;
+                opt.textContent = s.name || s.Name;
                 seasonSelect.appendChild(opt);
             });
 
-            // Identify current season from episode ID?
-            // Since we don't have a direct map here, we might rely on the currently selected season in the main UI
-            // OR find it. For now, defaulting to current UI season is safer.
+            // "Fetch season 01 EP 01 as default always" (or smart default)
+            // If currentEpisodeId is provided, try to find its season?
+            // Since we don't have an easy map, let's try to grab from UI first, then fallback to S1
+
             const currentUISeasonStr = document.querySelector('.lf-season-selector__option.is-selected')?.dataset.seasonId;
-            if (currentUISeasonStr) {
+
+            if (currentUISeasonStr && seasonsList.find(s => (s.id || s.Id) == currentUISeasonStr)) {
                 seasonSelect.value = currentUISeasonStr;
                 await this.updateEpisodesForSeason(modal, currentUISeasonStr, currentEpisodeId);
-            } else if (seasons.length > 0) {
-                seasonSelect.value = seasons[0].Id;
-                await this.updateEpisodesForSeason(modal, seasons[0].Id, currentEpisodeId);
+            } else if (seasonsList.length > 0) {
+                // Default to First Season (S1)
+                seasonSelect.value = seasonsList[0].id || seasonsList[0].Id;
+                await this.updateEpisodesForSeason(modal, seasonSelect.value, currentEpisodeId || null);
             }
         },
 
@@ -1526,8 +1533,8 @@
                              style="animation: 180ms ease-out 0s 1 normal both running scaleup; max-width: 800px; margin: 5vh auto; background: var(--color-background-secondary, #1c1c1c); border-radius: var(--radius-lg, 12px);">
                             
                             <div class="formDialogHeader" style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <button class="btnCancel" tabindex="-1" title="Back" style="background:none; border:none; color:inherit; cursor:pointer; padding: 8px; border-radius: 50%;">
-                                    <span class="material-icons" aria-hidden="true" style="font-size: 24px;">arrow_back</span>
+                                <button class="btnCancel" tabindex="-1" title="Close" style="background:none; border:none; color:inherit; cursor:pointer; padding: 8px; border-radius: 50%;">
+                                    <span class="material-icons" aria-hidden="true" style="font-size: 24px;">close</span>
                                 </button>
                                 <h3 class="formDialogHeaderTitle" style="margin: 0 0 0 16px; font-size: 1.2rem; font-weight: 600;">Subtitles</h3>
                             </div>
@@ -1545,7 +1552,7 @@
                                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
                                     
                                     <!-- TARGET INFO BOX -->
-                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc); display: none;">
+                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc);">
                                         Fetching episode info...
                                     </div>
 
@@ -1879,14 +1886,18 @@
                 this.loadCurrentSubtitles(newEpId);
             });
 
-            // Close
-            modal.querySelector('.btnCancel').addEventListener('click', () => {
+            // Close (Cancel Button)
+            modal.querySelector('.btnCancel').addEventListener('click', (e) => {
+                e.stopPropagation();
                 modal.classList.add('hide');
                 modal.classList.remove('opened');
             });
-            // Click outside
+
+            // Click outside (Overlay click)
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
+                // Close if clicking overlay OR dialogContainer (the wrapper around the dialog box)
+                // But NOT if clicking inside the dialog box itself (.focuscontainer)
+                if (e.target === modal || e.target.classList.contains('dialogContainer')) {
                     modal.classList.add('hide');
                     modal.classList.remove('opened');
                 }
@@ -2518,6 +2529,10 @@
 
             // Fetch episodes for first season
             const firstSeason = seasons[0];
+
+            // Expose seasons globally for SubtitleManager fallback
+            window.LF_CURRENT_SEASONS = seasons;
+
             const episodes = await fetchEpisodes(seriesId, firstSeason.id);
 
             // Format people for display
@@ -2996,10 +3011,15 @@
                     try {
                         const updates = Array.from(allCards).map(card => {
                             const itemId = card.dataset.episodeId;
-                            card.classList.add('is-success-marked');
+
                             if (seasonAction === 'unwatch') {
+                                // Optimistic: remove watched state immediately
+                                card.classList.remove('is-watched');
+                                card.classList.remove('is-success-marked');
                                 return window.ApiClient.markUnplayed(auth.UserId, itemId);
                             } else {
+                                // Optimistic: add success mark
+                                card.classList.add('is-success-marked');
                                 return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
                             }
                         });
@@ -3038,10 +3058,13 @@
                         selectedEpisodes.forEach(id => {
                             const card = container.querySelector(`.lf-episode-card[data-episode-id="${id}"]`);
                             if (card) {
-                                card.classList.add('is-success-marked');
-                                // Update watched status immediately for visual feedback before refresh
-                                if (actionType === 'unwatch') card.classList.remove('is-watched');
-                                else card.classList.add('is-watched');
+                                if (actionType === 'unwatch') {
+                                    card.classList.remove('is-watched');
+                                    card.classList.remove('is-success-marked');
+                                } else {
+                                    card.classList.add('is-success-marked');
+                                    card.classList.add('is-watched');
+                                }
                             }
                         });
 
