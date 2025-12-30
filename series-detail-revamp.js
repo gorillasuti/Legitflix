@@ -2150,7 +2150,7 @@
 
         try {
             const fields = 'Overview,PrimaryImageAspectRatio,UserData,RunTimeTicks,MediaSources';
-            const url = `/Shows/${seriesId}/Episodes?SeasonId=${seasonId}&UserId=${auth.UserId}&Fields=${fields}`;
+            const url = `/Shows/${seriesId}/Episodes?SeasonId=${seasonId}&UserId=${auth.UserId}&Fields=${fields}&_t=${Date.now()}`;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
             });
