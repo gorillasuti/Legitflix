@@ -2517,6 +2517,32 @@
             heroSection?.addEventListener('mousemove', resetHideTimer);
             heroSection?.addEventListener('click', resetHideTimer);
 
+            // YouTube Blocking Detection
+            let blockedTimeout;
+            let messageHandler;
+
+            const showBlockedModal = () => {
+                const modalId = 'lfBlockedModal';
+                if (document.getElementById(modalId)) return;
+
+                const html = `
+                    <div id="${modalId}" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 11000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+                        <div style="background: #1c1c1c; padding: 30px; border-radius: 12px; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                            <span class="material-icons" style="font-size: 48px; color: #ff5252; margin-bottom: 20px;">block</span>
+                            <h3 style="font-size: 1.2rem; margin-bottom: 10px; color: white;">Content blocked by browser</h3>
+                            <p style="color: rgba(255,255,255,0.7); margin-bottom: 24px; line-height: 1.5;">The trailer cannot be played because your browser blocked it. This usually happens due to tracking protection or ad blockers affecting the YouTube player.</p>
+                            <button id="lfCloseBlockedBtn" style="background: var(--clr-accent, #00a4dc); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">Close</button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', html);
+                document.getElementById('lfCloseBlockedBtn').addEventListener('click', () => {
+                    document.getElementById(modalId).remove();
+                    // Also stop the trailer state
+                    if (trailerBtn.click) trailerBtn.click(); // Trigger stop logic
+                });
+            };
+
             trailerBtn.addEventListener('click', () => {
                 const isPlaying = trailerContainer.classList.contains('is-playing');
 
@@ -2527,6 +2553,10 @@
                     heroSection?.classList.remove('is-clean-view');
                     clearTimeout(hideUITimeout);
 
+                    // Clear detection logic
+                    clearTimeout(blockedTimeout);
+                    if (messageHandler) window.removeEventListener('message', messageHandler);
+
                     if (backdrop) backdrop.style.opacity = '1';
 
                     // Reset Button
@@ -2535,23 +2565,24 @@
                         <span>Watch Trailer</span>
                      `;
 
-                    // Allow UI to show
-                    resetHideTimer();
-
-                    // Hide Mute (since we removed logic, ensure it's hidden)
-                    if (muteBtn) muteBtn.style.display = 'none';
-
+                    // Hide Mute
+                    if (muteBtn) {
+                        muteBtn.style.display = 'none';
+                        muteBtn.classList.remove('is-muted');
+                    }
                 } else {
                     // PLAY TRAILER
                     log('Trailer clicked, YT ID:', trailerYtId);
                     if (trailerIframe && trailerContainer) {
-                        // Update Iframe Attributes - Simple
+                        // Update Iframe Attributes (Exact match)
                         trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                        trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
-                        // Simple Embed URL (No JS API to avoid blocking)
-                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&playlist=${trailerYtId}&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1`;
+                        const origin = window.location.origin;
+                        // Embed URL with Origin for API reliability
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}&widget_referrer=${origin}`;
+
                         trailerIframe.src = embedUrl;
-
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
 
@@ -2564,14 +2595,58 @@
                             <span>Stop Trailer</span>
                         `;
 
-                        // Hide mute button (not supported without JS API in this rollback)
-                        if (muteBtn) muteBtn.style.display = 'none';
+                        // Show mute button explicity and force display
+                        if (muteBtn) {
+                            muteBtn.style.display = 'flex';
+                            muteBtn.style.zIndex = '100'; // Ensure visibility
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
+
+                        // Setup Blocking Detection
+                        // If we don't get ANY message from the iframe in 3.5s, assume blocked
+                        // (YouTube API sends messages on load)
+                        let receivedMessage = false;
+
+                        messageHandler = (event) => {
+                            // Check source (if possible) or just assume any YT message validates it
+                            // YouTube messages are usually strings like '{"event":"infoDelivery"...}'
+                            if (typeof event.data === 'string' && event.data.includes('infoDelivery')) {
+                                receivedMessage = true;
+                                clearTimeout(blockedTimeout);
+                            }
+                        };
+                        window.addEventListener('message', messageHandler);
+
+                        blockedTimeout = setTimeout(() => {
+                            if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
+                                log('Possible block detected: No YT API message received');
+                                showBlockedModal();
+                            }
+                        }, 3500);
                     }
                 }
             });
 
-            // Remove Mute Button Listener Logic (Commented out/Removed)
-            // if (muteBtn) { ... }
+            // Mute Button Logic
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    const isMuted = muteBtn.classList.contains('is-muted');
+                    // Need to post message to correct origin
+                    const targetOrigin = '*';
+                    if (trailerIframe.contentWindow) {
+                        if (isMuted) {
+                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), targetOrigin);
+                            muteBtn.classList.remove('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+                        } else {
+                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), targetOrigin);
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
+                    }
+                });
+            }
 
         } else if (trailerBtn && !trailerYtId) {
             // No trailer available - hide or disable button
