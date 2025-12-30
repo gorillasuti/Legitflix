@@ -2611,9 +2611,16 @@
         if (watchNowBtn) {
 
             // Logic to determine state and text
-            const updateWatchButton = async () => {
+            const updateWatchButton = async (retryCount = 0) => {
+                log('[WatchBtn] updateWatchButton called. Retry:', retryCount);
+
                 const auth = await getAuth();
-                if (!auth) return;
+                if (!auth) {
+                    if (retryCount < 3) {
+                        setTimeout(() => updateWatchButton(retryCount + 1), 500);
+                    }
+                    return;
+                }
 
                 try {
                     // Check Series Played Status
@@ -3245,7 +3252,7 @@
                 // Touch events
                 card.addEventListener('touchstart', startLongPress, { passive: true });
                 card.addEventListener('touchend', cancelLongPress);
-                card.addEventListener('touchmove', cancelLongPress);
+                card.addEventListener('touchmove', cancelLongPress, { passive: true });
 
                 card.addEventListener('click', function (e) {
                     if (preventClick) {
