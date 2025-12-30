@@ -2992,78 +2992,108 @@ async function fixLatestEpisodes() {
 }
 
 
-
-// 4. OVERRIDE LATEST SECTION (Fetch Top 10 including Watched)
+// 3. OVERRIDE LATEST SECTION (Fetch 10 Items, Include Watched, Fix Layout)
 async function overrideLatestSection() {
     const sections = document.querySelectorAll('.verticalSection');
 
     for (const section of sections) {
+        // 1. Validate "Latest" Section
         const titleEl = section.querySelector('.sectionTitle');
         if (!titleEl) continue;
 
         const title = titleEl.innerText.toLowerCase();
-        // Specifically target "Latest" sections
-        if ((title.includes('latest') || title.includes('recently added')) && !title.includes('history')) {
-            // Check if we already patched this section
-            if (section.getAttribute('data-latest-overridden') === 'true') continue;
+        const isLatest = (title.includes('latest') || title.includes('recently')) &&
+            !title.includes('continue') &&
+            !title.includes('next up') &&
+            !title.includes('history');
 
-            // Mark as processing to prevent dupes, but only if we successfully inject content?
-            // Safer to mark it now so we don't spam fetch.
-            section.setAttribute('data-latest-overridden', 'true');
+        if (!isLatest) continue;
 
-            try {
-                const userId = window.ApiClient.getCurrentUserId();
-                // 1. Fetch 10 Most Recent Items (Series/Movies)
-                // Filter by Recursive=true to get everything in library
-                // IncludeItemTypes=Series,Movie to skip Episodes
-                const itemsUrl = `/Users/${userId}/Items?SortBy=DateCreated&SortOrder=Descending&Limit=10&Recursive=true&IncludeItemTypes=Series,Movie&Fields=PrimaryImageAspectRatio,CanDelete,BasicSyncInfo,MediaSourceCount`;
+        // 2. Prevent Double Injection
+        if (section.dataset.customLatest === 'true') continue;
 
-                const response = await fetch(itemsUrl, {
-                    headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
-                });
-                const data = await response.json();
+        // 3. Determine Parent ID (Library)
+        // Try to find a link in the header: #!/list.html?parentId=XXXX
+        let parentId = null;
+        const link = section.querySelector('.sectionTitleContainer a'); // or .sectionHeader a
+        if (link) {
+            const href = link.getAttribute('href');
+            if (href) {
+                const match = href.match(/parentId=([a-zA-Z0-9]+)/);
+                if (match && match[1]) parentId = match[1];
+            }
+        }
 
-                if (data.Items && data.Items.length > 0) {
-                    const container = section.querySelector('.itemsContainer');
-                    if (container) {
-                        // Generate HTML for cards
-                        const cardHtml = data.Items.map(item => {
-                            const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-                            const linkUrl = `#!/details?id=${item.Id}`;
+        // 4. Fetch Data
+        try {
+            section.dataset.customLatest = 'true'; // Mark in progress
 
-                            // Standard Jellyfin Card Markup
-                            return `
-                                <div class="card overflowPortraitCard card-hoverable card-with-userdata" data-id="${item.Id}" data-type="${item.Type}" style="margin: 6px;">
-                                    <div class="cardBox visualCardBox">
-                                        <div class="cardScalable visualCardBox-cardScalable" style="background-color: transparent;">
-                                            <div class="cardPadder cardPadder-overflowPortrait"></div>
-                                            <a class="cardContent cardImageContainer itemAction" href="${linkUrl}" style="background-image: url('${imgUrl}'); background-position: center center; background-size: cover; aspect-ratio: 2/3;">
-                                            </a>
-                                            <div class="cardOverlayContainer itemAction" href="${linkUrl}"></div>
-                                        </div>
-                                        <div class="cardFooter visualCardBox-cardFooter">
-                                            <div class="cardText cardTextCentered" style="text-align: center; padding: 5px;">${item.Name}</div>
-                                            <!-- Optional Year -->
-                                            ${item.ProductionYear ? `<div class="cardText cardTextCentered cardText-secondary" style="text-align: center; font-size: 0.85em; opacity: 0.7;">${item.ProductionYear}</div>` : ''}
-                                        </div>
+            const userId = window.ApiClient.getCurrentUserId();
+            const query = {
+                SortBy: "DateCreated",
+                SortOrder: "Descending",
+                IncludeItemTypes: "Series,Movie",
+                Recursive: true,
+                Limit: 10,
+                Fields: "PrimaryImageAspectRatio,BasicSyncInfo",
+                ImageTypeLimit: 1,
+                EnableImageTypes: "Primary,Backdrop,Thumb",
+                // If parentId is found, scope to it. Otherwise global.
+                ...(parentId ? { ParentId: parentId } : {})
+            };
+
+            const data = await window.ApiClient.getItems(userId, query);
+
+            if (data && data.Items && data.Items.length > 0) {
+                // 5. Render Cards
+                const itemsContainer = section.querySelector('.itemsContainer');
+
+                // Clear existing
+                itemsContainer.innerHTML = '';
+
+                let html = '';
+                for (const item of data.Items) {
+                    // Build Card HTML matching Jellyfin's structure
+                    const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+                    const linkUrl = `#!/details?id=${item.Id}`;
+                    const title = item.Name;
+                    const year = item.ProductionYear || '';
+
+                    // Card HTML
+                    html += `
+                        <div class="card ScalableCard card-hoverable card-with-userdata" data-id="${item.Id}" data-type="${item.Type}">
+                            <div class="cardBox visualCardBox">
+                                <div class="cardScalable visualCardBox-cardScalable">
+                                    <div class="cardPadder cardPadder-overflowPortrait"></div>
+                                    <a class="cardContent cardImageContainer" href="${linkUrl}" style="background-image: url('${imgUrl}'); aspect-ratio: 2/3; background-size: cover; background-position: center;">
+                                    </a>
+                                </div>
+                                <div class="cardFooter visualCardBox-cardFooter">
+                                    <div class="cardText cardTextCentered cardText-first">
+                                        <a href="${linkUrl}">${title}</a>
+                                    </div>
+                                    <div class="cardText cardTextCentered cardText-secondary">
+                                        ${year}
                                     </div>
                                 </div>
-                            `;
-                        }).join('');
-
-                        container.innerHTML = cardHtml;
-
-                        // Re-attach listeners for the new cards
-                        // The observer will pick them up for hover effects, etc.
-                        // But native navigation might need 'itemAction' bindings if SPA router is strict.
-                        // Usually existing delegates on body handle 'itemAction' clicks.
-                    }
+                            </div>
+                        </div>
+                     `;
                 }
-            } catch (e) {
-                console.error('[LegitFlix] overrideLatestSection failed:', e);
-                // On error, remove attribute so we might retry or fail gracefully
-                section.removeAttribute('data-latest-overridden');
+
+                itemsContainer.innerHTML = html;
+
+                // Re-bind events (simple click handling for SPA nav)
+                itemsContainer.querySelectorAll('a').forEach(a => {
+                    a.onclick = (e) => {
+                        // Standard href works.
+                    };
+                });
             }
+
+        } catch (err) {
+            console.error('[LegitFlix] Override Latest Failed:', err);
+            // section.dataset.customLatest = 'false';
         }
     }
 }
@@ -3109,7 +3139,7 @@ const observer = new MutationObserver((mutations) => {
     // Call global helpers
     if (typeof renameMyList === 'function') renameMyList();
     if (typeof fixMixedCards === 'function') fixMixedCards();
-    if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+    // Use the new override instead of fixLatestEpisodes
     if (typeof overrideLatestSection === 'function') overrideLatestSection();
 
     injectPromoBanner();
