@@ -1899,75 +1899,9 @@
         });
 
         // Season selection UI (Update text & close)
-        if (seasonSelector) {
-            seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
-                opt.addEventListener('click', async function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('[DEBUG] Season Option Clicked:', this.dataset.seasonId);
-
-                    // Update selected state
-                    seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(o => o.classList.remove('is-selected'));
-                    this.classList.add('is-selected');
-
-                    // Update button text
-                    const buttonText = this.querySelector('span').textContent;
-                    const dest = container.querySelector('#lfSelectedSeasonText');
-                    if (dest) dest.textContent = buttonText;
-
-                    seasonSelector.classList.remove('is-open');
-
-                    // Fetch & Render Content
-                    const seasonId = this.dataset.seasonId;
-                    const grid = container.querySelector('.lf-episode-grid');
-                    console.log('[DEBUG] Target Grid Element:', grid);
-
-                    if (grid) {
-                        // Safe update of grid content
-                        grid.innerHTML = '<div style="color:var(--clr-text-muted); text-align:center; padding:40px; grid-column:1/-1;">Loading episodes...</div>';
-                        try {
-                            const hash = window.location.hash;
-                            const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
-                            console.log('[DEBUG] Series ID from URL:', seriesId);
-
-                            if (seriesId) {
-                                console.log('[DEBUG] Fetching episodes for season:', seasonId);
-                                const episodes = await fetchEpisodes(seriesId, seasonId);
-                                console.log('[DEBUG] Episodes fetched:', episodes.length);
-
-                                const newGridHtml = createEpisodeGrid(episodes);
-
-                                // Extract inner HTML to avoid nested grids
-                                const tempDiv = document.createElement('div');
-                                tempDiv.innerHTML = newGridHtml;
-                                const innerContent = tempDiv.querySelector('.lf-episode-grid').innerHTML;
-
-                                console.log('[DEBUG] Updating grid innerHTML...');
-                                grid.innerHTML = innerContent;
-
-                                // Enforce styles permanently
-                                enforceGridStyles(grid);
-                                console.log('[DEBUG] Grid Styles Enforced');
-
-                                // Re-attach card listeners
-                                grid.querySelectorAll('.lf-episode-card').forEach(card => {
-                                    card.addEventListener('click', () => {
-                                        const epId = card.dataset.episodeId;
-                                        if (window.legitFlixPlay) window.legitFlixPlay(epId);
-                                        else window.location.href = `#!/details?id=${epId}`;
-                                    });
-                                });
-                            }
-                        } catch (e) {
-                            grid.innerHTML = '<div style="text-align:center; color:red;">Error loading episodes</div>';
-                            console.error('[DEBUG] Error loading episodes:', e);
-                        }
-                    } else {
-                        console.error('[DEBUG] Episode Grid not found in DOM!');
-                    }
-                });
-            });
-        }
+        // Season selection UI (Update text & close)
+        // Logic moved to wireUpButtons to prevent duplication and ensure consistency
+        // (Deleted legacy block to fix 'tempDiv' null error)
     }
 
     // =========================================================================
