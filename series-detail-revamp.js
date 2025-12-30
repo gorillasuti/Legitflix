@@ -1600,17 +1600,31 @@
         const initialGrid = container.querySelector('.lf-episode-grid');
         if (initialGrid) enforceGridStyles(initialGrid);
 
-        // Parent Observer: Watch for Grid Replacements
+        // Parent Observer: Watch for Grid Replacements or Style Changes
         const episodesSection = container.querySelector('#lfEpisodesSection');
         if (episodesSection) {
-            const parentObserver = new MutationObserver((mutations) => {
-                const newGrid = episodesSection.querySelector('.lf-episode-grid');
-                if (newGrid && newGrid !== initialGrid) {
-                    console.log('[DEBUG] Grid replacement detected, re-enforcing styles');
-                    enforceGridStyles(newGrid);
+            const handleMutations = () => {
+                // Find the direct parent of episode cards
+                const firstCard = episodesSection.querySelector('.lf-episode-card');
+                if (firstCard && firstCard.parentElement) {
+                    const gridContainer = firstCard.parentElement;
+
+                    // Check if styles are missing or incorrect
+                    const computed = window.getComputedStyle(gridContainer);
+                    if (computed.display !== 'grid' || gridContainer.style.display !== 'grid') {
+                        console.log('[DEBUG] Fixing grid layout on container:', gridContainer.className);
+                        enforceGridStyles(gridContainer);
+                    }
                 }
+            };
+
+            const parentObserver = new MutationObserver((mutations) => {
+                handleMutations();
             });
-            parentObserver.observe(episodesSection, { childList: true, subtree: true });
+            parentObserver.observe(episodesSection, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+            // Should also run immediately in case of race condition
+            handleMutations();
         }
 
         log('Series detail page rendered');
