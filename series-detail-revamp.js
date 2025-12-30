@@ -2539,18 +2539,17 @@
                         muteBtn.classList.remove('is-muted');
                     }
                 } else {
-                    // PLAY TRAILER - Use Search Embed for region availability
-                    const query = encodeURIComponent((seriesData.name || 'Series') + ' official trailer');
-                    log('Playing Trailer via Search:', query);
+                    // PLAY TRAILER
+                    log('Trailer clicked, YT ID:', trailerYtId);
 
                     if (trailerIframe && trailerContainer) {
                         // Update Iframe Attributes
                         trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
                         trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
-                        // Use Search List Embed
-                        const origin = window.location.origin;
-                        const embedUrl = `https://www.youtube.com/embed?listType=search&list=${query}&autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1&origin=${origin}`;
+                        // Exact URL from legitflix-theme.js (The "Working Version")
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}`;
+
                         trailerIframe.src = embedUrl;
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
