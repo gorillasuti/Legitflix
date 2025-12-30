@@ -1175,20 +1175,38 @@
                 langSelector.classList.toggle('is-open');
             });
 
+            // Handle options (Audio/Subtitle)
             langSelector.querySelectorAll('.lf-filter-dropdown__option').forEach(opt => {
                 opt.addEventListener('click', function () {
+                    const type = this.dataset.type; // 'audio' or 'subtitle'
                     const lang = this.dataset.lang;
-                    const label = this.textContent.trim();
 
-                    container.querySelector('#lfLangText').textContent = label;
-
-                    langSelector.querySelectorAll('.lf-filter-dropdown__option').forEach(o => o.classList.remove('is-selected'));
+                    // Update selection in UI (per section)
+                    const section = this.closest('.lf-lang-section');
+                    section.querySelectorAll('.lf-filter-dropdown__option').forEach(o => o.classList.remove('is-selected'));
                     this.classList.add('is-selected');
-                    langSelector.classList.remove('is-open');
 
                     // Save Preference
-                    localStorage.setItem('legitflix-lang-pref', lang);
+                    if (type === 'audio') {
+                        localStorage.setItem('legitflix-audio-pref', lang);
+                        log('Audio preference saved:', lang);
+                    } else {
+                        localStorage.setItem('legitflix-sub-pref', lang);
+                        log('Subtitle preference saved:', lang);
+                    }
                 });
+            });
+
+            // Edit Subtitles Button
+            const editSubsBtn = langSelector.querySelector('#lfEditSubsBtn');
+            editSubsBtn?.addEventListener('click', () => {
+                const hash = window.location.hash;
+                const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
+                if (seriesId) {
+                    // Try to open Subtitle Editor (Generic Route)
+                    window.location.hash = `#!/subtitleeditor?id=${seriesId}`;
+                }
+                langSelector.classList.remove('is-open');
             });
 
             document.addEventListener('click', (e) => {
@@ -1319,6 +1337,11 @@
                                 const innerContent = tempDiv.querySelector('.lf-episode-grid').innerHTML;
 
                                 grid.innerHTML = innerContent;
+
+                                // FORCE GRID LAYOUT (Fixes stacking issue)
+                                grid.style.display = 'grid';
+                                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+                                grid.style.gap = '20px';
 
                                 // Re-attach card listeners
                                 grid.querySelectorAll('.lf-episode-card').forEach(card => {
@@ -1831,23 +1854,51 @@
 
         if (trailerBtn && trailerYtId) {
             trailerBtn.addEventListener('click', () => {
-                log('Trailer clicked, YT ID:', trailerYtId);
-                if (trailerIframe && trailerContainer) {
-                    // Update Iframe Attributes (Exact match to legitflix-theme.js)
-                    trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-                    trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                const isPlaying = trailerContainer.classList.contains('is-playing');
 
-                    // Exact URL from legitflix-theme.js
-                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
-                    trailerIframe.src = embedUrl;
-                    trailerContainer.classList.add('is-playing');
-                    if (backdrop) backdrop.style.opacity = '0';
+                if (isPlaying) {
+                    // STOP TRAILER
+                    trailerIframe.src = '';
+                    trailerContainer.classList.remove('is-playing');
+                    if (backdrop) backdrop.style.opacity = '1';
 
-                    // Show mute button
+                    // Reset Button
+                    trailerBtn.innerHTML = `
+                        <span class="material-icons">play_circle_filled</span>
+                        <span>Watch Trailer</span>
+                     `;
+
+                    // Hide Mute
                     if (muteBtn) {
-                        muteBtn.style.display = 'flex';
-                        muteBtn.classList.add('is-muted');
-                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        muteBtn.style.display = 'none';
+                        muteBtn.classList.remove('is-muted');
+                    }
+                } else {
+                    // PLAY TRAILER
+                    log('Trailer clicked, YT ID:', trailerYtId);
+                    if (trailerIframe && trailerContainer) {
+                        // Update Iframe Attributes (Exact match)
+                        trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                        trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+                        // Exact URL
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
+                        trailerIframe.src = embedUrl;
+                        trailerContainer.classList.add('is-playing');
+                        if (backdrop) backdrop.style.opacity = '0';
+
+                        // Update Button Text
+                        trailerBtn.innerHTML = `
+                            <span class="material-icons">stop_circle</span>
+                            <span>Stop Trailer</span>
+                        `;
+
+                        // Show mute button
+                        if (muteBtn) {
+                            muteBtn.style.display = 'flex';
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
                     }
                 }
             });
