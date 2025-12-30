@@ -2992,93 +2992,78 @@ async function fixLatestEpisodes() {
 }
 
 
-// 4. OVERRIDE LATEST SECTION (Force 10 items, Series/Movie only, Include Watched)
+
+// 4. OVERRIDE LATEST SECTION (Fetch Top 10 including Watched)
 async function overrideLatestSection() {
     const sections = document.querySelectorAll('.verticalSection');
 
     for (const section of sections) {
-        if (section.getAttribute('data-latest-overridden') === 'true') continue;
-
         const titleEl = section.querySelector('.sectionTitle');
         if (!titleEl) continue;
 
-        const title = titleEl.innerText.trim();
-        // Target specifically "Latest ..." sections.
-        if (!title.toLowerCase().startsWith('latest ')) continue;
+        const title = titleEl.innerText.toLowerCase();
+        // Specifically target "Latest" sections
+        if ((title.includes('latest') || title.includes('recently added')) && !title.includes('history')) {
+            // Check if we already patched this section
+            if (section.getAttribute('data-latest-overridden') === 'true') continue;
 
-        // Try to find ParentId from the header link to scope the query (e.g. "Latest Anime" -> Anime Library ID)
-        let parentId = null;
-        const link = section.querySelector('a[href*="parentId="]');
-        if (link) {
-            const url = new URL(link.href, window.location.origin);
-            parentId = url.searchParams.get('parentId');
-        }
+            // Mark as processing to prevent dupes, but only if we successfully inject content?
+            // Safer to mark it now so we don't spam fetch.
+            section.setAttribute('data-latest-overridden', 'true');
 
-        // If we can't find a parentId, we might not want to touch it to avoid mixing content randomly, 
-        // OR we fallback to global. Usually "Latest" on home is tied to a library. 
-        // Let's proceed only if we have a parentId or if the title strongly suggests it (for now require parentId for safety).
-        if (!parentId) continue;
+            try {
+                const userId = window.ApiClient.getCurrentUserId();
+                // 1. Fetch 10 Most Recent Items (Series/Movies)
+                // Filter by Recursive=true to get everything in library
+                // IncludeItemTypes=Series,Movie to skip Episodes
+                const itemsUrl = `/Users/${userId}/Items?SortBy=DateCreated&SortOrder=Descending&Limit=10&Recursive=true&IncludeItemTypes=Series,Movie&Fields=PrimaryImageAspectRatio,CanDelete,BasicSyncInfo,MediaSourceCount`;
 
-        section.setAttribute('data-latest-overridden', 'true'); // valid to try once
+                const response = await fetch(itemsUrl, {
+                    headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
+                });
+                const data = await response.json();
 
-        // 1. Fetch Latest 10 Items (Series, Movie)
-        try {
-            const userId = window.ApiClient.getCurrentUserId();
-            const query = {
-                SortBy: "DateCreated",
-                SortOrder: "Descending",
-                IncludeItemTypes: "Series,Movie",
-                Recursive: true,
-                Fields: "PrimaryImageAspectRatio,DateCreated,BasicSyncInfo,MediaSourceCount",
-                ImageTypeLimit: 1,
-                EnableImageTypes: "Primary,Backdrop,Banner,Thumb",
-                Limit: 10,
-                ParentId: parentId, // Scope to this library
-                // Filters: "IsUnplayed"  <-- OMITTED explicitly to show watched items
-            };
+                if (data.Items && data.Items.length > 0) {
+                    const container = section.querySelector('.itemsContainer');
+                    if (container) {
+                        // Generate HTML for cards
+                        const cardHtml = data.Items.map(item => {
+                            const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+                            const linkUrl = `#!/details?id=${item.Id}`;
 
-            const result = await window.ApiClient.getItems(userId, query);
-
-            if (result && result.Items && result.Items.length > 0) {
-                const itemsContainer = section.querySelector('.itemsContainer');
-                if (!itemsContainer) continue;
-
-                // 2. Generate HTML
-                let html = '';
-                for (const item of result.Items) {
-                    const id = item.Id;
-                    const name = item.Name;
-                    const type = item.Type;
-                    const year = item.ProductionYear || '';
-                    const imgUrl = `/Items/${id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-
-                    // Standard POSTER Card Markup
-                    html += `
-                        <div class="card overflowPortraitCard" data-id="${id}" data-type="${type}" data-isfolder="${item.IsFolder}">
-                            <div class="cardBox visualCardBox">
-                                <div class="cardScalable visualCardBox-cardScalable">
-                                    <div class="cardPadder cardPadder-overflowPortrait"></div>
-                                    <a class="cardContent cardImageContainer" href="#!/details?id=${id}" 
-                                       style="background-image: url('${imgUrl}'); background-position: center center; background-size: cover;">
-                                    </a>
+                            // Standard Jellyfin Card Markup
+                            return `
+                                <div class="card overflowPortraitCard card-hoverable card-with-userdata" data-id="${item.Id}" data-type="${item.Type}" style="margin: 6px;">
+                                    <div class="cardBox visualCardBox">
+                                        <div class="cardScalable visualCardBox-cardScalable" style="background-color: transparent;">
+                                            <div class="cardPadder cardPadder-overflowPortrait"></div>
+                                            <a class="cardContent cardImageContainer itemAction" href="${linkUrl}" style="background-image: url('${imgUrl}'); background-position: center center; background-size: cover; aspect-ratio: 2/3;">
+                                            </a>
+                                            <div class="cardOverlayContainer itemAction" href="${linkUrl}"></div>
+                                        </div>
+                                        <div class="cardFooter visualCardBox-cardFooter">
+                                            <div class="cardText cardTextCentered" style="text-align: center; padding: 5px;">${item.Name}</div>
+                                            <!-- Optional Year -->
+                                            ${item.ProductionYear ? `<div class="cardText cardTextCentered cardText-secondary" style="text-align: center; font-size: 0.85em; opacity: 0.7;">${item.ProductionYear}</div>` : ''}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="cardFooter visualCardBox-cardFooter">
-                                    <div class="cardText" style="text-align:center;">${name}</div>
-                                    <div class="cardText cardTextSecondary" style="text-align:center;">${year}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                            `;
+                        }).join('');
+
+                        container.innerHTML = cardHtml;
+
+                        // Re-attach listeners for the new cards
+                        // The observer will pick them up for hover effects, etc.
+                        // But native navigation might need 'itemAction' bindings if SPA router is strict.
+                        // Usually existing delegates on body handle 'itemAction' clicks.
+                    }
                 }
-
-                // 3. Inject
-                itemsContainer.innerHTML = html;
+            } catch (e) {
+                console.error('[LegitFlix] overrideLatestSection failed:', e);
+                // On error, remove attribute so we might retry or fail gracefully
+                section.removeAttribute('data-latest-overridden');
             }
-
-        } catch (err) {
-            console.error('[LegitFlix] overrideLatestSection failed for', title, err);
-            // On fail, we might want to remove the attribute to retry? Or just leave it broken.
-            section.removeAttribute('data-latest-overridden');
         }
     }
 }
@@ -3124,7 +3109,7 @@ const observer = new MutationObserver((mutations) => {
     // Call global helpers
     if (typeof renameMyList === 'function') renameMyList();
     if (typeof fixMixedCards === 'function') fixMixedCards();
-    // if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+    if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
     if (typeof overrideLatestSection === 'function') overrideLatestSection();
 
     injectPromoBanner();
