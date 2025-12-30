@@ -538,6 +538,56 @@
             font-size: 16px;
         }
 
+        /* Language Selector Split */
+        .lf-lang-menu {
+            min-width: 220px;
+            padding: 10px 0;
+        }
+        .lf-lang-section {
+            padding-bottom: 5px;
+        }
+        .lf-dropdown-section-title {
+            padding: 5px 15px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--clr-text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .lf-lang-separator {
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 5px 0;
+        }
+        .lf-lang-footer {
+            padding: 8px 10px 0 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 5px;
+        }
+        .lf-edit-subs-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--clr-text-main);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .lf-edit-subs-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .lf-edit-subs-btn .material-icons {
+             font-size: 18px;
+        }
+
         /* ============================================
            EPISODE GRID
            ============================================ */
@@ -1218,12 +1268,27 @@
 
             // Edit Subtitles Button
             const editSubsBtn = langSelector.querySelector('#lfEditSubsBtn');
-            editSubsBtn?.addEventListener('click', () => {
+            editSubsBtn?.addEventListener('click', async () => {
                 const hash = window.location.hash;
                 const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
                 if (seriesId) {
-                    // Try to open Subtitle Editor (Generic Route)
-                    window.location.hash = `#!/subtitleeditor?id=${seriesId}`;
+                    // 1. Try generic Emby/Jellyfin command first
+                    if (window.SubtitleEditor) {
+                        window.SubtitleEditor.show(seriesId);
+                    }
+                    // 2. Try to find the module directly if global is missing
+                    else {
+                        try {
+                            // This is a guess based on standard Jellyfin web modules
+                            // We might need to just use the route if we can't find the module
+                            const mod = await import('scripts/subtitleeditor');
+                            if (mod && mod.show) mod.show(seriesId);
+                            else window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                        } catch (e) {
+                            console.log('Could not load SubtitleEditor module, using route fallback');
+                            window.location.hash = `!/subtitleeditor?id=${seriesId}`;
+                        }
+                    }
                 }
                 langSelector.classList.remove('is-open');
             });
