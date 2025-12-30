@@ -108,12 +108,37 @@
             z-index: 1;
         }
 
+        .lf-series-hero__logo {
+            position: absolute;
+            bottom: 40px;
+            left: var(--content-padding);
+            width: 200px;
+            max-width: 30%;
+            height: auto;
+            object-fit: contain;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .lf-series-hero.is-clean-view .lf-series-hero__logo {
+            opacity: 1;
+        }
+
+        .lf-series-hero.is-clean-view .lf-series-hero__content {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+
         .lf-series-hero__content {
             position: relative;
             z-index: 2;
             display: flex;
             gap: 40px;
             width: 100%;
+            transition: all 0.5s ease;
         }
 
         .lf-series-hero__poster {
@@ -124,13 +149,15 @@
             border-radius: var(--radius-lg);
             border: 2px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            margin-top: auto; /* Align to bottom of padded area */
         }
 
         .lf-series-hero__info {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: flex-start; /* Expand downwards */
+            padding-top: 40vh; /* Push content down initially */
             gap: 12px;
         }
 
@@ -291,19 +318,24 @@
             transform: scale(0.9);
         }
 
+        .lf-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .lf-mute-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px; /* Match button height */
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             cursor: pointer;
             transition: all 0.2s ease;
-            margin-left: auto;
         }
 
         .lf-mute-btn:hover {
