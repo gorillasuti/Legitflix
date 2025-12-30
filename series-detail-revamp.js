@@ -2237,7 +2237,8 @@
                 logoUrl: item.ImageTags?.Logo ? `/Items/${item.Id}/Images/Logo?maxWidth=300&quality=90` : '',
                 people: item.People || [],
                 remoteTrailers: item.RemoteTrailers || [],
-                isFavorite: item.UserData?.IsFavorite || false
+                isFavorite: item.UserData?.IsFavorite || false,
+                userData: item.UserData || {} // Expose full UserData
             };
         } catch (e) {
             log('Error fetching series data:', e);
@@ -2313,7 +2314,8 @@
         if (!auth) return [];
 
         try {
-            const url = `/Items/${seriesId}/Similar?Limit=12&UserId=${auth.UserId}`;
+            // Strict type filtering
+            const url = `/Items/${seriesId}/Similar?Limit=12&UserId=${auth.UserId}&IncludeItemTypes=Series`;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
             });
@@ -2615,9 +2617,8 @@
 
                 try {
                     // Check Series Played Status
-                    // seriesData usually has UserData if fetched with userId, let's verify or refetch if needed
-                    // But for now assume seriesData has it or we rely on NextUp
-                    let isSeriesPlayed = seriesData.UserData?.Played || false;
+                    // Refactored to access the exposed 'userData' from fetchSeriesData
+                    let isSeriesPlayed = seriesData.userData?.Played || false;
 
                     // Fetch Next Up
                     const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
