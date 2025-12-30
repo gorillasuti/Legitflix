@@ -1245,7 +1245,7 @@
                         ${createLanguageSelector(audioStreams, subtitleStreams, targetEpisodeId)}
                         
                         <!-- Bulk Edit Button -->
-                        <button class="lf-filter-btn" id="lfBulkActionBtn" title="Bulk Edit" style="display: none;"> <!-- Hidden default, shown by logic if needed or user request? User said "Mark Season Watched" should be there. Visible. -->
+                        <button class="lf-filter-btn" id="lfBulkActionBtn" title="Bulk Edit">
                             <span class="material-icons">done_all</span>
                             <span id="lfBulkActionText">Mark Season Watched</span>
                         </button>
