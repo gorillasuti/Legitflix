@@ -292,6 +292,30 @@
             transform: scale(0.9);
         }
 
+        .lf-mute-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: auto;
+        }
+
+        .lf-mute-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        .lf-mute-btn.is-muted {
+            opacity: 0.7;
+        }
+
         /* ============================================
            CONTENT SECTIONS
            ============================================ */
@@ -909,7 +933,7 @@
             <div class="lf-season-selector__option ${i === selectedIndex ? 'is-selected' : ''}" 
                  data-season-id="${season.id}" data-season-index="${i}">
                 <span>${season.name}</span>
-                <span class="lf-season-selector__option-count">${season.episodeCount || 0} ep</span>
+                ${season.episodeCount > 0 ? `<span class="lf-season-selector__option-count">${season.episodeCount} ep</span>` : ''}
             </div>
         `).join('');
 
@@ -1099,27 +1123,8 @@
         // Season dropdown toggle
         const seasonSelector = container.querySelector('#lfSeasonSelector');
         if (seasonSelector) {
-            const button = seasonSelector.querySelector('.lf-season-selector__button');
+            const button = seasonSelector.querySelector('.lf-season-selector__button:not([disabled])');
             button?.addEventListener('click', () => seasonSelector.classList.toggle('is-open'));
-
-            // Season selection
-            seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
-                opt.addEventListener('click', function () {
-                    const seasonId = this.dataset.seasonId;
-                    const seasonIndex = parseInt(this.dataset.seasonIndex);
-
-                    // Update selected state
-                    seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(o => o.classList.remove('is-selected'));
-                    this.classList.add('is-selected');
-
-                    // Update button text
-                    container.querySelector('#lfSelectedSeasonText').textContent = this.querySelector('span').textContent;
-                    seasonSelector.classList.remove('is-open');
-
-                    log('Season selected:', seasonId, seasonIndex);
-                    // TODO: Fetch episodes for this season
-                });
-            });
         }
 
         // Sort dropdown
@@ -1194,15 +1199,6 @@
             });
         }
 
-        // Heart button toggle
-        const heartBtn = container.querySelector('#lfHeartBtn');
-        heartBtn?.addEventListener('click', function () {
-            const icon = this.querySelector('.material-icons');
-            this.classList.toggle('is-liked');
-            icon.textContent = this.classList.contains('is-liked') ? 'favorite' : 'favorite_border';
-            log('Favorite toggled:', this.classList.contains('is-liked'));
-        });
-
         // Description expand/collapse
         const loadMoreBtn = container.querySelector('#lfLoadMoreBtn');
         loadMoreBtn?.addEventListener('click', function () {
@@ -1219,23 +1215,23 @@
             if (!filterDropdown?.contains(e.target)) filterDropdown?.classList.remove('is-open');
         });
 
-        // Episode card clicks
-        container.querySelectorAll('.lf-episode-card').forEach(card => {
-            card.addEventListener('click', function () {
-                const episodeId = this.dataset.episodeId;
-                log('Episode clicked:', episodeId);
-                // TODO: Navigate to episode or play
-            });
-        });
+        // Season selection UI (Update text & close)
+        if (seasonSelector) {
+            seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(opt => {
+                opt.addEventListener('click', function () {
+                    // Update selected state
+                    seasonSelector.querySelectorAll('.lf-season-selector__option').forEach(o => o.classList.remove('is-selected'));
+                    this.classList.add('is-selected');
 
-        // Similar item clicks
-        container.querySelectorAll('.lf-similar-card').forEach(card => {
-            card.addEventListener('click', function () {
-                const itemId = this.dataset.itemId;
-                log('Similar item clicked:', itemId);
-                // TODO: Navigate to item
+                    // Update button text
+                    const buttonText = this.querySelector('span').textContent;
+                    const dest = container.querySelector('#lfSelectedSeasonText');
+                    if (dest) dest.textContent = buttonText;
+
+                    seasonSelector.classList.remove('is-open');
+                });
             });
-        });
+        }
     }
 
     // =========================================================================
