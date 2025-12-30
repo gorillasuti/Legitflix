@@ -2620,10 +2620,14 @@
                     // Refactored to access the exposed 'userData' from fetchSeriesData
                     let isSeriesPlayed = seriesData.userData?.Played || false;
 
+                    log('[WatchBtn] Series Played?', isSeriesPlayed, seriesData.userData);
+
                     // Fetch Next Up
                     const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
                     const nextUpData = await nextUpRes.json();
+
+                    log('[WatchBtn] NextUp Data:', nextUpData);
 
                     if (nextUpData.Items && nextUpData.Items.length > 0) {
                         const nextEp = nextUpData.Items[0];
@@ -2636,6 +2640,8 @@
                         // Check if it's literally the first episode and unplayed? 
                         // S1 E1 (IndexNumber 1, ParentIndexNumber 1) AND PlayedPercentage < 5
                         const isStart = nextEp.ParentIndexNumber === 1 && nextEp.IndexNumber === 1 && (!nextEp.UserData?.PlayedPercentage || nextEp.UserData.PlayedPercentage < 5);
+
+                        log('[WatchBtn] Next item found. isStart?', isStart);
 
                         if (isStart && !isSeriesPlayed) {
                             // DATA STATE 1: Not Started
@@ -2653,10 +2659,12 @@
                         // No Next Up
                         if (isSeriesPlayed) {
                             // DATA STATE 3: Watch Again
+                            log('[WatchBtn] No NextUp + Played = Watch Again');
                             watchNowBtn.innerHTML = '<span class="material-icons">replay</span> Watch Again';
                             watchNowBtn.dataset.isReplay = 'true';
                         } else {
                             // Fallback: Watch Now (Start)
+                            log('[WatchBtn] No NextUp + Not Played = Watch Now');
                             watchNowBtn.innerHTML = '<span class="material-icons">play_arrow</span> Watch Now';
                         }
                     }
