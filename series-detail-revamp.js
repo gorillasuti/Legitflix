@@ -1458,7 +1458,6 @@
                         .listItem { 
                             display: flex; align-items: center; padding: 14px; 
                             background: rgba(255,255,255,0.03);
-                            border-bottom: 1px solid rgba(255,255,255,0.05); 
                             border-radius: 4px;
                             margin-bottom: 4px;
                         }
@@ -1552,20 +1551,59 @@
                         </div>
                         ${s.IsExternal ? `
                         <button class="btnDelete" data-index="${s.Index}" title="Delete">
-                            <span class="material-icons" style="font-size: 18px;">delete</span>
-                        </button>` : ''}
-                    </div>
                 `).join('');
 
-                // Bind delete buttons (future implementation)
+                // Bind delete buttons
                 listContainer.querySelectorAll('.btnDelete').forEach(btn => {
-                    btn.addEventListener('click', () => alert('Deleting subtitles is not yet supported via this quick editor.'));
+                    btn.addEventListener('click', (e) => {
+                        const index = e.currentTarget.dataset.index;
+                        if (confirm('Are you sure you want to delete this subtitle?')) {
+                            this.deleteSubtitle(episodeId, index, e.currentTarget);
+                        }
+                    });
                 });
 
             } catch (e) {
                 log('Error loading subtitles:', e);
                 listContainer.innerHTML = `<div style="color: #ff5252;">Error loading subtitles: ${e.message}</div>`;
                 if (infoBox) infoBox.textContent = 'Error loading episode info.';
+            }
+        },
+
+        async deleteSubtitle(episodeId, subtitleIndex, buttonElement) {
+            // Optimistic UI
+            if (buttonElement) {
+                buttonElement.innerHTML = '<span class="material-icons spinning">sync</span>';
+            }
+
+            try {
+                const auth = await getAuth();
+                // Endpoint: DELETE /Videos/{Id}/Subtitles/{Index}
+                const response = await fetch(`/Videos/${episodeId}/Subtitles/${subtitleIndex}`, {
+                    method: 'DELETE',
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Delete failed: ${response.statusText}`);
+                }
+
+                // Success
+                if (buttonElement) {
+                    buttonElement.closest('.listItem').style.opacity = '0.5';
+                }
+
+                // Refresh list
+                setTimeout(() => {
+                    this.loadCurrentSubtitles(episodeId);
+                }, 1000);
+
+            } catch (e) {
+                console.error('Error deleting subtitle:', e);
+                if (buttonElement) {
+                    buttonElement.innerHTML = '<span class="material-icons" style="color: #ff5252;">error</span>';
+                }
+                alert('Failed to delete subtitle: ' + e.message);
             }
         },
 

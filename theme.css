@@ -1308,6 +1308,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     font-size: 0.95rem !important;
     transition: all 0.2s ease !important;
     text-transform: none !important;
+    flex: 2.75;
 }
 
 .formDialog .button-submit:hover,
@@ -1657,6 +1658,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .subtitleList h2 {
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     color: white !important;
     font-weight: 600 !important;
     margin-bottom: 12px !important;
