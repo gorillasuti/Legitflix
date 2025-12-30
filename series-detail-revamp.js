@@ -1551,6 +1551,9 @@
                         </div>
                         ${s.IsExternal ? `
                         <button class="btnDelete" data-index="${s.Index}" title="Delete">
+                            <span class="material-icons" style="font-size: 18px;">delete</span>
+                        </button>` : ''}
+                    </div>
                 `).join('');
 
                 // Bind delete buttons
