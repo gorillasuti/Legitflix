@@ -2749,14 +2749,158 @@
             }
         };
 
-        // Episode card clicks - play episode
-        container.querySelectorAll('.lf-episode-card').forEach(card => {
-            card.addEventListener('click', function () {
-                const episodeId = this.dataset.episodeId;
-                log('Episode clicked:', episodeId);
-                playItem(episodeId);
+        // Helper to refresh current season
+        const refreshCurrentSeason = async () => {
+            const activeSeason = container.querySelector('.lf-season-selector__option.is-selected');
+            const seasonId = activeSeason ? activeSeason.dataset.seasonId : (seriesData.seasons[0]?.id || '');
+            if (seasonId) activeSeason.click();
+        };
+
+        // BULK EDIT STATE
+        let isSelectionMode = false;
+        const selectedEpisodes = new Set();
+        const bulkBtn = container.querySelector('#lfBulkActionBtn');
+        const bulkText = container.querySelector('#lfBulkActionText');
+        const bulkIcon = bulkBtn?.querySelector('.material-icons');
+
+        if (bulkBtn) bulkBtn.style.display = 'flex';
+
+        // Toggle Mode
+        const toggleSelectionMode = (forceState) => {
+            isSelectionMode = forceState !== undefined ? forceState : !isSelectionMode;
+
+            if (isSelectionMode) {
+                container.classList.add('is-selection-mode');
+                container.querySelectorAll('.lf-episode-card').forEach(c => c.classList.add('is-selecting-mode'));
+                if (bulkText) bulkText.textContent = `Mark Selected (${selectedEpisodes.size})`;
+                if (bulkIcon) bulkIcon.textContent = 'check_circle';
+                if (bulkBtn) bulkBtn.classList.add('lf-btn--primary');
+            } else {
+                container.classList.remove('is-selection-mode');
+                container.querySelectorAll('.lf-episode-card').forEach(c => {
+                    c.classList.remove('is-selecting-mode');
+                    c.classList.remove('is-selected');
+                });
+                selectedEpisodes.clear();
+                if (bulkText) bulkText.textContent = 'Mark Season Watched';
+                if (bulkIcon) bulkIcon.textContent = 'done_all';
+                if (bulkBtn) bulkBtn.classList.remove('lf-btn--primary');
+            }
+        };
+
+        // Card Selection Logic
+        const toggleCardSelection = (card, id) => {
+            if (selectedEpisodes.has(id)) {
+                selectedEpisodes.delete(id);
+                card.classList.remove('is-selected');
+            } else {
+                selectedEpisodes.add(id);
+                card.classList.add('is-selected');
+            }
+            if (bulkText) bulkText.textContent = `Mark Selected (${selectedEpisodes.size})`;
+        };
+
+        // Bulk Action Listener
+        if (bulkBtn) {
+            bulkBtn.addEventListener('click', async () => {
+                const auth = await getAuth();
+
+                if (!isSelectionMode) {
+                    // "Mark Season Watched" action -> Select ALL
+                    toggleSelectionMode(true);
+                    const allCards = container.querySelectorAll('.lf-episode-card');
+                    allCards.forEach(c => {
+                        const id = c.dataset.episodeId;
+                        selectedEpisodes.add(id);
+                        c.classList.add('is-selected');
+                    });
+                    if (bulkText) bulkText.textContent = `Mark Selected (${selectedEpisodes.size})`;
+                } else {
+                    // "Mark Selected" action
+                    if (selectedEpisodes.size === 0) {
+                        toggleSelectionMode(false);
+                        return;
+                    }
+
+                    if (!confirm(`Mark ${selectedEpisodes.size} episodes as watched?`)) return;
+
+                    bulkText.textContent = 'Updating...';
+                    try {
+                        const updates = Array.from(selectedEpisodes).map(itemId => {
+                            // Using Jellyfin API (User likely has ApiClient attached to window)
+                            // If not, we might fail. Assuming window.ApiClient exists as per other code.
+                            return window.ApiClient.updatePlayedStatus(auth.UserId, itemId, true);
+                        });
+                        await Promise.all(updates);
+                        log('Bulk update complete');
+                        toggleSelectionMode(false);
+                        refreshCurrentSeason();
+                    } catch (e) {
+                        log('Error marking watched:', e);
+                        bulkText.textContent = 'Error!';
+                        setTimeout(() => toggleSelectionMode(false), 2000);
+                    }
+                }
             });
-        });
+        }
+
+        // Episode card clicks - play or select
+        const attachCardListeners = () => {
+            container.querySelectorAll('.lf-episode-card').forEach(card => {
+                let longPressTimer;
+                let preventClick = false;
+
+                const startLongPress = () => {
+                    preventClick = false;
+                    longPressTimer = setTimeout(() => {
+                        preventClick = true;
+                        if (!isSelectionMode) {
+                            toggleSelectionMode(true);
+                        }
+                        const id = card.dataset.episodeId;
+                        if (!selectedEpisodes.has(id)) {
+                            toggleCardSelection(card, id);
+                            if (navigator.vibrate) navigator.vibrate(50);
+                        }
+                    }, 600);
+                };
+
+                const cancelLongPress = () => {
+                    clearTimeout(longPressTimer);
+                };
+
+                // Mouse events
+                card.addEventListener('mousedown', startLongPress);
+                card.addEventListener('mouseup', cancelLongPress);
+                card.addEventListener('mouseleave', cancelLongPress);
+
+                // Touch events
+                card.addEventListener('touchstart', startLongPress, { passive: true });
+                card.addEventListener('touchend', cancelLongPress);
+                card.addEventListener('touchmove', cancelLongPress);
+
+                card.addEventListener('click', function (e) {
+                    if (preventClick) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+
+                    const episodeId = this.dataset.episodeId;
+
+                    if (isSelectionMode) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleCardSelection(this, episodeId);
+                    } else {
+                        // Play Mode
+                        log('Episode clicked:', episodeId);
+                        playItem(episodeId);
+                    }
+                });
+            });
+        };
+        attachCardListeners();
 
         // Similar item clicks - navigate to item
         container.querySelectorAll('.lf-similar-card').forEach(card => {
@@ -2787,8 +2931,8 @@
                     selectorBtnText.textContent = this.querySelector('span').textContent;
                 }
 
-                // Close dropdown
-                container.querySelector('.lf-season-selector').classList.remove('is-open');
+                // If in selection mode, exit it on season change?
+                if (typeof isSelectionMode !== 'undefined' && isSelectionMode) toggleSelectionMode(false);
 
                 // Fetch new episodes
                 const episodes = await fetchEpisodes(seriesId, seasonId);
@@ -2799,17 +2943,10 @@
                     // Update content directly (createEpisodeGrid now returns just cards)
                     episodeGrid.innerHTML = createEpisodeGrid(episodes);
 
-                    // Re-attach click handlers
-                    container.querySelectorAll('.lf-episode-card').forEach(card => {
-                        card.addEventListener('click', function () {
-                            const episodeId = this.dataset.episodeId;
-                            if (window.legitFlixPlay) {
-                                window.legitFlixPlay(episodeId);
-                            } else {
-                                window.location.href = `#!/details?id=${episodeId}`;
-                            }
-                        });
-                    });
+                    // Re-attach click handlers using shared function
+                    if (typeof attachCardListeners === 'function') {
+                        attachCardListeners();
+                    }
                 }
             });
         });
