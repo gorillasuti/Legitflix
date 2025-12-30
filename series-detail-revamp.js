@@ -817,6 +817,26 @@
             transform: scale(1);
         }
 
+        /* Watched Badge (Permanent) */
+        .lf-watched-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(76, 175, 80, 0.9); /* Green */
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .lf-watched-badge .material-icons {
+            font-size: 16px;
+        }
+
 
         /* ============================================
            CAST SECTION
