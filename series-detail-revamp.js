@@ -1395,8 +1395,8 @@
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
-                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
-                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 0px !important; opacity: 0.8;">Language</label>
+                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; margin-bottom: 0px !important;">
+                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; opacity: 0.8;">Language</label>
                                             
                                             <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
                                             <select id="selectLanguage" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 1rem; cursor: pointer; appearance: none; -webkit-appearance: none;">
@@ -2539,15 +2539,17 @@
                         muteBtn.classList.remove('is-muted');
                     }
                 } else {
-                    // PLAY TRAILER
-                    log('Trailer clicked, YT ID:', trailerYtId);
+                    // PLAY TRAILER - Use Search Embed for region availability
+                    const query = encodeURIComponent((seriesData.name || 'Series') + ' official trailer');
+                    log('Playing Trailer via Search:', query);
+
                     if (trailerIframe && trailerContainer) {
-                        // Update Iframe Attributes (Exact match)
+                        // Update Iframe Attributes
                         trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
                         trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 
-                        // Exact URL
-                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
+                        // Use Search List Embed
+                        const embedUrl = `https://www.youtube.com/embed?listType=search&list=${query}&autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1`;
                         trailerIframe.src = embedUrl;
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
