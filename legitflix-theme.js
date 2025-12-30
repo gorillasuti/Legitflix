@@ -3025,6 +3025,166 @@ function checkPageMode() {
     }
 }
 
+// --- ENHANCE LATEST SECTIONS (Custom Scroller: 50 Items + Watched) ---
+let _viewsCache = null;
+
+async function enhanceLatestSections() {
+    // Only run on Home/Index
+    const hash = window.location.hash.toLowerCase();
+    if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') return;
+
+    // 1. Fetch Views (Libraries) ONCE
+    if (!_viewsCache) {
+        try {
+            const userId = window.ApiClient.getCurrentUserId();
+            const viewsRes = await fetch(window.ApiClient.getUrl(`/Users/${userId}/Views`), {
+                headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
+            });
+            const viewsData = await viewsRes.json();
+            _viewsCache = viewsData.Items || [];
+        } catch (e) {
+            console.error('[LegitFlix] Error fetching views:', e);
+            return;
+        }
+    }
+
+    // 2. Scan Sections
+    const sections = document.querySelectorAll('.verticalSection');
+    for (const section of sections) {
+        if (section.getAttribute('data-enhanced-latest')) continue;
+
+        const titleEl = section.querySelector('.sectionTitle');
+        if (!titleEl) continue;
+
+        let titleText = titleEl.innerText.trim();
+        let libName = null;
+
+        // Parse Title (e.g. "Latest Anime", "Recently Added in TV")
+        if (titleText.startsWith('Latest ')) {
+            libName = titleText.substring(7);
+        } else if (titleText.startsWith('Recently Added in ')) {
+            libName = titleText.substring(18);
+        }
+
+        if (!libName) continue;
+
+        // Find Matching Library
+        const library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
+        if (!library) continue;
+
+        // Mark processing
+        section.setAttribute('data-enhanced-latest', 'true');
+
+        try {
+            console.log(`[LegitFlix] Enhancing Latest Section: ${libName} (${library.Id})`);
+
+            // 3. Fetch Custom Data (50 items, DateCreated Desc, No Filters)
+            const userId = window.ApiClient.getCurrentUserId();
+            // Build Query
+            const query = new URLSearchParams({
+                UserId: userId,
+                ParentId: library.Id,
+                Recursive: 'true',
+                SortBy: 'DateCreated',
+                SortOrder: 'Descending',
+                Limit: '50', // REQUESTED: More items
+                Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
+                EnableImageTypes: 'Primary,Backdrop,Thumb',
+                ImageTypeLimit: '1'
+            });
+
+            // Specific type filters
+            if (library.CollectionType === 'tvshows') query.append('IncludeItemTypes', 'Series');
+            else if (library.CollectionType === 'movies') query.append('IncludeItemTypes', 'Movie');
+            else query.append('IncludeItemTypes', 'Movie,Series');
+
+            const itemsUrl = window.ApiClient.getUrl(`/Users/${userId}/Items?${query.toString()}`);
+            const itemsRes = await fetch(itemsUrl, { headers: { 'X-Emby-Token': window.ApiClient.accessToken() } });
+            const itemsData = await itemsRes.json();
+
+            if (itemsData.Items && itemsData.Items.length > 0) {
+                // 4. Hide Native Container
+                const nativeContainer = section.querySelector('.itemsContainer');
+                if (nativeContainer) nativeContainer.style.display = 'none';
+
+                // 5. Render Custom Container
+                const customContainer = document.createElement('div');
+                customContainer.className = 'itemsContainer padded-left padded-right vertical-wrap custom-latest-scroller';
+                // Inline styles to force successful horizontal layout
+                customContainer.style.display = 'flex';
+                customContainer.style.flexDirection = 'row';
+                customContainer.style.overflowX = 'auto'; // Horizontal scroll
+                customContainer.style.overflowY = 'hidden';
+                customContainer.style.gap = '1.2em'; // Consistent spacing
+                customContainer.style.paddingBottom = '20px'; // Scrollbar space
+
+                itemsData.Items.forEach(item => {
+                    const card = createCustomCard(item);
+                    customContainer.appendChild(card);
+                });
+
+                // Append to Section
+                section.appendChild(customContainer);
+            } else {
+                section.removeAttribute('data-enhanced-latest'); // Retry/Revert
+            }
+
+        } catch (err) {
+            console.error('[LegitFlix] Failed to enhance section:', libName, err);
+            section.removeAttribute('data-enhanced-latest');
+        }
+    }
+}
+
+function createCustomCard(item) {
+    const card = document.createElement('div');
+    // Use standard classes for styling inheritance
+    card.className = 'card scalableCard card-hoverable overflowPortraitCard';
+    card.dataset.id = item.Id;
+    card.dataset.type = item.Type;
+    card.style.minWidth = '14vw'; // Ensure decent size
+    card.style.maxWidth = '14vw';
+
+    // Image, Link & Indicators
+    const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+    const linkUrl = `#!/details?id=${item.Id}`;
+
+    const isPlayed = item.UserData && item.UserData.Played;
+    const playedHtml = isPlayed ?
+        `<div class="playedIndicator" style="position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);"><i class="material-icons" style="font-size: 1em;">check</i></div>`
+        : '';
+
+    const unplayedCount = item.UserData && item.UserData.UnplayedItemCount;
+    const countHtml = (unplayedCount && !isPlayed) ?
+        `<div class="countIndicator" style="position:absolute; top:0.5em; right:0.5em; background:#cc3333; color:white; border-radius:50%; width:1.5em; height:1.5em; display:flex; align-items:center; justify-content:center; font-size:0.8em; font-weight:bold;">${unplayedCount}</div>`
+        : '';
+
+    card.innerHTML = `
+        <div class="cardBox visualCardBox">
+            <div class="cardScalable">
+                <div class="cardPadder cardPadder-overflowPortrait"></div>
+                <a class="cardContent cardImageContainer" href="${linkUrl}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
+                    ${playedHtml}
+                    ${countHtml}
+                </a>
+            </div>
+            <div class="cardFooter">
+                <div class="cardText centered cardText-first" style="text-align: left; padding-top: 5px;">${item.Name}</div>
+                <div class="cardText centered cardText-secondary" style="text-align: left;">${item.ProductionYear || ''}</div>
+            </div>
+        </div>
+    `;
+
+    const a = card.querySelector('a');
+    a.onclick = (e) => {
+        e.preventDefault();
+        window.location.href = linkUrl;
+        return false;
+    };
+
+    return card;
+}
+
 const observer = new MutationObserver((mutations) => {
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
