@@ -3154,8 +3154,7 @@
 
                         setTimeout(() => {
                             refreshCurrentSeason();
-                            // Update Watch Button State
-                            if (typeof updateWatchButton === 'function') updateWatchButton();
+                            // Logic inside refresh/season change will reset text via updateSeasonButtonState
                         }, 1000);
                     } catch (e) {
                         // Error
@@ -3200,8 +3199,6 @@
                         setTimeout(() => {
                             toggleSelectionMode(false);
                             refreshCurrentSeason();
-                            // Update Watch Button State
-                            if (typeof updateWatchButton === 'function') updateWatchButton();
                         }, 1000);
                     } catch (e) {
                         // Error
