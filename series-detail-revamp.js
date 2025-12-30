@@ -2556,6 +2556,7 @@
                     // Clear detection logic
                     clearTimeout(blockedTimeout);
                     if (messageHandler) window.removeEventListener('message', messageHandler);
+                    document.getElementById('lfTrailerHelpBtn')?.remove();
 
                     if (backdrop) backdrop.style.opacity = '1';
 
@@ -2621,14 +2622,47 @@
                         window.addEventListener('message', messageHandler);
 
                         blockedTimeout = setTimeout(() => {
+                            // If playing but no API message, show a help button instead of blocking modal
+                            // This avoids false positives where the video plays but API messages are blocked/delayed
                             if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
-                                log('Possible block detected: No YT API message received in 5s');
-                                showBlockedModal();
+                                log('Possible block detected: No YT API message received in 4s. Showing help button.');
+                                showTrailerHelpBtn();
                             }
-                        }, 5000);
+                        }, 4000); // Reduced to 4s
                     }
                 }
             });
+
+            // Help Button Helper
+            const showTrailerHelpBtn = () => {
+                if (document.getElementById('lfTrailerHelpBtn')) return;
+
+                const btn = document.createElement('button');
+                btn.id = 'lfTrailerHelpBtn';
+                btn.innerHTML = '<span class="material-icons">help_outline</span> <span>Trouble playing?</span>';
+                btn.className = 'lf-btn lf-btn--glass';
+                Object.assign(btn.style, {
+                    position: 'absolute',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: '100',
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                });
+
+                // Append to container (ensure relative positioning)
+                trailerContainer.appendChild(btn);
+
+                // Fade in
+                requestAnimationFrame(() => btn.style.opacity = '1');
+
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showBlockedModal();
+                });
+            };
 
             // Mute Button Logic
             if (muteBtn) {
