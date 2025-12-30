@@ -2992,6 +2992,98 @@ async function fixLatestEpisodes() {
 }
 
 
+// 4. OVERRIDE LATEST SECTION (Force 10 items, Series/Movie only, Include Watched)
+async function overrideLatestSection() {
+    const sections = document.querySelectorAll('.verticalSection');
+
+    for (const section of sections) {
+        if (section.getAttribute('data-latest-overridden') === 'true') continue;
+
+        const titleEl = section.querySelector('.sectionTitle');
+        if (!titleEl) continue;
+
+        const title = titleEl.innerText.trim();
+        // Target specifically "Latest ..." sections.
+        if (!title.toLowerCase().startsWith('latest ')) continue;
+
+        // Try to find ParentId from the header link to scope the query (e.g. "Latest Anime" -> Anime Library ID)
+        let parentId = null;
+        const link = section.querySelector('a[href*="parentId="]');
+        if (link) {
+            const url = new URL(link.href, window.location.origin);
+            parentId = url.searchParams.get('parentId');
+        }
+
+        // If we can't find a parentId, we might not want to touch it to avoid mixing content randomly, 
+        // OR we fallback to global. Usually "Latest" on home is tied to a library. 
+        // Let's proceed only if we have a parentId or if the title strongly suggests it (for now require parentId for safety).
+        if (!parentId) continue;
+
+        section.setAttribute('data-latest-overridden', 'true'); // valid to try once
+
+        // 1. Fetch Latest 10 Items (Series, Movie)
+        try {
+            const userId = window.ApiClient.getCurrentUserId();
+            const query = {
+                SortBy: "DateCreated",
+                SortOrder: "Descending",
+                IncludeItemTypes: "Series,Movie",
+                Recursive: true,
+                Fields: "PrimaryImageAspectRatio,DateCreated,BasicSyncInfo,MediaSourceCount",
+                ImageTypeLimit: 1,
+                EnableImageTypes: "Primary,Backdrop,Banner,Thumb",
+                Limit: 10,
+                ParentId: parentId, // Scope to this library
+                // Filters: "IsUnplayed"  <-- OMITTED explicitly to show watched items
+            };
+
+            const result = await window.ApiClient.getItems(userId, query);
+
+            if (result && result.Items && result.Items.length > 0) {
+                const itemsContainer = section.querySelector('.itemsContainer');
+                if (!itemsContainer) continue;
+
+                // 2. Generate HTML
+                let html = '';
+                for (const item of result.Items) {
+                    const id = item.Id;
+                    const name = item.Name;
+                    const type = item.Type;
+                    const year = item.ProductionYear || '';
+                    const imgUrl = `/Items/${id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+
+                    // Standard POSTER Card Markup
+                    html += `
+                        <div class="card overflowPortraitCard" data-id="${id}" data-type="${type}" data-isfolder="${item.IsFolder}">
+                            <div class="cardBox visualCardBox">
+                                <div class="cardScalable visualCardBox-cardScalable">
+                                    <div class="cardPadder cardPadder-overflowPortrait"></div>
+                                    <a class="cardContent cardImageContainer" href="#!/details?id=${id}" 
+                                       style="background-image: url('${imgUrl}'); background-position: center center; background-size: cover;">
+                                    </a>
+                                </div>
+                                <div class="cardFooter visualCardBox-cardFooter">
+                                    <div class="cardText" style="text-align:center;">${name}</div>
+                                    <div class="cardText cardTextSecondary" style="text-align:center;">${year}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 3. Inject
+                itemsContainer.innerHTML = html;
+            }
+
+        } catch (err) {
+            console.error('[LegitFlix] overrideLatestSection failed for', title, err);
+            // On fail, we might want to remove the attribute to retry? Or just leave it broken.
+            section.removeAttribute('data-latest-overridden');
+        }
+    }
+}
+
+
 // Call setup
 try {
     setupHoverCards();
@@ -3032,7 +3124,8 @@ const observer = new MutationObserver((mutations) => {
     // Call global helpers
     if (typeof renameMyList === 'function') renameMyList();
     if (typeof fixMixedCards === 'function') fixMixedCards();
-    if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+    // if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+    if (typeof overrideLatestSection === 'function') overrideLatestSection();
 
     injectPromoBanner();
     tagNativeSections();
