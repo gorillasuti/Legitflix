@@ -2376,6 +2376,18 @@
     }
 
     /**
+     * Helper to get YouTube ID from URL
+     */
+    function getYoutubeId(url) {
+        if (!url) return null;
+        // Matches legitflix-theme.js logic
+        if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+        if (url.includes('embed/')) return url.split('embed/')[1].split('?')[0];
+        return null;
+    }
+
+    /**
      * Handle Series Page Logic
      */
     async function handleSeriesPage(seriesId) {
