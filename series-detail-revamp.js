@@ -1181,13 +1181,17 @@
             const duration = ep.runTimeTicks ? formatDuration(ep.runTimeTicks) : '';
             const progress = ep.userData?.PlayedPercentage || 0;
             const hasProgress = progress > 0;
+            const isPlayed = ep.userData?.Played;
 
             return `
-                <div class="lf-episode-card" data-episode-id="${ep.id}">
+                <div class="lf-episode-card ${isPlayed ? 'is-watched' : ''}" data-episode-id="${ep.id}">
                     <div class="lf-episode-card__thumbnail">
                         <img src="${thumbUrl}" alt="${title}">
                         <div class="lf-episode-card__play-icon">
                             <span class="material-icons">play_arrow</span>
+                        </div>
+                        <div class="lf-episode-checkbox">
+                            <span class="material-icons">check</span>
                         </div>
                         <span class="lf-episode-card__badge">E${episodeNum}</span>
                         ${duration ? `<span class="lf-episode-card__duration">${duration}</span>` : ''}
@@ -1239,6 +1243,13 @@
                     ${createSeasonSelector(seasons)}
                     <div class="lf-filter-controls">
                         ${createLanguageSelector(audioStreams, subtitleStreams, targetEpisodeId)}
+                        
+                        <!-- Bulk Edit Button -->
+                        <button class="lf-filter-btn" id="lfBulkActionBtn" title="Bulk Edit" style="display: none;"> <!-- Hidden default, shown by logic if needed or user request? User said "Mark Season Watched" should be there. Visible. -->
+                            <span class="material-icons">done_all</span>
+                            <span id="lfBulkActionText">Mark Season Watched</span>
+                        </button>
+
                         <div class="lf-filter-dropdown" id="lfSortDropdown">
                             <button class="lf-filter-btn">
                                 <span class="material-icons">sort</span>
