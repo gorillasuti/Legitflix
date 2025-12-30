@@ -599,13 +599,18 @@ async function injectMediaBar() {
         // Remove old wrappers (cleanup)
         document.querySelectorAll('.legit-hero-wrapper').forEach(el => el.remove());
         document.querySelectorAll('.hero-carousel-container').forEach(el => el.remove()); // Fallback
+        document.querySelectorAll('.lf-custom-sections-wrapper').forEach(el => el.remove());
 
+        // Fetch Data for Hero & Custom Rows
         const items = await fetchMediaBarItems();
-        if (items.length === 0) return;
+        const views = await fetchUserViews();
+        const auth = await getAuth();
+
+        if (items.length === 0 && views.length === 0) return;
 
         // Attempt injection
-        let checkInterval = null; // Declare checkInterval here
-        checkInterval = setInterval(() => {
+        let checkInterval = null;
+        checkInterval = setInterval(async () => {
             let container = document.querySelector('.homeSectionsContainer');
             if (!container) container = document.querySelector('.mainAnimatedPages');
             if (!container) container = document.querySelector('#indexPage .pageContent');
@@ -616,21 +621,72 @@ async function injectMediaBar() {
             if (isReady && !document.querySelector('.legit-hero-wrapper')) {
                 clearInterval(checkInterval);
 
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('legit-hero-wrapper');
-                wrapper.innerHTML = createMediaBarHTML(items);
+                // 1. Inject Hero
+                if (items.length > 0) {
+                    const wrapper = document.createElement('div');
+                    wrapper.classList.add('legit-hero-wrapper');
+                    wrapper.innerHTML = createMediaBarHTML(items);
+                    container.insertBefore(wrapper, container.firstChild);
+                    container.classList.add('has-legit-hero');
+                    logger.log('injectMediaBar: Injected Home Carousel successfully');
+                    startCarousel();
+                }
 
-                container.insertBefore(wrapper, container.firstChild);
-                container.classList.add('has-legit-hero'); // Enable CSS spacing
+                // 2. Inject Custom Rows (Latest)
+                if (views.length > 0 && auth) {
+                    const sectionsWrapper = document.createElement('div');
+                    sectionsWrapper.className = 'lf-custom-sections-wrapper';
 
-                logger.log('injectMediaBar: Injected Home Carousel successfully');
-                startCarousel();
+                    // Insert after Hero
+                    const hero = container.querySelector('.legit-hero-wrapper');
+                    if (hero) hero.insertAdjacentElement('afterend', sectionsWrapper);
+                    else container.insertBefore(sectionsWrapper, container.firstChild);
 
-                // Inject Custom Sections (Latest 10)
-                injectCustomHomeSections();
+                    // CSS to hide defaults
+                    if (!document.getElementById('lf-hide-defaults')) {
+                        const style = document.createElement('style');
+                        style.id = 'lf-hide-defaults';
+                        style.textContent = `.section0, .section1, .section2, .section3, .section4 { display: none; }`;
+                        document.head.appendChild(style);
+                    }
+
+                    // Build Rows
+                    for (const view of views) {
+                        if (view.CollectionType === 'boxsets') continue;
+                        try {
+                            const limit = 10;
+                            const url = `/Users/${auth.UserId}/Items?ParentId=${view.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=${limit}&Fields=PrimaryImageAspectRatio,Overview,UserData,CommunityRating,ProductionYear`;
+                            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                            const data = await res.json();
+
+                            if (data.Items && data.Items.length > 0) {
+                                const sectionHtml = `
+                                    <div class="verticalSection sectionTitleContainer">
+                                        <h2 class="sectionTitle sectionTitle-cards">Latest ${view.Name}</h2>
+                                    </div>
+                                    <div class="itemsContainer scrollSlider focuscontainer-x" style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 2rem; scroll-behavior: smooth;">
+                                        ${createNativeCards(data.Items)}
+                                        ${createViewAllCard(view.Id, view.Name)}
+                                    </div>
+                                 `;
+                                const div = document.createElement('div');
+                                div.className = 'verticalSection lf-custom-section';
+                                div.innerHTML = sectionHtml;
+                                sectionsWrapper.appendChild(div);
+                            }
+                        } catch (e) { logger.error('Error fetching view', e); }
+                    }
+
+                    // Hide Original Sections (JS cleanup)
+                    const originals = document.querySelectorAll('.verticalSection');
+                    originals.forEach(sec => {
+                        if (sec.classList.contains('lf-custom-section') || sec.closest('.legit-hero-wrapper')) return;
+                        const title = sec.querySelector('.sectionTitle');
+                        if (title && title.textContent.includes('Latest')) sec.style.display = 'none';
+                    });
+                }
 
             } else if (isReady && document.querySelector('.legit-hero-wrapper')) {
-                // Already injected by another thread
                 clearInterval(checkInterval);
             }
         }, 1000);
@@ -641,109 +697,7 @@ async function injectMediaBar() {
         }, 15000);
     }
 }
-
-// --- CUSTOM HOME SECTIONS (Replaces Default Latest) ---
-async function injectCustomHomeSections() {
-    logger.log('injectCustomHomeSections: Starting...');
-
-    // 1. Container Check
-    // We try to find the standard home sections container
-    let container = document.querySelector('.homeSectionsContainer') || document.querySelector('#indexPage .pageContent');
-    if (!container) return;
-
-    // Avoid double injection
-    if (document.querySelector('.lf-custom-sections-wrapper')) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'lf-custom-sections-wrapper';
-
-    // Insert AFTER the Hero (if it exists) or at top
-    const hero = document.querySelector('.legit-hero-wrapper');
-    if (hero) {
-        hero.insertAdjacentElement('afterend', wrapper);
-    } else {
-        container.insertBefore(wrapper, container.firstChild);
-    }
-
-    // 2. Hide Default "Latest" Sections
-    // Standard Jellyfin structure usually puts "Latest [Name]" in sections causing the issue.
-    // We hide them via style injection for robustness.
-    const style = document.createElement('style');
-    style.id = 'lf-hide-defaults';
-    style.textContent = `
-        /* Hide standard Latest Media sections to prevent duplicates/landscape issues */
-        .section0, .section1, .section2, .section3, .section4 { 
-            /* This is risky as it might hide My Media. 
-               Better to identify by content or let user configure. 
-               User asked to "Rebuild" them, implies replacement. 
-               Standard Home usually has: 
-               1. My Media (Small) 
-               2. Latest [Lib 1] 
-               3. Latest [Lib 2] 
-               
-               We will try to target sections that look like "Latest".
-            */
-        }
-        /* Safer: We will hide them individually via JS loop below */
-    `;
-    document.head.appendChild(style);
-
-    // 3. Fetch Views
-    const views = await fetchUserViews();
-    const auth = await getAuth();
-
-    // 4. Loop & Build
-    for (const view of views) {
-        // Skip "Collections" or other specific types if needed? Usually OK to show all.
-        if (view.CollectionType === 'boxsets') continue;
-
-        try {
-            // Fetch Last 10 Series/Movies
-            // Strictly exclude Episodes to fix landscape issue
-            const limit = 10;
-            const url = `/Users/${auth.UserId}/Items?ParentId=${view.Id}&IncludeItemTypes=Series,Movie&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=${limit}&Fields=PrimaryImageAspectRatio,Overview,UserData,CommunityRating,ProductionYear`;
-
-            const res = await fetch(url, { headers: { 'X-Emby-Token': auth.AccessToken } });
-            const data = await res.json();
-
-            if (!data.Items || data.Items.length === 0) continue;
-
-            // Generate HTML
-            const sectionHtml = `
-                <div class="verticalSection sectionTitleContainer">
-                    <h2 class="sectionTitle sectionTitle-cards">
-                        Latest ${view.Name}
-                    </h2>
-                </div>
-                <div class="itemsContainer scrollSlider focuscontainer-x" style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 2rem; scroll-behavior: smooth;">
-                    ${createNativeCards(data.Items)}
-                    ${createViewAllCard(view.Id, view.Name)}
-                </div>
-            `;
-
-            const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'verticalSection lf-custom-section';
-            sectionDiv.innerHTML = sectionHtml;
-            wrapper.appendChild(sectionDiv);
-
-        } catch (e) {
-            logger.error(`Failed to load custom section for ${view.Name}`, e);
-        }
-    }
-
-    // 5. Hide Original Sections (JS approach)
-    // We look for sections that contain "Latest" in their title
-    const originals = document.querySelectorAll('.verticalSection');
-    originals.forEach(sec => {
-        // Skip our own
-        if (sec.classList.contains('lf-custom-section') || sec.closest('.legit-hero-wrapper')) return;
-
-        const title = sec.querySelector('.sectionTitle');
-        if (title && title.textContent.includes('Latest')) {
-            sec.style.display = 'none';
-        }
-    });
-}
+// Remove injectCustomHomeSections definition below
 
 function createNativeCards(items) {
     return items.map(item => {
