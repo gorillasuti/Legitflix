@@ -1336,8 +1336,257 @@
     }
 
     // =========================================================================
-    // EVENT HANDLERS
+    // SUBTITLE MANAGER (Custom Implementation)
     // =========================================================================
+    const SubtitleManager = {
+        modalId: 'lfSubtitleModal',
+
+        async show(episodeId) {
+            log('Opening Subtitle Manager for:', episodeId);
+            this.injectModal();
+            const modal = document.getElementById(this.modalId);
+
+            // Show modal (animation handled by CSS/JS class)
+            modal.classList.remove('hide');
+            modal.classList.add('opened');
+            modal.dataset.episodeId = episodeId;
+
+            // Load initial data
+            await this.loadCurrentSubtitles(episodeId);
+
+            // Setup listeners (if not already)
+            if (!modal.dataset.listenersAttached) {
+                this.attachListeners(modal);
+                modal.dataset.listenersAttached = 'true';
+            }
+        },
+
+        injectModal() {
+            if (document.getElementById(this.modalId)) return;
+
+            const html = `
+                <div id="${this.modalId}" class="lf-modal-overlay hide">
+                    <div class="dialogContainer">
+                        <div class="focuscontainer dialog dialog-fixedSize dialog-small formDialog subtitleEditorDialog opened" 
+                             style="animation: 180ms ease-out 0s 1 normal both running scaleup; max-width: 800px; margin: 5vh auto; background: var(--color-background-secondary, #1c1c1c); border-radius: var(--radius-lg, 12px);">
+                            
+                            <div class="formDialogHeader" style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <button is="paper-icon-button-light" class="btnCancel autoSize paper-icon-button-light" tabindex="-1" title="Back" style="background:none; border:none; color:inherit; cursor:pointer;">
+                                    <span class="material-icons arrow_back" aria-hidden="true">arrow_back</span>
+                                </button>
+                                <h3 class="formDialogHeaderTitle" style="margin: 0 0 0 16px; font-size: 1.2rem; font-weight: 600;">Subtitles</h3>
+                            </div>
+
+                            <div class="formDialogContent smoothScrollY" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
+                                <div class="dialogContentInner dialog-content-centered">
+                                    
+                                    <!-- EXISTING SUBTITLES -->
+                                    <div class="subtitleList" style="margin-bottom:2em">
+                                        <h2 style="font-size: 1rem; margin-bottom: 1rem; opacity: 0.8;">My Subtitles</h2>
+                                        <div id="lfCurrentSubsList">Loading...</div>
+                                    </div>
+
+                                    <!-- SEARCH -->
+                                    <h2 style="font-size: 1rem; margin-bottom: 1rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
+                                    
+                                    <form class="subtitleSearchForm" style="display: flex; gap: 10px; align-items: flex-end;">
+                                        <div class="selectContainer flex-grow" style="flex: 1;">
+                                            <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.8rem; margin-bottom: 4px; opacity: 0.7;">Language</label>
+                                            <select is="emby-select" id="selectLanguage" class="emby-select-withcolor emby-select" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                                                <option value="eng">English</option>
+                                                <option value="spa">Spanish</option>
+                                                <option value="fre">French</option>
+                                                <option value="ger">German</option>
+                                                <option value="ita">Italian</option>
+                                                <option value="por">Portuguese</option>
+                                                <option value="rus">Russian</option>
+                                                <option value="pol">Polish</option>
+                                                <option value="dut">Dutch</option>
+                                                <option value="swe">Swedish</option>
+                                                <option value="nor">Norwegian</option>
+                                                <option value="fin">Finnish</option>
+                                                <option value="da">Danish</option>
+                                                <option value="tur">Turkish</option>
+                                                <option value="ara">Arabic</option>
+                                                <option value="heb">Hebrew</option>
+                                                <option value="hun">Hungarian</option>
+                                                <option value="cze">Czech</option>
+                                                <option value="rom">Romanian</option>
+                                                <option value="vie">Vietnamese</option>
+                                                <option value="tha">Thai</option>
+                                                <option value="chi">Chinese</option>
+                                                <option value="jpn">Japanese</option>
+                                                <option value="kor">Korean</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="raised btnSubmit block button-submit emby-button" style="background: var(--color-primary, #00a4dc); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                                            Search
+                                        </button>
+                                    </form>
+
+                                    <div class="subtitleResults" id="lfSubtitleSearchResults" style="margin-top: 20px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        .lf-modal-overlay {
+                            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                            background: rgba(0,0,0,0.8); z-index: 10000;
+                            display: flex; align-items: flex-start; justify-content: center;
+                            overflow-y: auto;
+                        }
+                        .lf-modal-overlay.hide { display: none !important; }
+                        .listItem { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+                        .listItemBody { flex: 1; margin: 0 10px; }
+                        .secondary { font-size: 0.85rem; opacity: 0.7; }
+                        .btnDelete, .btnDownload { background: none; border: none; color: white; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
+                        .btnDelete:hover, .btnDownload:hover { opacity: 1; }
+                    </style>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        },
+
+        async loadCurrentSubtitles(episodeId) {
+            const listContainer = document.querySelector('#lfCurrentSubsList');
+            listContainer.innerHTML = '<div style="padding: 10px; opacity: 0.6;">Fetching subtitles...</div>';
+
+            try {
+                const auth = await getAuth();
+                const response = await fetch(`/Users/${auth.UserId}/Items/${episodeId}`, {
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+                const data = await response.json();
+
+                // Get streams
+                const streams = (data.MediaSources?.[0]?.MediaStreams || []).filter(s => s.Type === 'Subtitle');
+
+                if (streams.length === 0) {
+                    listContainer.innerHTML = '<div style="padding: 10px; opacity: 0.6;">No subtitles found.</div>';
+                    return;
+                }
+
+                listContainer.innerHTML = streams.map((s, index) => `
+                    <div class="listItem">
+                        <span class="material-icons" style="opacity: 0.7;">closed_caption</span>
+                        <div class="listItemBody">
+                            <div>${s.DisplayTitle || s.Title || s.Language || 'Unknown'}</div>
+                            <div class="secondary">${s.IsExternal ? 'External' : 'Embedded'} • ${s.Codec || ''}</div>
+                        </div>
+                        ${s.IsExternal ? `
+                        <button class="btnDelete" data-index="${s.Index}" title="Delete">
+                            <span class="material-icons">delete</span>
+                        </button>` : ''}
+                    </div>
+                `).join('');
+
+                // Bind delete buttons (future implementation)
+                listContainer.querySelectorAll('.btnDelete').forEach(btn => {
+                    btn.addEventListener('click', () => alert('Deleting subtitles is not yet supported via this quick editor.'));
+                });
+
+            } catch (e) {
+                log('Error loading subtitles:', e);
+                listContainer.innerHTML = `<div style="color: #ff5252;">Error loading subtitles: ${e.message}</div>`;
+            }
+        },
+
+        async searchSubtitles(episodeId, language) {
+            const resultsContainer = document.querySelector('#lfSubtitleSearchResults');
+            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.6;">Searching...</div>';
+
+            try {
+                const auth = await getAuth();
+                const url = `/Items/${episodeId}/RemoteSearch/Subtitles/${language}`;
+                const response = await fetch(url, {
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+                const data = await response.json(); // Array of RemoteSubtitleInfo
+
+                if (!data || data.length === 0) {
+                    resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.6;">No results found.</div>';
+                    return;
+                }
+
+                resultsContainer.innerHTML = data.map(sub => `
+                    <div class="listItem">
+                        <span class="material-icons" style="opacity: 0.7;">download</span>
+                        <div class="listItemBody">
+                            <div>${sub.Name}</div>
+                            <div class="secondary">${sub.ProviderName} • ${sub.Format || ''} • ${sub.Author || 'Unknown'}</div>
+                        </div>
+                        <button class="btnDownload" data-id="${sub.Id}" title="Download">
+                            <span class="material-icons">cloud_download</span>
+                        </button>
+                    </div>
+                `).join('');
+
+                // Bind download buttons
+                resultsContainer.querySelectorAll('.btnDownload').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.download(episodeId, e.currentTarget.dataset.id));
+                });
+
+            } catch (e) {
+                log('Error searching:', e);
+                resultsContainer.innerHTML = `<div style="color: #ff5252;">Search failed: ${e.message}</div>`;
+            }
+        },
+
+        async download(episodeId, subtitleId) {
+            const resultsContainer = document.querySelector('#lfSubtitleSearchResults');
+            // Optimistic UI
+            resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.6;">Downloading...</div>';
+
+            try {
+                const auth = await getAuth();
+                // Standard Jellyfin download endpoint
+                await fetch(`/Items/${episodeId}/RemoteSearch/Subtitles/${subtitleId}`, {
+                    method: 'POST',
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                });
+
+                resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #4caf50;">Download successful! Refreshing list...</div>';
+
+                // Refresh list
+                setTimeout(() => {
+                    this.loadCurrentSubtitles(episodeId);
+                    resultsContainer.innerHTML = '';
+                }, 1500);
+
+            } catch (e) {
+                log('Download error:', e);
+                resultsContainer.innerHTML = `<div style="color: #ff5252;">Download failed: ${e.message}</div>`;
+            }
+        },
+
+        attachListeners(modal) {
+            // Close
+            modal.querySelector('.btnCancel').addEventListener('click', () => {
+                modal.classList.add('hide');
+                modal.classList.remove('opened');
+            });
+            // Click outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hide');
+                    modal.classList.remove('opened');
+                }
+            });
+
+            // Search
+            const form = modal.querySelector('.subtitleSearchForm');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const lang = modal.querySelector('#selectLanguage').value;
+                const episodeId = modal.dataset.episodeId;
+                this.searchSubtitles(episodeId, lang);
+            });
+        }
+    };
+
+    // Observer setup (keeping the rest of the file)
+    // ===================================
     function attachEventListeners(container) {
         console.log('[DEBUG] attachEventListeners called');
         // Season dropdown toggle
@@ -1382,52 +1631,22 @@
 
             // Edit Subtitles Button
             const editSubsBtn = langSelector.querySelector('#lfEditSubsBtn');
-            editSubsBtn?.addEventListener('click', async function () {
-                // Check if we have a specific episode ID (from First Unwatched logic)
-                // Otherwise fallback to Series ID from URL
-                const episodeId = this.dataset.episodeId;
-                const hash = window.location.hash;
-                const seriesId = hash.includes('id=') ? hash.split('id=')[1].split('&')[0] : null;
+            editSubsBtn?.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
 
-                const targetId = episodeId || seriesId; // Prefer Episode ID for subtitle editing
+                // Get target ID (Episode ID)
+                // We prefer the button's dataset attribute if available
+                const targetId = this.dataset.episodeId || currentSeriesId; // Fallback if needed, though usually incorrect for subs
+
+                console.log('[DEBUG] Edit Subtitles Clicked. Target:', targetId);
 
                 if (targetId) {
-                    console.log('[DEBUG] Opening Subtitle Editor for ID:', targetId);
-                    // 1. Try generic Emby/Jellyfin command first
-                    if (window.SubtitleEditor) {
-                        window.SubtitleEditor.show(targetId);
-                    }
-                    // 2. Try RequireJS (Jellyfin standard)
-                    else if (window.require) {
-                        window.require(['subtitleeditor'], (SubtitleEditor) => {
-                            if (SubtitleEditor && SubtitleEditor.show) {
-                                SubtitleEditor.show(targetId);
-                            } else {
-                                // Try finding in global scope after require?
-                                console.log('SubtitleEditor loaded but API mismatch', SubtitleEditor);
-                            }
-                        });
-                    }
-                    // 3. Try to find the module directly if global is missing
-                    else {
-                        try {
-                            // Try multiple common paths for the module
-                            let mod = null;
-                            try { mod = await import('scripts/subtitleeditor'); } catch (e) { }
-                            if (!mod) try { mod = await import('controllers/subtitleeditor'); } catch (e) { }
-
-                            if (mod && mod.show) {
-                                mod.show(targetId);
-                            } else {
-                                console.log('SubtitleEditor module not found, falling back to route');
-                                window.location.hash = `!/subtitleeditor?id=${targetId}`;
-                            }
-                        } catch (e) {
-                            console.log('Error loading SubtitleEditor, using route fallback', e);
-                            window.location.hash = `!/subtitleeditor?id=${targetId}`;
-                        }
-                    }
+                    SubtitleManager.show(targetId);
+                } else {
+                    console.error('No target ID for subtitle editor');
                 }
+
                 langSelector.classList.remove('is-open');
             });
 
