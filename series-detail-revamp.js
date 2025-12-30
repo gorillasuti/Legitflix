@@ -2372,395 +2372,479 @@
         currentSeriesId = seriesId;
         log('Detected Series page:', seriesId);
 
+        await handleSeriesPage(seriesId);
     }
-}
+
+    /**
+     * Handle Series Page Logic
+     */
+    async function handleSeriesPage(seriesId) {
+        try {
+            const auth = await getAuth();
+            if (!auth) return;
+
+            // Fetch series data
+            const seriesUrl = `/Users/${auth.UserId}/Items/${seriesId}?Fields=RemoteTrailers,People,Studios,Genres,Overview,ProductionYear,OfficialRating,RunTimeTicks,Tags,ImageTags,ProviderIds`;
+            const seriesRes = await fetch(seriesUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+            const seriesData = await seriesRes.json();
+
+            // Fetch Seasons
+            const seasonsUrl = `/Users/${auth.UserId}/Items?ParentId=${seriesId}&IncludeItemTypes=Season&Fields=RemoteTrailers`;
+            const seasonsRes = await fetch(seasonsUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+            const seasonsData = await seasonsRes.json();
+            const seasons = seasonsData.Items || [];
+
+            // Fetch first season episodes
+            let episodes = [];
+            if (seasons.length > 0) {
+                episodes = await fetchEpisodes(seriesId, seasons[0].Id);
+            }
+
+            // Get Trailer ID (Matches legitflix-theme.js logic)
+            let trailerYtId = null;
+            let allTrailers = [];
+
+            // 1. Series Remote Trailers
+            if (seriesData.RemoteTrailers) {
+                seriesData.RemoteTrailers.forEach(t => {
+                    const vid = getYoutubeId(t.Url);
+                    if (vid) allTrailers.push({ title: 'Main Trailer', id: vid });
+                });
+            }
+
+            // 2. Season Remote Trailers
+            seasons.forEach(s => {
+                if (s.RemoteTrailers) {
+                    s.RemoteTrailers.forEach(t => {
+                        const vid = getYoutubeId(t.Url);
+                        if (vid) allTrailers.push({ title: s.Name, id: vid });
+                    });
+                }
+            });
+
+            // 3. Priority: Season 1 > First available
+            if (allTrailers.length > 0) {
+                trailerYtId = allTrailers[0].id;
+                const s1 = allTrailers.find(t => t.title === 'Season 1');
+                if (s1) trailerYtId = s1.id;
+            }
+
+            // Data for rendering
+            const people = seriesData.People || [];
+
+            // Similar Items
+            const similar = await fetchSimilar(seriesId);
+
+            // Prepare Container
+            const wrapper = prepareContainer();
+            if (!wrapper) return;
+
+            // Render
+            renderSeriesDetailPage({
+                series: seriesData,
+                seasons: seasons,
+                episodes: episodes,
+                people: people,
+                similar: similar
+            }, wrapper);
+
+            // Wire up dynamic buttons after render
+            wireUpButtons(seriesId, seriesData, trailerYtId, seasons);
+
+            log('Series detail page injected successfully');
+        } catch (e) {
+            log('Error injecting series page:', e);
+        } finally {
+            isInjecting = false;
+        }
+    }
 
     /**
      * Wire up button functionality
      */
     function wireUpButtons(seriesId, seriesData, trailerYtId, seasons) {
-    const container = document.getElementById(CONFIG.containerId);
-    if (!container) return;
+        const container = document.getElementById(CONFIG.containerId);
+        if (!container) return;
 
-    // Watch Now button - plays first unwatched episode
-    const watchNowBtn = container.querySelector('#lfWatchNowBtn');
-    if (watchNowBtn) {
-        watchNowBtn.addEventListener('click', async () => {
-            log('Watch Now clicked');
-            // Get NextUp or first episode
-            const auth = await getAuth();
-            if (!auth) return;
-
-            try {
-                const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
-                const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
-                const nextUpData = await nextUpRes.json();
-
-                let episodeId = null;
-                if (nextUpData.Items && nextUpData.Items.length > 0) {
-                    episodeId = nextUpData.Items[0].Id;
-                } else {
-                    // Play first episode
-                    const firstSeason = seasons[0];
-                    const episodes = await fetchEpisodes(seriesId, firstSeason.id);
-                    if (episodes.length > 0) {
-                        episodeId = episodes[0].id;
-                    }
-                }
-
-                if (episodeId) {
-                    // Use existing playback helper if available
-                    if (window.legitFlixPlay) {
-                        window.legitFlixPlay(episodeId);
-                    } else {
-                        window.location.href = `#!/details?id=${episodeId}`;
-                    }
-                }
-            } catch (e) {
-                log('Error playing:', e);
-            }
-        });
-    }
-
-    // Trailer button
-    const trailerBtn = container.querySelector('#lfTrailerBtn');
-    const trailerContainer = container.querySelector('#lfHeroTrailer');
-    const trailerIframe = container.querySelector('#lfTrailerIframe');
-    const backdrop = container.querySelector('#lfHeroBackdrop');
-
-    const muteBtn = container.querySelector('#lfMuteBtn');
-
-    if (trailerBtn && trailerYtId) {
-        let hideUITimeout;
-        const heroSection = container.querySelector('#lfSeriesHero');
-
-        const startHideTimer = () => {
-            clearTimeout(hideUITimeout);
-            hideUITimeout = setTimeout(() => {
-                if (trailerContainer.classList.contains('is-playing')) {
-                    heroSection?.classList.add('is-clean-view');
-                }
-            }, 5000);
-        };
-
-        const resetHideTimer = () => {
-            heroSection?.classList.remove('is-clean-view');
-            if (trailerContainer.classList.contains('is-playing')) {
-                startHideTimer();
-            }
-        };
-
-        // Interaction listener to wake up UI
-        heroSection?.addEventListener('mousemove', resetHideTimer);
-        heroSection?.addEventListener('click', resetHideTimer);
-
-        trailerBtn.addEventListener('click', () => {
-            const isPlaying = trailerContainer.classList.contains('is-playing');
-
-            if (isPlaying) {
-                // STOP TRAILER
-                trailerIframe.src = '';
-                trailerContainer.classList.remove('is-playing');
-                heroSection?.classList.remove('is-clean-view');
-                clearTimeout(hideUITimeout);
-
-                if (backdrop) backdrop.style.opacity = '1';
-
-                // Reset Button
-                trailerBtn.innerHTML = `
-                        <span class="material-icons">play_circle_filled</span>
-                        <span>Watch Trailer</span>
-                     `;
-
-                // Hide Mute
-                if (muteBtn) {
-                    muteBtn.style.display = 'none';
-                    muteBtn.classList.remove('is-muted');
-                }
-            } else {
-                // PLAY TRAILER
-                log('Trailer clicked, YT ID:', trailerYtId);
-
-                if (trailerIframe && trailerContainer) {
-                    // Update Iframe Attributes
-                    trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-                    trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-
-                    // Exact URL from legitflix-theme.js (The "Working Version")
-                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}`;
-
-                    trailerIframe.src = embedUrl;
-                    trailerContainer.classList.add('is-playing');
-                    if (backdrop) backdrop.style.opacity = '0';
-
-                    // Start Clean Mode Timer
-                    startHideTimer();
-
-                    // Update Button Text
-                    trailerBtn.innerHTML = `
-                            <span class="material-icons">stop_circle</span>
-                            <span>Stop Trailer</span>
-                        `;
-
-                    // Show mute button
-                    if (muteBtn) {
-                        muteBtn.style.display = 'flex';
-                        muteBtn.classList.add('is-muted');
-                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                    }
-                }
-            }
-        });
-
-        // Mute Button Logic
-        if (muteBtn) {
-            muteBtn.addEventListener('click', () => {
-                const isMuted = muteBtn.classList.contains('is-muted');
-                if (trailerIframe.contentWindow) {
-                    if (isMuted) {
-                        trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-                        muteBtn.classList.remove('is-muted');
-                        muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
-                    } else {
-                        trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
-                        muteBtn.classList.add('is-muted');
-                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                    }
-                }
-            });
-        }
-
-    } else if (trailerBtn && !trailerYtId) {
-        // No trailer available - hide or disable button
-        trailerBtn.style.opacity = '0.5';
-        trailerBtn.style.pointerEvents = 'none';
-        trailerBtn.title = 'No trailer available';
-    }
-
-    // Heart/Favorite button
-    const heartBtn = container.querySelector('#lfHeartBtn');
-    if (heartBtn) {
-        // Set initial state
-        if (seriesData.isFavorite) {
-            heartBtn.classList.add('is-liked');
-            heartBtn.querySelector('.material-icons').textContent = 'favorite';
-        }
-
-        heartBtn.addEventListener('click', async function () {
-            const icon = this.querySelector('.material-icons');
-            const wasLiked = this.classList.contains('is-liked');
-
-            // Optimistic UI update
-            this.classList.toggle('is-liked');
-            icon.textContent = this.classList.contains('is-liked') ? 'favorite' : 'favorite_border';
-
-            // Call API
-            try {
+        // Watch Now button - plays first unwatched episode
+        const watchNowBtn = container.querySelector('#lfWatchNowBtn');
+        if (watchNowBtn) {
+            watchNowBtn.addEventListener('click', async () => {
+                log('Watch Now clicked');
+                // Get NextUp or first episode
                 const auth = await getAuth();
-                if (auth && window.ApiClient) {
-                    await window.ApiClient.updateFavoriteStatus(auth.UserId, seriesId, !wasLiked);
-                    log('Favorite updated:', !wasLiked);
-                }
-            } catch (e) {
-                // Revert on error
-                this.classList.toggle('is-liked');
-                icon.textContent = wasLiked ? 'favorite' : 'favorite_border';
-                log('Error updating favorite:', e);
-            }
-        });
-    }
+                if (!auth) return;
 
-    // Playback helper
-    const playItem = (itemId) => {
-        if (window.PlaybackManager) {
-            window.PlaybackManager.play({
-                items: [itemId],
-                startPositionTicks: 0
-            });
-        } else if (window.legitFlixPlay) {
-            window.legitFlixPlay(itemId);
-        } else {
-            window.location.href = `#!/details?id=${itemId}`;
-        }
-    };
+                try {
+                    const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
+                    const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                    const nextUpData = await nextUpRes.json();
 
-    // Episode card clicks - play episode
-    container.querySelectorAll('.lf-episode-card').forEach(card => {
-        card.addEventListener('click', function () {
-            const episodeId = this.dataset.episodeId;
-            log('Episode clicked:', episodeId);
-            playItem(episodeId);
-        });
-    });
+                    let episodeId = null;
+                    if (nextUpData.Items && nextUpData.Items.length > 0) {
+                        episodeId = nextUpData.Items[0].Id;
+                    } else {
+                        // Play first episode
+                        const firstSeason = seasons[0];
+                        const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+                        if (episodes.length > 0) {
+                            episodeId = episodes[0].id;
+                        }
+                    }
 
-    // Similar item clicks - navigate to item
-    container.querySelectorAll('.lf-similar-card').forEach(card => {
-        card.addEventListener('click', function () {
-            const itemId = this.dataset.itemId;
-            log('Similar clicked:', itemId);
-            window.location.href = `#!/details?id=${itemId}`;
-        });
-    });
-
-    // Season selector - reload episodes when changed
-    const seasonOptions = container.querySelectorAll('.lf-season-selector__option');
-    seasonOptions.forEach(opt => {
-        opt.addEventListener('click', async function () {
-            const seasonId = this.dataset.seasonId;
-            const seasonIndex = parseInt(this.dataset.seasonIndex);
-            log('Season changed:', seasonId);
-
-            // Fetch new episodes
-            const episodes = await fetchEpisodes(seriesId, seasonId);
-
-            // Re-render episode grid
-            const episodeGrid = container.querySelector('.lf-episode-grid');
-            if (episodeGrid) {
-                episodeGrid.innerHTML = createEpisodeGrid(episodes).replace('<div class="lf-episode-grid">', '').replace('</div>', '');
-
-                // Re-attach click handlers
-                container.querySelectorAll('.lf-episode-card').forEach(card => {
-                    card.addEventListener('click', function () {
-                        const episodeId = this.dataset.episodeId;
+                    if (episodeId) {
+                        // Use existing playback helper if available
                         if (window.legitFlixPlay) {
                             window.legitFlixPlay(episodeId);
                         } else {
                             window.location.href = `#!/details?id=${episodeId}`;
                         }
-                    });
+                    }
+                } catch (e) {
+                    log('Error playing:', e);
+                }
+            });
+        }
+
+        // Trailer button
+        const trailerBtn = container.querySelector('#lfTrailerBtn');
+        const trailerContainer = container.querySelector('#lfHeroTrailer');
+        const trailerIframe = container.querySelector('#lfTrailerIframe');
+        const backdrop = container.querySelector('#lfHeroBackdrop');
+
+        const muteBtn = container.querySelector('#lfMuteBtn');
+
+        if (trailerBtn && trailerYtId) {
+            let hideUITimeout;
+            const heroSection = container.querySelector('#lfSeriesHero');
+
+            const startHideTimer = () => {
+                clearTimeout(hideUITimeout);
+                hideUITimeout = setTimeout(() => {
+                    if (trailerContainer.classList.contains('is-playing')) {
+                        heroSection?.classList.add('is-clean-view');
+                    }
+                }, 5000);
+            };
+
+            const resetHideTimer = () => {
+                heroSection?.classList.remove('is-clean-view');
+                if (trailerContainer.classList.contains('is-playing')) {
+                    startHideTimer();
+                }
+            };
+
+            // Interaction listener to wake up UI
+            heroSection?.addEventListener('mousemove', resetHideTimer);
+            heroSection?.addEventListener('click', resetHideTimer);
+
+            trailerBtn.addEventListener('click', () => {
+                const isPlaying = trailerContainer.classList.contains('is-playing');
+
+                if (isPlaying) {
+                    // STOP TRAILER
+                    trailerIframe.src = '';
+                    trailerContainer.classList.remove('is-playing');
+                    heroSection?.classList.remove('is-clean-view');
+                    clearTimeout(hideUITimeout);
+
+                    if (backdrop) backdrop.style.opacity = '1';
+
+                    // Reset Button
+                    trailerBtn.innerHTML = `
+                        <span class="material-icons">play_circle_filled</span>
+                        <span>Watch Trailer</span>
+                     `;
+
+                    // Hide Mute
+                    if (muteBtn) {
+                        muteBtn.style.display = 'none';
+                        muteBtn.classList.remove('is-muted');
+                    }
+                } else {
+                    // PLAY TRAILER
+                    log('Trailer clicked, YT ID:', trailerYtId);
+
+                    if (trailerIframe && trailerContainer) {
+                        // Update Iframe Attributes
+                        trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                        trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+                        // Exact URL from legitflix-theme.js (The "Working Version")
+                        const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}`;
+
+                        trailerIframe.src = embedUrl;
+                        trailerContainer.classList.add('is-playing');
+                        if (backdrop) backdrop.style.opacity = '0';
+
+                        // Start Clean Mode Timer
+                        startHideTimer();
+
+                        // Update Button Text
+                        trailerBtn.innerHTML = `
+                            <span class="material-icons">stop_circle</span>
+                            <span>Stop Trailer</span>
+                        `;
+
+                        // Show mute button
+                        if (muteBtn) {
+                            muteBtn.style.display = 'flex';
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
+                    }
+                }
+            });
+
+            // Mute Button Logic
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    const isMuted = muteBtn.classList.contains('is-muted');
+                    if (trailerIframe.contentWindow) {
+                        if (isMuted) {
+                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+                            muteBtn.classList.remove('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+                        } else {
+                            trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
+                    }
                 });
             }
-        });
-    });
-}
 
-/**
- * Start monitoring loop
- */
-function startMonitoring() {
-    // Run immediately
-    monitorSeriesDetailPage();
-
-    // Then check periodically for SPA navigation
-    setInterval(() => {
-        monitorSeriesDetailPage();
-    }, 1000);
-}
-
-// =========================================================================
-// DEMO DATA (For browser prototyping)
-// =========================================================================
-const DEMO_DATA = {
-    series: {
-        id: '43b07d8c75320ca4542a2ea375ed8095',
-        name: 'Your Lie in April',
-        year: '2014 - 2015',
-        officialRating: 'TV-PG',
-        communityRating: 8.6,
-        episodeCount: 22,
-        overview: "Piano prodigy Arima Kosei dominated the competition and all child musicians knew his name. But after his mother, who was also his instructor, passed away, he had a mental breakdown while performing at a recital that resulted in him no longer being able to hear the sound of his piano even though his hearing was perfectly fine. Even two years later, Kosei hasn't touched the piano and views the world in monotone, without any flair or color. He was content living out his life with his good friends Tsubaki and Watari until one day, a free-spirited violinist named Kaori changed everything.",
-        genres: ['Drama', 'Romance', 'Music'],
-        studios: [{ Name: 'A-1 Pictures' }],
-        backdropUrl: 'https://stream.legitflix.eu/Items/43b07d8c75320ca4542a2ea375ed8095/Images/Backdrop/0?tag=1027162ed5999b669a9b22983261de30&maxWidth=1920&quality=80',
-        posterUrl: 'https://stream.legitflix.eu/Items/43b07d8c75320ca4542a2ea375ed8095/Images/Primary?fillHeight=350&fillWidth=240&quality=96&tag=68e1bad239ac7faf99052b2fd3304c72',
-        people: [
-            { Name: 'Natsuki Hanae', Type: 'Actor', Role: 'Kousei Arima' },
-            { Name: 'Risa Taneda', Type: 'Actor', Role: 'Kaori Miyazono' },
-            { Name: 'Ayane Sakura', Type: 'Actor', Role: 'Tsubaki Sawabe' }
-        ]
-    },
-    seasons: [
-        { id: 's1', name: 'Season 1', episodeCount: 22 },
-        { id: 's2', name: 'Season 2', episodeCount: 24 },
-        { id: 's3', name: 'Specials', episodeCount: 2 }
-    ],
-    episodes: [
-        { id: 'e1', indexNumber: 1, name: 'Monotone/Colorful', overview: 'Piano prodigy Kosei Arima dominates competitions until tragedy strikes.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000, userData: { PlayedPercentage: 75 } },
-        { id: 'e2', indexNumber: 2, name: 'Friend A', overview: 'Kaori asks Kosei to be her accompanist at a competition.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
-        { id: 'e3', indexNumber: 3, name: 'Inside Spring', overview: 'Kosei struggles as he faces the piano again after years.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
-        { id: 'e4', indexNumber: 4, name: 'Departure', overview: 'The competition day arrives and Kosei must overcome his fears.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
-        { id: 'e5', indexNumber: 5, name: 'Gray Skies', overview: 'A defining moment that will change Kosei\'s life forever.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
-        { id: 'e6', indexNumber: 6, name: 'On the Way Home', overview: 'Kosei reflects on his performance and what lies ahead.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 }
-    ],
-    people: [
-        { Id: 'p1', Name: 'Natsuki Hanae', Type: 'Actor', Role: 'Kousei Arima', imageUrl: 'https://stream.legitflix.eu/Items/52cf6b71865912d687416fd9efe30e77/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p2', Name: 'Risa Taneda', Type: 'Actor', Role: 'Kaori Miyazono', imageUrl: 'https://stream.legitflix.eu/Items/a04645001ff80f055512f906137bab8d/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p3', Name: 'Ayane Sakura', Type: 'Actor', Role: 'Tsubaki Sawabe', imageUrl: 'https://stream.legitflix.eu/Items/efc9b3bea54cc5e1eea1c27dfb7f35bf/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p4', Name: 'Ryota Osaka', Type: 'Actor', Role: 'Ryouta Watari', imageUrl: 'https://stream.legitflix.eu/Items/c41402b5f1002a24c825ddd8b706bbb9/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p5', Name: 'Ai Kayano', Type: 'Actor', Role: 'Nagi Aiza', imageUrl: 'https://stream.legitflix.eu/Items/8da0c7a7ffcc3ffb559fd05c1f241fb4/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p6', Name: 'Saori Hayami', Type: 'Actor', Role: 'Emi Igawa', imageUrl: 'https://stream.legitflix.eu/Items/72fb92f7d43121d3715ad608118426fd/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
-        { Id: 'p7', Name: 'Yuki Kaji', Type: 'Actor', Role: 'Takeshi Aiza', imageUrl: 'https://stream.legitflix.eu/Items/491d9d793c6fdd08d7bbde585d398c14/Images/Primary?fillHeight=100&fillWidth=100&quality=96' }
-    ],
-    similar: [
-        { Id: 's1', Name: 'Golden Time', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
-        { Id: 's2', Name: 'Akame ga Kill!', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
-        { Id: 's3', Name: 'Anohana', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
-        { Id: 's4', Name: 'Clannad', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
-        { Id: 's5', Name: 'Violet Evergarden', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
-        { Id: 's6', Name: 'Toradora!', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' }
-    ]
-};
-
-// =========================================================================
-// PUBLIC API
-// =========================================================================
-window.LFSeriesDetail = {
-    // UI generators
-    injectStyles,
-    renderSeriesDetailPage,
-    createHeroSection,
-    createSeasonSelector,
-    createEpisodeGrid,
-    createEpisodesSection,
-    createCastSection,
-    createSimilarSection,
-
-    // API functions
-    fetchSeriesData,
-    fetchSeasons,
-    fetchEpisodes,
-    fetchSimilar,
-
-    // Page monitoring
-    monitorSeriesDetailPage,
-    startMonitoring,
-
-    // Demo data
-    DEMO_DATA,
-
-    // Quick demo function for browser testing
-    demo: function (targetSelector = 'body') {
-        const target = document.querySelector(targetSelector);
-        if (!target) {
-            console.error('Target not found:', targetSelector);
-            return;
+        } else if (trailerBtn && !trailerYtId) {
+            // No trailer available - hide or disable button
+            trailerBtn.style.opacity = '0.5';
+            trailerBtn.style.pointerEvents = 'none';
+            trailerBtn.title = 'No trailer available';
         }
-        target.style.backgroundColor = '#141414';
-        target.style.fontFamily = "'Inter', sans-serif";
-        renderSeriesDetailPage(DEMO_DATA, target);
-        log('Demo rendered into:', targetSelector);
+
+        // Heart/Favorite button
+        const heartBtn = container.querySelector('#lfHeartBtn');
+        if (heartBtn) {
+            // Set initial state
+            if (seriesData.isFavorite) {
+                heartBtn.classList.add('is-liked');
+                heartBtn.querySelector('.material-icons').textContent = 'favorite';
+            }
+
+            heartBtn.addEventListener('click', async function () {
+                const icon = this.querySelector('.material-icons');
+                const wasLiked = this.classList.contains('is-liked');
+
+                // Optimistic UI update
+                this.classList.toggle('is-liked');
+                icon.textContent = this.classList.contains('is-liked') ? 'favorite' : 'favorite_border';
+
+                // Call API
+                try {
+                    const auth = await getAuth();
+                    if (auth && window.ApiClient) {
+                        await window.ApiClient.updateFavoriteStatus(auth.UserId, seriesId, !wasLiked);
+                        log('Favorite updated:', !wasLiked);
+                    }
+                } catch (e) {
+                    // Revert on error
+                    this.classList.toggle('is-liked');
+                    icon.textContent = wasLiked ? 'favorite' : 'favorite_border';
+                    log('Error updating favorite:', e);
+                }
+            });
+        }
+
+        // Playback helper
+        const playItem = (itemId) => {
+            if (window.PlaybackManager) {
+                window.PlaybackManager.play({
+                    items: [itemId],
+                    startPositionTicks: 0
+                });
+            } else if (window.legitFlixPlay) {
+                window.legitFlixPlay(itemId);
+            } else {
+                window.location.href = `#!/details?id=${itemId}`;
+            }
+        };
+
+        // Episode card clicks - play episode
+        container.querySelectorAll('.lf-episode-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const episodeId = this.dataset.episodeId;
+                log('Episode clicked:', episodeId);
+                playItem(episodeId);
+            });
+        });
+
+        // Similar item clicks - navigate to item
+        container.querySelectorAll('.lf-similar-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const itemId = this.dataset.itemId;
+                log('Similar clicked:', itemId);
+                window.location.href = `#!/details?id=${itemId}`;
+            });
+        });
+
+        // Season selector - reload episodes when changed
+        const seasonOptions = container.querySelectorAll('.lf-season-selector__option');
+        seasonOptions.forEach(opt => {
+            opt.addEventListener('click', async function () {
+                const seasonId = this.dataset.seasonId;
+                const seasonIndex = parseInt(this.dataset.seasonIndex);
+                log('Season changed:', seasonId);
+
+                // Fetch new episodes
+                const episodes = await fetchEpisodes(seriesId, seasonId);
+
+                // Re-render episode grid
+                const episodeGrid = container.querySelector('.lf-episode-grid');
+                if (episodeGrid) {
+                    episodeGrid.innerHTML = createEpisodeGrid(episodes).replace('<div class="lf-episode-grid">', '').replace('</div>', '');
+
+                    // Re-attach click handlers
+                    container.querySelectorAll('.lf-episode-card').forEach(card => {
+                        card.addEventListener('click', function () {
+                            const episodeId = this.dataset.episodeId;
+                            if (window.legitFlixPlay) {
+                                window.legitFlixPlay(episodeId);
+                            } else {
+                                window.location.href = `#!/details?id=${episodeId}`;
+                            }
+                        });
+                    });
+                }
+            });
+        });
     }
-};
 
-// =========================================================================
-// AUTO-START (Only when running on Jellyfin)
-// =========================================================================
+    /**
+     * Start monitoring loop
+     */
+    function startMonitoring() {
+        // Run immediately
+        monitorSeriesDetailPage();
 
-// Check if we're in Jellyfin (ApiClient exists or will exist)
-const checkAndStart = () => {
-    if (window.ApiClient) {
-        log('Detected Jellyfin environment. Starting monitoring...');
-        startMonitoring();
-    } else if (window.location.href.includes('file://')) {
-        log('Detected local file mode. Call LFSeriesDetail.demo() to test.');
-    } else {
-        // Wait for ApiClient to appear
-        setTimeout(checkAndStart, 500);
+        // Then check periodically for SPA navigation
+        setInterval(() => {
+            monitorSeriesDetailPage();
+        }, 1000);
     }
-};
 
-// Start after a short delay to let Jellyfin initialize
-setTimeout(checkAndStart, 1000);
+    // =========================================================================
+    // DEMO DATA (For browser prototyping)
+    // =========================================================================
+    const DEMO_DATA = {
+        series: {
+            id: '43b07d8c75320ca4542a2ea375ed8095',
+            name: 'Your Lie in April',
+            year: '2014 - 2015',
+            officialRating: 'TV-PG',
+            communityRating: 8.6,
+            episodeCount: 22,
+            overview: "Piano prodigy Arima Kosei dominated the competition and all child musicians knew his name. But after his mother, who was also his instructor, passed away, he had a mental breakdown while performing at a recital that resulted in him no longer being able to hear the sound of his piano even though his hearing was perfectly fine. Even two years later, Kosei hasn't touched the piano and views the world in monotone, without any flair or color. He was content living out his life with his good friends Tsubaki and Watari until one day, a free-spirited violinist named Kaori changed everything.",
+            genres: ['Drama', 'Romance', 'Music'],
+            studios: [{ Name: 'A-1 Pictures' }],
+            backdropUrl: 'https://stream.legitflix.eu/Items/43b07d8c75320ca4542a2ea375ed8095/Images/Backdrop/0?tag=1027162ed5999b669a9b22983261de30&maxWidth=1920&quality=80',
+            posterUrl: 'https://stream.legitflix.eu/Items/43b07d8c75320ca4542a2ea375ed8095/Images/Primary?fillHeight=350&fillWidth=240&quality=96&tag=68e1bad239ac7faf99052b2fd3304c72',
+            people: [
+                { Name: 'Natsuki Hanae', Type: 'Actor', Role: 'Kousei Arima' },
+                { Name: 'Risa Taneda', Type: 'Actor', Role: 'Kaori Miyazono' },
+                { Name: 'Ayane Sakura', Type: 'Actor', Role: 'Tsubaki Sawabe' }
+            ]
+        },
+        seasons: [
+            { id: 's1', name: 'Season 1', episodeCount: 22 },
+            { id: 's2', name: 'Season 2', episodeCount: 24 },
+            { id: 's3', name: 'Specials', episodeCount: 2 }
+        ],
+        episodes: [
+            { id: 'e1', indexNumber: 1, name: 'Monotone/Colorful', overview: 'Piano prodigy Kosei Arima dominates competitions until tragedy strikes.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000, userData: { PlayedPercentage: 75 } },
+            { id: 'e2', indexNumber: 2, name: 'Friend A', overview: 'Kaori asks Kosei to be her accompanist at a competition.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
+            { id: 'e3', indexNumber: 3, name: 'Inside Spring', overview: 'Kosei struggles as he faces the piano again after years.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
+            { id: 'e4', indexNumber: 4, name: 'Departure', overview: 'The competition day arrives and Kosei must overcome his fears.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
+            { id: 'e5', indexNumber: 5, name: 'Gray Skies', overview: 'A defining moment that will change Kosei\'s life forever.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 },
+            { id: 'e6', indexNumber: 6, name: 'On the Way Home', overview: 'Kosei reflects on his performance and what lies ahead.', thumbnailUrl: 'https://stream.legitflix.eu/Items/d7362b64f95057e0cb43e59f6e1590e5/Images/Primary?fillHeight=180&fillWidth=320&quality=96', runTimeTicks: 13650000000 }
+        ],
+        people: [
+            { Id: 'p1', Name: 'Natsuki Hanae', Type: 'Actor', Role: 'Kousei Arima', imageUrl: 'https://stream.legitflix.eu/Items/52cf6b71865912d687416fd9efe30e77/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p2', Name: 'Risa Taneda', Type: 'Actor', Role: 'Kaori Miyazono', imageUrl: 'https://stream.legitflix.eu/Items/a04645001ff80f055512f906137bab8d/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p3', Name: 'Ayane Sakura', Type: 'Actor', Role: 'Tsubaki Sawabe', imageUrl: 'https://stream.legitflix.eu/Items/efc9b3bea54cc5e1eea1c27dfb7f35bf/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p4', Name: 'Ryota Osaka', Type: 'Actor', Role: 'Ryouta Watari', imageUrl: 'https://stream.legitflix.eu/Items/c41402b5f1002a24c825ddd8b706bbb9/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p5', Name: 'Ai Kayano', Type: 'Actor', Role: 'Nagi Aiza', imageUrl: 'https://stream.legitflix.eu/Items/8da0c7a7ffcc3ffb559fd05c1f241fb4/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p6', Name: 'Saori Hayami', Type: 'Actor', Role: 'Emi Igawa', imageUrl: 'https://stream.legitflix.eu/Items/72fb92f7d43121d3715ad608118426fd/Images/Primary?fillHeight=100&fillWidth=100&quality=96' },
+            { Id: 'p7', Name: 'Yuki Kaji', Type: 'Actor', Role: 'Takeshi Aiza', imageUrl: 'https://stream.legitflix.eu/Items/491d9d793c6fdd08d7bbde585d398c14/Images/Primary?fillHeight=100&fillWidth=100&quality=96' }
+        ],
+        similar: [
+            { Id: 's1', Name: 'Golden Time', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
+            { Id: 's2', Name: 'Akame ga Kill!', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
+            { Id: 's3', Name: 'Anohana', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
+            { Id: 's4', Name: 'Clannad', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
+            { Id: 's5', Name: 'Violet Evergarden', posterUrl: 'https://stream.legitflix.eu/Items/9bcd2a047bc849520b0221b95355d765/Images/Primary?fillHeight=225&fillWidth=150&quality=96' },
+            { Id: 's6', Name: 'Toradora!', posterUrl: 'https://stream.legitflix.eu/Items/b2556b9c04d84cb2773a4910c484fafd/Images/Primary?fillHeight=225&fillWidth=150&quality=96' }
+        ]
+    };
 
-log('Module loaded. Call LFSeriesDetail.demo() to test, or it will auto-start on Jellyfin.');
-}) ();
+    // =========================================================================
+    // PUBLIC API
+    // =========================================================================
+    window.LFSeriesDetail = {
+        // UI generators
+        injectStyles,
+        renderSeriesDetailPage,
+        createHeroSection,
+        createSeasonSelector,
+        createEpisodeGrid,
+        createEpisodesSection,
+        createCastSection,
+        createSimilarSection,
+
+        // API functions
+        fetchSeriesData,
+        fetchSeasons,
+        fetchEpisodes,
+        fetchSimilar,
+
+        // Page monitoring
+        monitorSeriesDetailPage,
+        startMonitoring,
+
+        // Demo data
+        DEMO_DATA,
+
+        // Quick demo function for browser testing
+        demo: function (targetSelector = 'body') {
+            const target = document.querySelector(targetSelector);
+            if (!target) {
+                console.error('Target not found:', targetSelector);
+                return;
+            }
+            target.style.backgroundColor = '#141414';
+            target.style.fontFamily = "'Inter', sans-serif";
+            renderSeriesDetailPage(DEMO_DATA, target);
+            log('Demo rendered into:', targetSelector);
+        }
+    };
+
+    // =========================================================================
+    // AUTO-START (Only when running on Jellyfin)
+    // =========================================================================
+
+    // Check if we're in Jellyfin (ApiClient exists or will exist)
+    const checkAndStart = () => {
+        if (window.ApiClient) {
+            log('Detected Jellyfin environment. Starting monitoring...');
+            startMonitoring();
+        } else if (window.location.href.includes('file://')) {
+            log('Detected local file mode. Call LFSeriesDetail.demo() to test.');
+        } else {
+            // Wait for ApiClient to appear
+            setTimeout(checkAndStart, 500);
+        }
+    };
+
+    // Start after a short delay to let Jellyfin initialize
+    setTimeout(checkAndStart, 1000);
+
+    log('Module loaded. Call LFSeriesDetail.demo() to test, or it will auto-start on Jellyfin.');
+})();
