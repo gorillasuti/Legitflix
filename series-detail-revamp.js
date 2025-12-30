@@ -1116,7 +1116,7 @@
      * @param {Array} episodes - Array of episode objects
      */
     function createEpisodeGrid(episodes) {
-        const cards = episodes.map(ep => {
+        return episodes.map(ep => {
             const thumbUrl = ep.thumbnailUrl || '';
             const episodeNum = ep.indexNumber || 0;
             const title = ep.name || `Episode ${episodeNum}`;
@@ -1147,8 +1147,6 @@
                 </div>
             `;
         }).join('');
-
-        return `<div class="lf-episode-grid">${cards}</div>`;
     }
 
     /**
@@ -1157,8 +1155,8 @@
      * @param {Array} episodes - Episodes for current season
      */
     function createEpisodesSection(seasons, episodes) {
-        // Find first unwatched episode to use as "representative" for languages/subtitles
-        // and for the Edit Subtitles target (which usually requires a video item, not series)
+        // ... (truncated for brevity, keeping identifying logic same) ...
+        // Find first unwatched episode logic...
         let targetEpisode = null;
         if (episodes && episodes.length > 0) {
             targetEpisode = episodes.find(e => !e.userData?.Played) || episodes[0];
@@ -1169,7 +1167,7 @@
         let targetEpisodeId = null;
 
         if (targetEpisode && targetEpisode.MediaSources && targetEpisode.MediaSources.length > 0) {
-            targetEpisodeId = targetEpisode.id; // Store ID for Edit Button
+            targetEpisodeId = targetEpisode.id;
             const source = targetEpisode.MediaSources[0];
             if (source.MediaStreams) {
                 audioStreams = source.MediaStreams.filter(s => s.Type === 'Audio');
@@ -1222,10 +1220,21 @@
                         </div>
                     </div>
                 </div>
-                ${createEpisodeGrid(episodes)}
+                <div class="lf-episode-grid">${createEpisodeGrid(episodes)}</div>
             </section>
         `;
     }
+
+    // ... Use separate tool call for the Season Selector logic update if I can't reach it here (it's around line 2760) ...
+    // Actually, I can replace the function definitions here, but the update logic is far down.
+    // I will just update the function definitions first.
+
+    // Wait, if I change createEpisodeGrid now, I break the logic at line 2773 BEFORE I fix it.
+    // But valid JS code will be written. It won't break until run.
+    // I should try to include the season selector update in the same chunk if possible, or do it immediately after.
+    // The file is large (2900 lines). `createEpisodeGrid` is at 1118. `wireUpButtons` is at 2760.
+    // I will do two edits. One for the functions, one for the event listener.
+
 
     /**
      * Create cast section HTML
@@ -1395,7 +1404,7 @@
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
-                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+                                        <div class="selectContainer flex-grow" style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; margin-bottom: 0px !important;">
                                             <label class="selectLabel" for="selectLanguage" style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Language</label>
                                             
                                             <!-- STANDARD SELECT (No 'is=emby-select' to avoid truncation/override) -->
@@ -2759,10 +2768,25 @@
         // Season selector - reload episodes when changed
         const seasonOptions = container.querySelectorAll('.lf-season-selector__option');
         seasonOptions.forEach(opt => {
-            opt.addEventListener('click', async function () {
+            opt.addEventListener('click', async function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
                 const seasonId = this.dataset.seasonId;
                 const seasonIndex = parseInt(this.dataset.seasonIndex);
                 log('Season changed:', seasonId);
+
+                // Update UI selection
+                seasonOptions.forEach(o => o.classList.remove('is-selected'));
+                this.classList.add('is-selected');
+
+                const selectorBtnText = container.querySelector('#lfSelectedSeasonText');
+                if (selectorBtnText) {
+                    selectorBtnText.textContent = this.querySelector('span').textContent;
+                }
+
+                // Close dropdown
+                container.querySelector('.lf-season-selector').classList.remove('is-open');
 
                 // Fetch new episodes
                 const episodes = await fetchEpisodes(seriesId, seasonId);
@@ -2770,7 +2794,8 @@
                 // Re-render episode grid
                 const episodeGrid = container.querySelector('.lf-episode-grid');
                 if (episodeGrid) {
-                    episodeGrid.innerHTML = createEpisodeGrid(episodes).replace('<div class="lf-episode-grid">', '').replace('</div>', '');
+                    // Update content directly (createEpisodeGrid now returns just cards)
+                    episodeGrid.innerHTML = createEpisodeGrid(episodes);
 
                     // Re-attach click handlers
                     container.querySelectorAll('.lf-episode-card').forEach(card => {
