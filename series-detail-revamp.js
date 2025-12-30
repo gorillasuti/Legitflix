@@ -1503,8 +1503,17 @@
             epSelect.disabled = true;
 
             // Fetch episodes
-            // using fetchEpisodes from global scope
-            const eps = await fetchEpisodes(series.Id, seasonId);
+            // using fetchEpisodes from global scope, fallback series ID
+            const seriesId = (typeof series !== 'undefined' && series.Id) ? series.Id :
+                (typeof data !== 'undefined' && data.series) ? (data.series.id || data.series.Id) :
+                    window.LF_CURRENT_SERIES ? (window.LF_CURRENT_SERIES.id || window.LF_CURRENT_SERIES.Id) : null;
+
+            if (!seriesId) {
+                epSelect.innerHTML = '<option>Error: No Series ID</option>';
+                return;
+            }
+
+            const eps = await fetchEpisodes(seriesId, seasonId);
 
             epSelect.innerHTML = '';
             eps.forEach(ep => {
@@ -1532,11 +1541,11 @@
                         <div class="focuscontainer dialog dialog-fixedSize dialog-small formDialog subtitleEditorDialog opened" 
                              style="animation: 180ms ease-out 0s 1 normal both running scaleup; max-width: 800px; margin: 5vh auto; background: var(--color-background-secondary, #1c1c1c); border-radius: var(--radius-lg, 12px);">
                             
-                            <div class="formDialogHeader" style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <button class="btnCancel" tabindex="-1" title="Close" style="background:none; border:none; color:inherit; cursor:pointer; padding: 8px; border-radius: 50%;">
+                            <div class="formDialogHeader" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 class="formDialogHeaderTitle" style="margin: 0; font-size: 1.2rem; font-weight: 600;">Subtitles</h3>
+                                <button class="btnCancel" tabindex="-1" title="Close" style="background:none; border:none; color:inherit; cursor:pointer; opacity: 0.7;">
                                     <span class="material-icons" aria-hidden="true" style="font-size: 24px;">close</span>
                                 </button>
-                                <h3 class="formDialogHeaderTitle" style="margin: 0 0 0 16px; font-size: 1.2rem; font-weight: 600;">Subtitles</h3>
                             </div>
 
                             <div class="formDialogContent smoothScrollY" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
@@ -1551,11 +1560,6 @@
                                     <!-- SEARCH -->
                                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
                                     
-                                    <!-- TARGET INFO BOX -->
-                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc);">
-                                        Fetching episode info...
-                                    </div>
-
                                     <!-- NAVIGATION SELECTORS -->
                                     <div class="subtitleNav" style="display: flex; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                         <div style="flex: 1;">
@@ -1570,6 +1574,11 @@
                                                 <option>Loading...</option>
                                             </select>
                                         </div>
+                                    </div>
+
+                                    <!-- TARGET INFO BOX -->
+                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc);">
+                                        Fetching episode info...
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
@@ -1888,6 +1897,7 @@
 
             // Close (Cancel Button)
             modal.querySelector('.btnCancel').addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 modal.classList.add('hide');
                 modal.classList.remove('opened');
@@ -1895,9 +1905,8 @@
 
             // Click outside (Overlay click)
             modal.addEventListener('click', (e) => {
-                // Close if clicking overlay OR dialogContainer (the wrapper around the dialog box)
-                // But NOT if clicking inside the dialog box itself (.focuscontainer)
-                if (e.target === modal || e.target.classList.contains('dialogContainer')) {
+                // Close if the click is NOT inside the dialog content box (.focuscontainer)
+                if (!e.target.closest('.focuscontainer')) {
                     modal.classList.add('hide');
                     modal.classList.remove('opened');
                 }
@@ -2530,8 +2539,9 @@
             // Fetch episodes for first season
             const firstSeason = seasons[0];
 
-            // Expose seasons globally for SubtitleManager fallback
+            // Expose vars globally for SubtitleManager fallback
             window.LF_CURRENT_SEASONS = seasons;
+            window.LF_CURRENT_SERIES = seriesData;
 
             const episodes = await fetchEpisodes(seriesId, firstSeason.id);
 
