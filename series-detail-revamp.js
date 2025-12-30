@@ -1510,12 +1510,21 @@
 
         // Description expand/collapse
         const loadMoreBtn = container.querySelector('#lfLoadMoreBtn');
-        loadMoreBtn?.addEventListener('click', function () {
-            const descText = container.querySelector('#lfDescriptionText');
-            const isExpanded = descText.classList.toggle('is-expanded');
-            this.classList.toggle('is-expanded', isExpanded);
-            this.querySelector('span:first-child').textContent = isExpanded ? 'Show less' : 'Load more';
-        });
+        const descText = container.querySelector('#lfDescriptionText');
+
+        if (loadMoreBtn && descText) {
+            // Check if text is clamped (overflowing)
+            // We use a small tolerance
+            if (descText.scrollHeight <= descText.clientHeight + 2) {
+                loadMoreBtn.style.display = 'none';
+            }
+
+            loadMoreBtn.addEventListener('click', function () {
+                const isExpanded = descText.classList.toggle('is-expanded');
+                this.classList.toggle('is-expanded', isExpanded);
+                this.querySelector('span:first-child').textContent = isExpanded ? 'Show less' : 'Load more';
+            });
+        }
 
         // Close dropdowns on outside click
         document.addEventListener('click', (e) => {
