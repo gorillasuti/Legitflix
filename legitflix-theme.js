@@ -2269,91 +2269,7 @@ window.ensurePasswordForm = function () {
     }
 };
 
-// --- LEGACY INIT REMOVED ---
-// The hashchange cleanup logic is removed as the new monitor loop handles state.
 
-
-// --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
-function renameMyList() {
-    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
-        let text = el.innerText.trim();
-        const lowerText = text.toLowerCase();
-        let newText = null;
-
-        // 1. My List / My Media -> Categories
-        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
-            newText = 'Categories';
-        }
-        // 2. Next Up -> History
-        else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
-            newText = 'History';
-        }
-        // 3. Recently Added in [Type] -> Latest [Type]
-        else if (lowerText.startsWith('recently added in ')) {
-            // "Recently Added in " is 18 chars
-            const type = text.substring(18);
-            newText = `Latest ${type}`;
-        }
-
-        if (newText) {
-            el.innerText = newText;
-            // Also update the link if it exists for tooltip/accessibility
-            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
-            if (parent) {
-                const link = parent.querySelector('a');
-                if (link) link.setAttribute('title', newText);
-            }
-        }
-    });
-}
-// Run initially and on mutation
-renameMyList();
-
-// --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
-function fixMixedCards() {
-    // Find Backdrops that should be Posters (Movies/Series)
-    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
-    const cards = document.querySelectorAll(selector);
-
-    cards.forEach(card => {
-        // 1. Swap Card Class (Backdrop -> Portrait)
-        // This fixes dimensions and grid layout
-        card.classList.remove('overflowBackdropCard');
-        card.classList.add('overflowPortraitCard');
-
-        // 2. Swap Padder Class
-        const padder = card.querySelector('.cardPadder-overflowBackdrop');
-        if (padder) {
-            padder.classList.remove('cardPadder-overflowBackdrop');
-            padder.classList.add('cardPadder-overflowPortrait');
-        }
-
-        // 3. Swap Image URL (Thumb -> Primary)
-        // This gets the correct Poster image from server
-        const imgContainer = card.querySelector('.cardImageContainer');
-        if (imgContainer) {
-            const style = imgContainer.getAttribute('style') || '';
-            // Improved Lazy-Loader Fighting Logic
-            const swapImage = () => {
-                const s = imgContainer.getAttribute('style') || '';
-                if (s.includes('Images/Thumb')) {
-                    // Replace Thumb with Primary
-                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
-                    if (s !== ns) imgContainer.setAttribute('style', ns);
-                }
-            };
-
-            // Run immediately
-            swapImage();
-
-            // Observe for lazy loader changes
-            if (!imgContainer._observerAttached) {
-                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
-                imgContainer._observerAttached = true;
-            }
-        }
-    });
-}
 
 // Run initially and on mutation
 renameMyList();
@@ -2925,6 +2841,157 @@ async function createHoverCard(card, id) {
     }
 }
 
+// --- GLOBAL HELPERS (Moved out of setupHoverCards for scope access) ---
+
+// 1. RENAME SECTIONS
+function renameMyList() {
+    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
+        let text = el.innerText.trim();
+        const lowerText = text.toLowerCase();
+        let newText = null;
+
+        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
+            newText = 'Categories';
+        } else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
+            newText = 'History';
+        } else if (lowerText.startsWith('recently added in ')) {
+            const type = text.substring(18);
+            newText = `Latest ${type}`;
+        }
+
+        if (newText) {
+            el.innerText = newText;
+            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
+            if (parent) {
+                const link = parent.querySelector('a');
+                if (link) link.setAttribute('title', newText);
+            }
+        }
+    });
+}
+
+// 2. FIX MIXED CONTENT CARDS (Layout Fix)
+function fixMixedCards() {
+    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
+    const cards = document.querySelectorAll(selector);
+
+    cards.forEach(card => {
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
+
+        const padder = card.querySelector('.cardPadder-overflowBackdrop');
+        if (padder) {
+            padder.classList.remove('cardPadder-overflowBackdrop');
+            padder.classList.add('cardPadder-overflowPortrait');
+        }
+
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const style = imgContainer.getAttribute('style') || '';
+            const swapImage = () => {
+                const s = imgContainer.getAttribute('style') || '';
+                if (s.includes('Images/Thumb')) {
+                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
+                    if (s !== ns) imgContainer.setAttribute('style', ns);
+                }
+            };
+            swapImage();
+            if (!imgContainer._observerAttached) {
+                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
+                imgContainer._observerAttached = true;
+            }
+        }
+    });
+}
+
+// 3. FIX LATEST EPISODES (Convert Episode -> Series in Latest Sections)
+async function fixLatestEpisodes() {
+    // Only target sections that are likely "Latest" (Vertical/Poster grids)
+    const sections = document.querySelectorAll('.verticalSection, .sectionTitleContainer');
+
+    for (const section of sections) {
+        // Find title
+        const titleEl = section.querySelector('.sectionTitle') || section; // fallback
+        const title = titleEl.innerText.toLowerCase();
+
+        // Check if it's a "Latest" section (and NOT Continue Watching/Next Up)
+        // "Latest Anime" -> yes. "Recently Added" -> yes.
+        const isLatest = (title.includes('latest') || title.includes('recently')) &&
+            !title.includes('continue') &&
+            !title.includes('next up') &&
+            !title.includes('history');
+
+        if (isLatest) {
+            // Find Episode cards in this section
+            // Look for card siblings in itemsContainer
+            const container = section.closest('.verticalSection')?.querySelector('.itemsContainer')
+                || section.nextElementSibling; // usually itemsContainer is next sibling
+
+            if (container) {
+                const episodeCards = container.querySelectorAll('.card[data-type="Episode"]');
+
+                for (const card of episodeCards) {
+                    if (card.getAttribute('data-fixed-episode')) continue;
+                    card.setAttribute('data-fixed-episode', 'true'); // Mark processed
+
+                    const episodeId = card.getAttribute('data-id');
+
+                    try {
+                        // Fetch Item to get Series Info
+                        const userId = window.ApiClient.getCurrentUserId();
+                        const item = await window.ApiClient.getItem(userId, episodeId);
+
+                        if (item && item.SeriesId) {
+                            // CONVERT TO SERIES CARD
+
+                            // 1. Update ID & Type
+                            card.setAttribute('data-id', item.SeriesId);
+                            card.setAttribute('data-type', 'Series');
+
+                            // 2. Update Image (Series Primary)
+                            const imgContainer = card.querySelector('.cardImageContainer');
+                            if (imgContainer) {
+                                // Force Poster Ratio (CSS handles this globally now, but ensure image is correct)
+                                const imgUrl = `/Items/${item.SeriesId}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+                                imgContainer.style.backgroundImage = `url('${imgUrl}')`;
+                            }
+
+                            // 3. Update Title (Series Name)
+                            // Usually cardText contains episode name "S1:E22 - ...".
+                            // We want "Your Lie in April" (item.SeriesName)
+                            const titleDiv = card.querySelector('.cardText');
+                            if (titleDiv) {
+                                titleDiv.innerText = item.SeriesName || item.Name;
+                            }
+
+                            // 4. Update Link
+                            const link = card.querySelector('.itemAction');
+                            if (link && item.SeriesId) {
+                                const newUrl = `#!/details?id=${item.SeriesId}`;
+                                link.setAttribute('href', newUrl);
+                                link.onclick = (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    window.location.href = newUrl;
+                                    return false;
+                                };
+                            }
+
+                            // 5. Cleanup Overlay (Remove Play Button overlay if present intended for episode)
+                            // Series cards usually just open details, manual play button logic might interfere
+                            const overlay = card.querySelector('.hover-overlay, .cardOverlayFab');
+                            if (overlay) overlay.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error('[LegitFlix] fixLatestEpisodes error:', e);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 // Call setup
 try {
     setupHoverCards();
@@ -2961,8 +3028,12 @@ function checkPageMode() {
 const observer = new MutationObserver((mutations) => {
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
-    renameMyList();
-    fixMixedCards();
+
+    // Call global helpers
+    if (typeof renameMyList === 'function') renameMyList();
+    if (typeof fixMixedCards === 'function') fixMixedCards();
+    if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
+
     injectPromoBanner();
     tagNativeSections();
 });
