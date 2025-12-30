@@ -861,7 +861,7 @@
                     style="background-image: url('${backdropUrl}');"></div>
                 
                 <div class="lf-series-hero__trailer" id="lfHeroTrailer">
-                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
 
                 <div class="lf-series-hero__content">
@@ -1728,8 +1728,12 @@
             trailerBtn.addEventListener('click', () => {
                 log('Trailer clicked, YT ID:', trailerYtId);
                 if (trailerIframe && trailerContainer) {
-                    // Clean Embed URL (No controls, mute, loop, minimal UI)
-                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&playlist=${trailerYtId}&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&enablejsapi=1`;
+                    // Update Iframe Attributes (Exact match to legitflix-theme.js)
+                    trailerIframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                    trailerIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+                    // Exact URL from legitflix-theme.js
+                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1`;
                     trailerIframe.src = embedUrl;
                     trailerContainer.classList.add('is-playing');
                     if (backdrop) backdrop.style.opacity = '0';
