@@ -161,7 +161,6 @@
             display: flex;
             gap: 3rem;
             align-items: flex-start;
-            justify-content: space-between;
         }
 
         .lf-series-hero__description {
@@ -907,15 +906,18 @@
         const genres = (series.genres || []).slice(0, 3).join(', ');
         const studios = (series.studios || []).slice(0, 2).map(s => s.Name || s).join(', ');
         const cast = (series.people || []).filter(p => p.Type === 'Actor').slice(0, 3).map(p => p.Name).join(', ');
+        const logoUrl = series.logoUrl || '';
 
         return `
-            <section class="lf-series-hero">
+            <section class="lf-series-hero" id="lfSeriesHero">
                 <div class="lf-series-hero__backdrop" id="lfHeroBackdrop"
                     style="background-image: url('${backdropUrl}');"></div>
                 
                 <div class="lf-series-hero__trailer" id="lfHeroTrailer">
                     <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
+
+                ${logoUrl ? `<img class="lf-series-hero__logo" src="${logoUrl}" alt="${title} Logo">` : ''}
 
                 <div class="lf-series-hero__content">
                     <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
@@ -945,12 +947,14 @@
                                 <span class="material-icons">theaters</span>
                                 Watch Trailer
                             </button>
-                            <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart" id="lfHeartBtn">
-                                <span class="material-icons">favorite_border</span>
-                            </button>
-                            <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
-                                <span class="material-icons">volume_off</span>
-                            </button>
+                            <div class="lf-btn-group">
+                                <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart" id="lfHeartBtn">
+                                    <span class="material-icons">favorite_border</span>
+                                </button>
+                                <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
+                                    <span class="material-icons">volume_off</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="lf-series-hero__details">
@@ -1680,6 +1684,7 @@
                 studios: item.Studios || [],
                 backdropUrl: item.BackdropImageTags?.length ? `/Items/${item.Id}/Images/Backdrop/0?maxWidth=1920&quality=90` : '',
                 posterUrl: item.ImageTags?.Primary ? `/Items/${item.Id}/Images/Primary?fillHeight=350&fillWidth=240&quality=96` : '',
+                logoUrl: item.ImageTags?.Logo ? `/Items/${item.Id}/Images/Logo?maxWidth=300&quality=90` : '',
                 people: item.People || [],
                 remoteTrailers: item.RemoteTrailers || [],
                 isFavorite: item.UserData?.IsFavorite || false
@@ -2092,6 +2097,29 @@
         const muteBtn = container.querySelector('#lfMuteBtn');
 
         if (trailerBtn && trailerYtId) {
+            let hideUITimeout;
+            const heroSection = container.querySelector('#lfSeriesHero');
+
+            const startHideTimer = () => {
+                clearTimeout(hideUITimeout);
+                hideUITimeout = setTimeout(() => {
+                    if (trailerContainer.classList.contains('is-playing')) {
+                        heroSection?.classList.add('is-clean-view');
+                    }
+                }, 5000);
+            };
+
+            const resetHideTimer = () => {
+                heroSection?.classList.remove('is-clean-view');
+                if (trailerContainer.classList.contains('is-playing')) {
+                    startHideTimer();
+                }
+            };
+
+            // Interaction listener to wake up UI
+            heroSection?.addEventListener('mousemove', resetHideTimer);
+            heroSection?.addEventListener('click', resetHideTimer);
+
             trailerBtn.addEventListener('click', () => {
                 const isPlaying = trailerContainer.classList.contains('is-playing');
 
@@ -2099,6 +2127,9 @@
                     // STOP TRAILER
                     trailerIframe.src = '';
                     trailerContainer.classList.remove('is-playing');
+                    heroSection?.classList.remove('is-clean-view');
+                    clearTimeout(hideUITimeout);
+
                     if (backdrop) backdrop.style.opacity = '1';
 
                     // Reset Button
@@ -2125,6 +2156,9 @@
                         trailerIframe.src = embedUrl;
                         trailerContainer.classList.add('is-playing');
                         if (backdrop) backdrop.style.opacity = '0';
+
+                        // Start Clean Mode Timer
+                        startHideTimer();
 
                         // Update Button Text
                         trailerBtn.innerHTML = `
