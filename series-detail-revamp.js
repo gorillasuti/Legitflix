@@ -2604,15 +2604,98 @@
         if (!container) return;
 
         // Watch Now button - plays first unwatched episode
+        // Watch Now button - dynamic states
         const watchNowBtn = container.querySelector('#lfWatchNowBtn');
         if (watchNowBtn) {
-            watchNowBtn.addEventListener('click', async () => {
-                log('Watch Now clicked');
-                // Get NextUp or first episode
+
+            // Logic to determine state and text
+            const updateWatchButton = async () => {
                 const auth = await getAuth();
                 if (!auth) return;
 
                 try {
+                    // Check Series Played Status
+                    // seriesData usually has UserData if fetched with userId, let's verify or refetch if needed
+                    // But for now assume seriesData has it or we rely on NextUp
+                    let isSeriesPlayed = seriesData.UserData?.Played || false;
+
+                    // Fetch Next Up
+                    const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
+                    const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
+                    const nextUpData = await nextUpRes.json();
+
+                    if (nextUpData.Items && nextUpData.Items.length > 0) {
+                        const nextEp = nextUpData.Items[0];
+
+                        // STATE 2: Continue Watching
+                        // Even if series is "Played" (re-watching), NextUp takes precedence if it exists?
+                        // Actually if Series is Played, NextUp is usually empty UNLESS user started rewatching.
+                        // So if we have NextUp, we continue.
+
+                        // Check if it's literally the first episode and unplayed? 
+                        // S1 E1 (IndexNumber 1, ParentIndexNumber 1) AND PlayedPercentage < 5
+                        const isStart = nextEp.ParentIndexNumber === 1 && nextEp.IndexNumber === 1 && (!nextEp.UserData?.PlayedPercentage || nextEp.UserData.PlayedPercentage < 5);
+
+                        if (isStart && !isSeriesPlayed) {
+                            // DATA STATE 1: Not Started
+                            watchNowBtn.innerHTML = '<span class="material-icons">play_arrow</span> Watch Now';
+                        } else {
+                            // DATA STATE 2: Continue Watching
+                            const sNum = nextEp.ParentIndexNumber;
+                            const eNum = nextEp.IndexNumber;
+                            watchNowBtn.innerHTML = `<span class="material-icons">play_arrow</span> Continue Watching S${sNum} : E${eNum}`;
+
+                            // Store ID for quick access
+                            watchNowBtn.dataset.nextId = nextEp.Id;
+                        }
+                    } else {
+                        // No Next Up
+                        if (isSeriesPlayed) {
+                            // DATA STATE 3: Watch Again
+                            watchNowBtn.innerHTML = '<span class="material-icons">replay</span> Watch Again';
+                            watchNowBtn.dataset.isReplay = 'true';
+                        } else {
+                            // Fallback: Watch Now (Start)
+                            watchNowBtn.innerHTML = '<span class="material-icons">play_arrow</span> Watch Now';
+                        }
+                    }
+
+                } catch (e) {
+                    log('Error updating watch button:', e);
+                }
+            };
+
+            // Run immediately
+            updateWatchButton();
+
+            // Click Handler
+            watchNowBtn.addEventListener('click', async () => {
+                log('Watch Now clicked');
+                const auth = await getAuth();
+                if (!auth) return;
+
+                // Optimistic use of cached ID
+                if (watchNowBtn.dataset.nextId) {
+                    if (window.legitFlixPlay) window.legitFlixPlay(watchNowBtn.dataset.nextId);
+                    else window.location.href = `#!/details?id=${watchNowBtn.dataset.nextId}`;
+                    return;
+                }
+
+                // If Replay, start from beginning
+                if (watchNowBtn.dataset.isReplay === 'true') {
+                    // Get first episode
+                    const firstSeason = seasons[0];
+                    const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+                    if (episodes.length > 0) {
+                        const epId = episodes[0].id;
+                        if (window.legitFlixPlay) window.legitFlixPlay(epId);
+                        else window.location.href = `#!/details?id=${epId}`;
+                    }
+                    return;
+                }
+
+                try {
+                    // Fallback fetch (same as before) logic
                     const nextUpUrl = `/Shows/${seriesId}/NextUp?Limit=1&UserId=${auth.UserId}`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
                     const nextUpData = await nextUpRes.json();
@@ -2630,7 +2713,6 @@
                     }
 
                     if (episodeId) {
-                        // Use existing playback helper if available
                         if (window.legitFlixPlay) {
                             window.legitFlixPlay(episodeId);
                         } else {
