@@ -1044,7 +1044,7 @@
                                     <span>${communityRating}</span>
                                 </div>
                             ` : ''}
-                            ${episodeCount ? `<span>•</span><span>${episodeCount} Episodes</span>` : ''}
+                            ${episodeCount ? `<span>•</span><span>${episodeCount} Seasons</span>` : ''}
                         </div>
 
                         <div class="lf-series-hero__actions">
@@ -1448,13 +1448,71 @@
             modal.classList.add('opened');
             modal.dataset.episodeId = episodeId;
 
-            // Load initial data
+            // Load initial data for selectors
+            await this.populateSeasons(modal, episodeId);
+
+            // Load subtitles
             await this.loadCurrentSubtitles(episodeId);
 
             // Setup listeners (if not already)
             if (!modal.dataset.listenersAttached) {
                 this.attachListeners(modal);
                 modal.dataset.listenersAttached = 'true';
+            }
+        },
+
+        async populateSeasons(modal, currentEpisodeId) {
+            const seasonSelect = modal.querySelector('#lfSubSeasonSelect');
+            if (!seasonSelect) return;
+
+            seasonSelect.innerHTML = '';
+
+            // Use 'seasons' from renderSeriesDetailPage scope
+            seasons.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.Id;
+                opt.textContent = s.Name;
+                seasonSelect.appendChild(opt);
+            });
+
+            // Identify current season from episode ID?
+            // Since we don't have a direct map here, we might rely on the currently selected season in the main UI
+            // OR find it. For now, defaulting to current UI season is safer.
+            const currentUISeasonStr = document.querySelector('.lf-season-selector__option.is-selected')?.dataset.seasonId;
+            if (currentUISeasonStr) {
+                seasonSelect.value = currentUISeasonStr;
+                await this.updateEpisodesForSeason(modal, currentUISeasonStr, currentEpisodeId);
+            } else if (seasons.length > 0) {
+                seasonSelect.value = seasons[0].Id;
+                await this.updateEpisodesForSeason(modal, seasons[0].Id, currentEpisodeId);
+            }
+        },
+
+        async updateEpisodesForSeason(modal, seasonId, targetEpisodeId = null) {
+            const epSelect = modal.querySelector('#lfSubEpisodeSelect');
+            if (!epSelect) return;
+
+            epSelect.innerHTML = '<option>Loading...</option>';
+            epSelect.disabled = true;
+
+            // Fetch episodes
+            // using fetchEpisodes from global scope
+            const eps = await fetchEpisodes(series.Id, seasonId);
+
+            epSelect.innerHTML = '';
+            eps.forEach(ep => {
+                const opt = document.createElement('option');
+                opt.value = ep.id;
+                opt.textContent = `${ep.indexNumber}. ${ep.name}`;
+                if (ep.id === targetEpisodeId) opt.selected = true;
+                epSelect.appendChild(opt);
+            });
+            epSelect.disabled = false;
+
+            // If no target, select first and trigger load? 
+            if (!targetEpisodeId && eps.length > 0) {
+                epSelect.value = eps[0].id;
+                // Don't auto-load subs here to avoid double fetch if just strictly populating
             }
         },
 
@@ -1487,8 +1545,24 @@
                                     <h2 style="font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.8; margin-top: 2rem;">Search for Subtitles</h2>
                                     
                                     <!-- TARGET INFO BOX -->
-                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc);">
+                                    <div id="lfSubtitleTargetInfo" style="background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; color: var(--clr-text-muted); border-left: 3px solid var(--clr-accent, #00a4dc); display: none;">
                                         Fetching episode info...
+                                    </div>
+
+                                    <!-- NAVIGATION SELECTORS -->
+                                    <div class="subtitleNav" style="display: flex; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                        <div style="flex: 1;">
+                                            <label style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Season</label>
+                                            <select id="lfSubSeasonSelect" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 0.95rem;">
+                                                <option>Loading...</option>
+                                            </select>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <label style="display: block; font-size: 0.85rem; margin-bottom: 6px; opacity: 0.8;">Episode</label>
+                                            <select id="lfSubEpisodeSelect" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 6px; font-size: 0.95rem;">
+                                                <option>Loading...</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <form class="subtitleSearchForm" style="display: flex; gap: 12px; align-items: flex-end;">
@@ -1782,6 +1856,29 @@
         },
 
         attachListeners(modal) {
+            // Navigation Listeners
+            const seasonSelect = modal.querySelector('#lfSubSeasonSelect');
+            const epSelect = modal.querySelector('#lfSubEpisodeSelect');
+
+            seasonSelect?.addEventListener('change', async (e) => {
+                const seasonId = e.target.value;
+                // Update episodes list
+                await this.updateEpisodesForSeason(modal, seasonId);
+
+                // Select first episode of new season and load
+                const newEpId = epSelect.value;
+                if (newEpId) {
+                    modal.dataset.episodeId = newEpId;
+                    this.loadCurrentSubtitles(newEpId);
+                }
+            });
+
+            epSelect?.addEventListener('change', (e) => {
+                const newEpId = e.target.value;
+                modal.dataset.episodeId = newEpId;
+                this.loadCurrentSubtitles(newEpId);
+            });
+
             // Close
             modal.querySelector('.btnCancel').addEventListener('click', () => {
                 modal.classList.add('hide');
@@ -2804,8 +2901,33 @@
                 });
                 selectedEpisodes.clear();
                 if (bulkText) bulkText.textContent = 'Mark Season Watched';
-                if (bulkIcon) bulkIcon.textContent = 'done_all';
+
+                // Revert to Season Button State
+                updateSeasonButtonState();
                 if (bulkBtn) bulkBtn.classList.remove('lf-btn--primary');
+            }
+        };
+
+        // Helper to update Season Button (Instant Action)
+        const updateSeasonButtonState = () => {
+            if (isSelectionMode || !bulkText) return;
+
+            const cards = container.querySelectorAll('.lf-episode-card');
+            if (cards.length === 0) return;
+
+            let allWatched = true;
+            cards.forEach(card => {
+                if (!card.classList.contains('is-watched')) allWatched = false;
+            });
+
+            if (allWatched) {
+                bulkText.textContent = 'Mark Season Unwatched';
+                bulkBtn.dataset.seasonAction = 'unwatch';
+                if (bulkIcon) bulkIcon.textContent = 'remove_done';
+            } else {
+                bulkText.textContent = 'Mark Season Watched';
+                bulkBtn.dataset.seasonAction = 'watch';
+                if (bulkIcon) bulkIcon.textContent = 'done_all';
             }
         };
 
@@ -2828,13 +2950,16 @@
                 if (allWatched) {
                     bulkText.textContent = `Mark Unwatched (${selectedEpisodes.size})`;
                     bulkBtn.dataset.actionType = 'unwatch';
+                    if (bulkIcon) bulkIcon.textContent = 'remove_circle_outline';
                 } else {
                     bulkText.textContent = `Mark Watched (${selectedEpisodes.size})`;
                     bulkBtn.dataset.actionType = 'watch';
+                    if (bulkIcon) bulkIcon.textContent = 'check_circle';
                 }
             } else {
-                bulkText.textContent = `Mark Watched (0)`;
-                bulkBtn.dataset.actionType = 'watch';
+                // Nothing selected fallback
+                updateSeasonButtonState(); // Revert to season state if 0 selected? 
+                // Actually logic says toggleSelection(false) if 0 size in click, but here strictly update text.
             }
         };
 
@@ -2856,23 +2981,27 @@
                 e.stopPropagation();
                 const auth = await getAuth();
                 if (!auth || !window.ApiClient) {
-                    console.error('API Client or Auth missing');
-                    if (bulkText) bulkText.textContent = 'Login Req.';
+                    // Error
                     return;
                 }
 
                 if (!isSelectionMode) {
-                    // "Mark Season Watched" INSTANT ACTION
+                    // "Mark Season Watched/Unwatched" INSTANT ACTION
                     const allCards = container.querySelectorAll('.lf-episode-card');
                     if (allCards.length === 0) return;
 
+                    const seasonAction = bulkBtn.dataset.seasonAction || 'watch';
                     bulkText.textContent = 'Updating...';
 
                     try {
                         const updates = Array.from(allCards).map(card => {
                             const itemId = card.dataset.episodeId;
                             card.classList.add('is-success-marked');
-                            return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
+                            if (seasonAction === 'unwatch') {
+                                return window.ApiClient.markUnplayed(auth.UserId, itemId);
+                            } else {
+                                return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
+                            }
                         });
 
                         await Promise.all(updates);
@@ -2880,11 +3009,10 @@
 
                         setTimeout(() => {
                             refreshCurrentSeason();
-                            if (bulkText) bulkText.textContent = 'Mark Season Watched';
+                            // Logic inside refresh/season change will reset text via updateSeasonButtonState
                         }, 1000);
                     } catch (e) {
-                        log('Error marking season watched:', e);
-                        if (bulkText) bulkText.textContent = 'Error!';
+                        // Error
                         allCards.forEach(c => c.classList.remove('is-success-marked'));
                     }
                 } else {
@@ -2900,10 +3028,8 @@
                     try {
                         const updates = Array.from(selectedEpisodes).map(itemId => {
                             if (actionType === 'unwatch') {
-                                // Mark Unplayed
                                 return window.ApiClient.markUnplayed(auth.UserId, itemId);
                             } else {
-                                // Mark Played
                                 return window.ApiClient.markPlayed(auth.UserId, itemId, new Date());
                             }
                         });
@@ -2927,7 +3053,7 @@
                             refreshCurrentSeason();
                         }, 1000);
                     } catch (e) {
-                        log('Error processing bulk action:', e);
+                        // Error
                         if (bulkText) bulkText.textContent = 'Error!';
                         // Remove success marks
                         selectedEpisodes.forEach(id => {
@@ -2938,6 +3064,10 @@
                 }
             });
         }
+
+        // Initial state check
+        updateSeasonButtonState();
+
 
         // Click Outside to Exit Selection Mode
         document.addEventListener('click', (e) => {
@@ -3021,7 +3151,6 @@
         });
 
         // Season selector - reload episodes when changed
-        const seasonOptions = container.querySelectorAll('.lf-season-selector__option');
         seasonOptions.forEach(opt => {
             opt.addEventListener('click', async function (e) {
                 e.preventDefault();
@@ -3056,6 +3185,9 @@
                     if (typeof attachCardListeners === 'function') {
                         attachCardListeners();
                     }
+
+                    // Update Season Button State based on new episodes
+                    updateSeasonButtonState();
                 }
             });
         });
