@@ -3058,9 +3058,10 @@ async function augmentLatestSections() {
             // If container exists but has few items (native default is ~10-16), it means it was reset.
             if (cont && cont.children.length < 20) {
                 console.log('[LegitFlix] Detected native overwrite in', section.innerText.split('\n')[0]);
-                section.removeAttribute('data-augmented-latest'); // Reset to re-process
+                section.removeAttribute('data-augmented-latest');
+                // Fall through to re-process immediately
             } else {
-                continue; // Still healthy
+                continue; // Still healthy, skip this section
             }
         }
 
@@ -3103,10 +3104,9 @@ async function augmentLatestSections() {
                 ImageTypeLimit: '1'
             });
 
-            // Specific type filters
-            if (library.CollectionType === 'tvshows') query.append('IncludeItemTypes', 'Series');
-            else if (library.CollectionType === 'movies') query.append('IncludeItemTypes', 'Movie');
-            else query.append('IncludeItemTypes', 'Movie,Series');
+            // RELAXED TYPE FILTERING: Always include Movies and Series to support Mixed Content (Anime)
+            // This fixes "Anime Movie not shown" issue.
+            query.append('IncludeItemTypes', 'Movie,Series');
 
             const itemsUrl = window.ApiClient.getUrl(`/Users/${userId}/Items?${query.toString()}`);
             const itemsRes = await fetch(itemsUrl, { headers: { 'X-Emby-Token': window.ApiClient.accessToken() } });
