@@ -3051,7 +3051,20 @@ async function enhanceLatestSections() {
     // 2. Scan Sections
     const sections = document.querySelectorAll('.verticalSection');
     for (const section of sections) {
-        if (section.getAttribute('data-enhanced-latest')) continue;
+
+        // CHECK: If already processed, verify if it was overwritten by native code
+        const isEnhanced = section.getAttribute('data-enhanced-latest');
+        if (isEnhanced) {
+            const cont = section.querySelector('.itemsContainer');
+            // If container exists but has few items (native default is ~10-16, we want 50), it means it was reset.
+            // Our augmented container usually has ~50.
+            if (cont && cont.children.length < 20) {
+                console.log('[LegitFlix] Detected native overwrite in', section.innerText.split('\n')[0]);
+                section.removeAttribute('data-enhanced-latest'); // Reset to re-process
+            } else {
+                continue; // Still healthy
+            }
+        }
 
         const titleEl = section.querySelector('.sectionTitle');
         if (!titleEl) continue;
@@ -3072,7 +3085,6 @@ async function enhanceLatestSections() {
         const library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
         if (!library) continue;
 
-        // Mark processing
         section.setAttribute('data-enhanced-latest', 'true');
 
         try {
@@ -3104,7 +3116,12 @@ async function enhanceLatestSections() {
 
             if (itemsData.Items && itemsData.Items.length > 0) {
                 const nativeContainer = section.querySelector('.itemsContainer');
-                if (!nativeContainer) continue;
+
+                // Retry finding container if missing (rendering race condition)
+                if (!nativeContainer) {
+                    section.removeAttribute('data-enhanced-latest');
+                    continue;
+                }
 
                 // Ensure native container handles overflow
                 nativeContainer.style.display = 'flex';
