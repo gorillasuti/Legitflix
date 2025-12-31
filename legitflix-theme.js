@@ -3107,8 +3107,19 @@ async function augmentLatestSections() {
                 Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
                 EnableImageTypes: 'Primary,Backdrop,Thumb',
                 ImageTypeLimit: '1',
-                // Broaden types to support Music, Home Videos, Photos, etc.
-                IncludeItemTypes: 'Movie,Series,Episode,Video,MusicVideo,Audio,Photo,Book',
+                EnableImageTypes: 'Primary,Backdrop,Thumb',
+                ImageTypeLimit: '1',
+                // Dynamic Types based on Collection ('movies', 'tvshows', 'music', 'homevideos', 'books', 'mixed')
+                IncludeItemTypes: (() => {
+                    const type = library.CollectionType;
+                    if (type === 'music') return 'MusicAlbum';
+                    if (type === 'books') return 'Book';
+                    if (type === 'homevideos') return 'Video,Photo';
+                    // For 'movies', 'tvshows', 'mixed', or 'unknown' (e.g. Anime Mixed), 
+                    // we request major items. Excluding 'Episode' prevents the "random content" noise.
+                    return 'Movie,Series,Video';
+                })(),
+                Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
                 Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
             });
 
