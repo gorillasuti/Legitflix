@@ -3026,6 +3026,7 @@ function checkPageMode() {
 }
 
 // --- AUGMENT LATEST SECTIONS (Append to Native) ---
+let _viewsCache = null;
 
 async function augmentLatestSections() {
     // Only run on Home/Index
