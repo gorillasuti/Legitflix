@@ -3056,9 +3056,13 @@ async function augmentLatestSections() {
         const isAugmented = section.getAttribute('data-augmented-latest');
         if (isAugmented) {
             const cont = section.querySelector('.itemsContainer');
-            // If container exists but has few items (native default is ~10-16), it means it was reset.
-            if (cont && cont.children.length < 20) {
-                console.log('[LegitFlix] Detected native overwrite in', section.innerText.split('\n')[0]);
+            // Dynamic threshold: If we expected 10 items, don't reset just because it's < 20
+            const expected = parseInt(section.getAttribute('data-expected-count') || '20');
+            const threshold = Math.min(20, expected);
+
+            // If container exists but has fewer items than our threshold, it implies a Reset (or empty).
+            if (cont && cont.children.length < threshold) {
+                console.log(`[LegitFlix] Detected native overwrite in ${section.innerText.split('\n')[0]} (Count: ${cont.children.length} < ${threshold})`);
                 section.removeAttribute('data-augmented-latest');
                 // Fall through to re-process immediately
             } else {
@@ -3123,6 +3127,9 @@ async function augmentLatestSections() {
                     section.removeAttribute('data-augmented-latest');
                     continue;
                 }
+
+                // Store expected count for Guardian check
+                section.setAttribute('data-expected-count', itemsData.Items.length);
 
                 // Ensure native container handles overflow
                 nativeContainer.style.display = 'flex';
@@ -3210,11 +3217,16 @@ async function augmentLatestSections() {
                 // We do this LAST so we don't trigger ourselves when we cleared the container a moment ago.
                 if (!nativeContainer.dataset.protected) {
                     nativeContainer.dataset.protected = 'true';
+                    const fetchedCount = itemsData.Items.length;
+
                     const protector = new MutationObserver(() => {
+                        // Dynamic Threshold from fetched count
+                        const threshold = Math.min(20, fetchedCount);
+
                         // Only trigger if children count is distressingly low (indicating native reset)
                         // AND we are not currently empty (which might happen during a valid re-render)
-                        if (nativeContainer.children.length > 0 && nativeContainer.children.length < 20) {
-                            console.log('[LegitFlix] Container nuked by native code. Re-triggering augment.');
+                        if (nativeContainer.children.length > 0 && nativeContainer.children.length < threshold) {
+                            console.log(`[LegitFlix] Container nuked by native code (Count: ${nativeContainer.children.length} < ${threshold}). Re-triggering augment.`);
                             section.removeAttribute('data-augmented-latest');
                             nativeContainer.dataset.protected = ''; // Clear flag
                             protector.disconnect();
