@@ -3087,9 +3087,9 @@ async function augmentLatestSections() {
         section.setAttribute('data-augmented-latest', 'true');
 
         try {
-            console.log(`[LegitFlix] Augmenting Latest Section: ${libName} (${library.Id})`);
+            console.log(`[LegitFlix] Augmenting Latest Section [v3]: ${libName} (${library.Id})`);
 
-            // 3. Fetch Custom Data (50 items, DateCreated Desc, No Filters)
+            // 3. Fetch Custom Data (100 items, DateCreated Desc, No Filters)
             const userId = window.ApiClient.getCurrentUserId();
             // Build Query
             const query = new URLSearchParams({
@@ -3098,17 +3098,19 @@ async function augmentLatestSections() {
                 Recursive: 'true',
                 SortBy: 'DateCreated',
                 SortOrder: 'Descending',
-                Limit: '50', // REQUESTED: More items
+                Limit: '100', // REQUESTED: Even more items
                 Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
                 EnableImageTypes: 'Primary,Backdrop,Thumb',
-                ImageTypeLimit: '1'
+                ImageTypeLimit: '1',
+                IncludeItemTypes: 'Movie,Series', // Hardcoded filter for Mixed Content
+                Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
             });
 
-            // RELAXED TYPE FILTERING: Always include Movies and Series to support Mixed Content (Anime)
-            // This fixes "Anime Movie not shown" issue.
-            query.append('IncludeItemTypes', 'Movie,Series');
+            // NO extra query.append needed now
 
             const itemsUrl = window.ApiClient.getUrl(`/Users/${userId}/Items?${query.toString()}`);
+
+
             const itemsRes = await fetch(itemsUrl, { headers: { 'X-Emby-Token': window.ApiClient.accessToken() } });
             const itemsData = await itemsRes.json();
 
