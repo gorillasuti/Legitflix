@@ -307,7 +307,7 @@ async function fetchMediaBarItems(retryCount = 0) {
         for (const item of validItems) {
             if (item.Type === 'Series') {
                 try {
-                    const nextUpUrl = `/Shows/${item.Id}/NextUp?Limit=1&UserId=${auth.UserId}&Fields=UserData`;
+                    const nextUpUrl = `/Shows/NextUp?SeriesId=${item.Id}&Limit=1&UserId=${auth.UserId}&Fields=UserData`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
                     if (!nextUpRes.ok) continue; // Skip failing items silently
                     const nextUpData = await nextUpRes.json();
@@ -3116,6 +3116,10 @@ async function augmentLatestSections() {
 
             // 3. Fetch Custom Data (100 items, DateCreated Desc, No Filters)
             const userId = window.ApiClient.getCurrentUserId();
+            if (!userId) {
+                console.warn('[LegitFlix] augmentLatestSections: No API Client or User ID. Skipping.');
+                continue;
+            }
             // Build Query
             const query = new URLSearchParams({
                 UserId: userId,
