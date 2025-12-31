@@ -3043,7 +3043,7 @@ async function augmentLatestSections() {
             const viewsData = await viewsRes.json();
             _viewsCache = viewsData.Items || [];
         } catch (e) {
-            console.error('[LegitFlix] Error fetching views:', e);
+
             return;
         }
     }
@@ -3052,19 +3052,14 @@ async function augmentLatestSections() {
     const sections = document.querySelectorAll('.verticalSection');
     for (const section of sections) {
 
-        // GUARDIAN CHECK: Verify if native code overwrote our changes
-        const isAugmented = section.getAttribute('data-augmented-latest');
-        if (isAugmented) {
-            const cont = section.querySelector('.itemsContainer');
-            // If container exists but has few items (native default is ~10-16), it means it was reset.
-            if (cont && cont.children.length < 20) {
-                console.log('[LegitFlix] Detected native overwrite in', section.innerText.split('\n')[0]);
-                section.removeAttribute('data-augmented-latest');
-                // Fall through to re-process immediately
-            } else {
-                continue; // Still healthy, skip this section
-            }
+        // CACHE CHECK: If we already fetched data for this section, just re-render/verify
+        if (section._legitFlixCachedItems) {
+            renderLatestItems(section, section._legitFlixCachedItems);
+            continue;
         }
+
+        // INIT CHECK: If already processing, skip (unless we have cache, handled above)
+        if (section.getAttribute('data-augmented-latest')) continue;
 
         const titleEl = section.querySelector('.sectionTitle');
         if (!titleEl) continue;
@@ -3072,7 +3067,6 @@ async function augmentLatestSections() {
         let titleText = titleEl.innerText.trim();
         let libName = null;
 
-        // Parse Title (e.g. "Latest Anime", "Recently Added in TV")
         if (titleText.startsWith('Latest ')) {
             libName = titleText.substring(7);
         } else if (titleText.startsWith('Recently Added in ')) {
@@ -3088,137 +3082,33 @@ async function augmentLatestSections() {
         section.setAttribute('data-augmented-latest', 'true');
 
         try {
-            console.log(`[LegitFlix] Augmenting Latest Section [v3]: ${libName} (${library.Id})`);
+            console.log(`[LegitFlix] Fetching Latest Section [v4]: ${libName} (${library.Id})`);
 
-            // 3. Fetch Custom Data (100 items, DateCreated Desc, No Filters)
+            // 3. Fetch Custom Data (100 items)
             const userId = window.ApiClient.getCurrentUserId();
-            // Build Query
             const query = new URLSearchParams({
                 UserId: userId,
                 ParentId: library.Id,
                 Recursive: 'true',
                 SortBy: 'DateCreated',
                 SortOrder: 'Descending',
-                Limit: '100', // REQUESTED: Even more items
+                Limit: '100',
                 Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
                 EnableImageTypes: 'Primary,Backdrop,Thumb',
                 ImageTypeLimit: '1',
-                IncludeItemTypes: 'Movie,Series', // Hardcoded filter for Mixed Content
-                Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
+                IncludeItemTypes: 'Movie,Series',
+                Filters: 'IsFolder=false'
             });
 
-            // NO extra query.append needed now
-
             const itemsUrl = window.ApiClient.getUrl(`/Users/${userId}/Items?${query.toString()}`);
-
-
             const itemsRes = await fetch(itemsUrl, { headers: { 'X-Emby-Token': window.ApiClient.accessToken() } });
             const itemsData = await itemsRes.json();
 
             if (itemsData.Items && itemsData.Items.length > 0) {
-                const nativeContainer = section.querySelector('.itemsContainer');
-
-                // Retry finding container if missing (rendering race condition)
-                if (!nativeContainer) {
-                    section.removeAttribute('data-augmented-latest');
-                    continue;
-                }
-
-                // Ensure native container handles overflow
-                nativeContainer.style.display = 'flex';
-                nativeContainer.style.flexDirection = 'row';
-                nativeContainer.style.overflowX = 'auto';
-                nativeContainer.style.flexWrap = 'nowrap'; // Force horizontal
-
-                // ATTACH PROTECTION OBSERVER: If native code clears this container, we re-run.
-                if (!nativeContainer.dataset.protected) {
-                    nativeContainer.dataset.protected = 'true';
-                    const protector = new MutationObserver(() => {
-                        if (nativeContainer.children.length < 20) {
-                            console.log('[LegitFlix] Container nuked by native code. Re-triggering augment.');
-                            section.removeAttribute('data-augmented-latest');
-                            nativeContainer.dataset.protected = ''; // Clear flag
-                            protector.disconnect(); // Stop observing this instance
-                            // augmentLatestSections will be picked up by global observer loops
-                        }
-                    });
-                    protector.observe(nativeContainer, { childList: true });
-                }
-
-                // Get Template from existing card (native look)
-                // Use first child even if hidden, or check children length
-                const templateCard = nativeContainer.querySelector('.card');
-                if (!templateCard) continue; // Can't clone if empty
-
-                // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
-                nativeContainer.innerHTML = '';
-
-                itemsData.Items.forEach(item => {
-                    // Clone
-                    const card = templateCard.cloneNode(true);
-                    card.style.display = ''; // Ensure visible if template was hidden
-
-                    // Update Data Attributes
-                    card.setAttribute('data-id', item.Id);
-                    card.setAttribute('data-type', item.Type);
-
-                    // Update Image
-                    const imgContainer = card.querySelector('.cardImageContainer');
-                    if (imgContainer) {
-                        const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
-
-                        // Clear any existing indicators (clone artifacts)
-                        const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
-                        existingIndicators.forEach(el => el.remove());
-
-                        // Add Watched Indicator
-                        const isPlayed = item.UserData && item.UserData.Played;
-                        if (isPlayed) {
-                            const ind = document.createElement('div');
-                            ind.className = 'playedIndicator';
-                            ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
-                            ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
-                            imgContainer.appendChild(ind);
-                        }
-                    }
-
-                    // Update Text
-                    const texts = card.querySelectorAll('.cardText');
-                    // Usually first is Title, second is Year/Details
-                    if (texts.length > 0) texts[0].innerText = item.Name;
-                    if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
-
-                    // Update Link
-                    const link = card.querySelector('.cardContent') || card;
-                    if (link.tagName === 'A') {
-                        link.setAttribute('href', `#!/details?id=${item.Id}`);
-                        link.onclick = (e) => {
-                            e.preventDefault();
-                            window.location.href = `#!/details?id=${item.Id}`;
-                            return false;
-                        };
-                    } else {
-                        // Sometimes link is nested
-                        const nestedLink = card.querySelector('a');
-                        if (nestedLink) {
-                            nestedLink.setAttribute('href', `#!/details?id=${item.Id}`);
-                            nestedLink.onclick = (e) => {
-                                e.preventDefault();
-                                window.location.href = `#!/details?id=${item.Id}`;
-                                return false;
-                            };
-                        }
-                    }
-
-                    // Cleanup any "Episode" specific classes if template was wrong type (rare in Latest)
-                    card.classList.remove('overflowBackdropCard');
-                    card.classList.add('overflowPortraitCard');
-
-                    // Append
-                    nativeContainer.appendChild(card);
-                });
-
+                // SAVE TO CACHE
+                section._legitFlixCachedItems = itemsData.Items;
+                // RENDER
+                renderLatestItems(section, itemsData.Items);
             } else {
                 section.removeAttribute('data-augmented-latest'); // Retry/Revert
             }
@@ -3228,6 +3118,111 @@ async function augmentLatestSections() {
             section.removeAttribute('data-augmented-latest');
         }
     }
+}
+
+function renderLatestItems(section, items) {
+    const nativeContainer = section.querySelector('.itemsContainer');
+    if (!nativeContainer) return;
+
+    // Ensure style
+    nativeContainer.style.display = 'flex';
+    nativeContainer.style.flexDirection = 'row';
+    nativeContainer.style.overflowX = 'auto';
+    nativeContainer.style.flexWrap = 'nowrap';
+
+    // Disconnect existing protector to avoid loops during our own update
+    if (nativeContainer._legitFlixProtector) {
+        nativeContainer._legitFlixProtector.disconnect();
+    }
+
+    // Get Template (try to find valid card, or create fallback if totally empty)
+    let templateCard = nativeContainer.querySelector('.card');
+
+    // RENDER: Clear and Fill
+    // We only clear if we found a template or if we are confident we can build from scratch.
+    if (!templateCard && items.length > 0) {
+        // Rare edge case: native container is empty.
+        // Wait for native to simple-render at least one card so we can clone it.
+        return;
+    }
+
+    // CLONE & FILL
+    nativeContainer.innerHTML = '';
+
+    items.forEach(item => {
+        const card = templateCard.cloneNode(true);
+        card.style.display = '';
+
+        // Attributes
+        card.setAttribute('data-id', item.Id);
+        card.setAttribute('data-type', item.Type);
+
+        // Image
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+            imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+
+            // Clean
+            const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
+            existingIndicators.forEach(el => el.remove());
+
+            // Watched
+            const isPlayed = item.UserData && item.UserData.Played;
+            if (isPlayed) {
+                const ind = document.createElement('div');
+                ind.className = 'playedIndicator';
+                ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
+                imgContainer.appendChild(ind);
+            }
+        }
+
+        // Text
+        const texts = card.querySelectorAll('.cardText');
+        if (texts.length > 0) texts[0].innerText = item.Name;
+        if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
+
+        // Link
+        // Handle various card structures
+        const link = card.querySelector('a') || card.querySelector('.cardContent') || card;
+        const href = `#!/details?id=${item.Id}`;
+
+        // If the element itself is an anchor
+        if (link.tagName === 'A') {
+            link.setAttribute('href', href);
+        }
+
+        // Always attach click handler to the card or interactive part
+        (link).onclick = (e) => {
+            // Stop default just in case
+            e.preventDefault();
+            window.location.href = href;
+            return false;
+        };
+
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
+
+        nativeContainer.appendChild(card);
+    });
+
+    // RE-ATTACH PROTECTOR (Debounced)
+    // We watch for childList changes. If count drops, we re-render from CACHE.
+    nativeContainer._legitFlixProtector = new MutationObserver((mutations) => {
+        if (nativeContainer.children.length < 20) {
+            console.log('[LegitFlix] Native overwrite detected. Restoring from cache...');
+            // Disconnect immediately to prevent recursion during restore
+            nativeContainer._legitFlixProtector.disconnect();
+
+            // Wait 10ms to let native finish its "clearing" operation, then restore
+            setTimeout(() => {
+                renderLatestItems(section, items);
+            }, 10);
+        }
+    });
+
+    nativeContainer._legitFlixProtector.observe(nativeContainer, { childList: true });
 }
 
 function createCustomCard(item) {
