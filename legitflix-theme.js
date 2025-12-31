@@ -3086,8 +3086,28 @@ async function augmentLatestSections() {
         if (!libName) continue;
 
         // Find Matching Library
-        const library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
-        if (!library) continue;
+        let library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
+
+        // ROBUSTNESS: If library not found, maybe cache is stale (new library added)?
+        if (!library && !window._legitFlixViewsRefreshed) {
+            console.log(`[LegitFlix] Library "${libName}" not found in cache. Refreshing views...`);
+            try {
+                const userId = window.ApiClient.getCurrentUserId();
+                const viewsRes = await fetch(window.ApiClient.getUrl(`/Users/${userId}/Views`), {
+                    headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
+                });
+                const viewsData = await viewsRes.json();
+                _viewsCache = viewsData.Items; // Update Global Cache
+                window._legitFlixViewsRefreshed = true; // Only try once per reload to avoid loops
+
+                // Retry finding library
+                library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
+            } catch (e) {
+                console.error('[LegitFlix] Failed to refresh views:', e);
+            }
+        }
+
+        if (!library) continue; // Still not found, skip
 
         section.setAttribute('data-augmented-latest', 'true');
 
@@ -3107,20 +3127,8 @@ async function augmentLatestSections() {
                 Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
                 EnableImageTypes: 'Primary,Backdrop,Thumb',
                 ImageTypeLimit: '1',
-                EnableImageTypes: 'Primary,Backdrop,Thumb',
-                ImageTypeLimit: '1',
-                // Dynamic Types based on Collection ('movies', 'tvshows', 'music', 'homevideos', 'books', 'mixed')
-                IncludeItemTypes: (() => {
-                    const type = library.CollectionType;
-                    if (type === 'music') return 'MusicAlbum';
-                    if (type === 'books') return 'Book';
-                    if (type === 'homevideos') return 'Video,Photo';
-                    // For 'movies', 'tvshows', 'mixed', or 'unknown' (e.g. Anime Mixed), 
-                    // we request major items. Excluding 'Episode' prevents the "random content" noise.
-                    return 'Movie,Series,Video';
-                })(),
-                Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
-                Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
+                IncludeItemTypes: 'Movie,Series', // Hardcoded filter for Mixed Content
+                Filters: 'IsFolder%3Dfalse' // Ensure no folders
             });
 
             // NO extra query.append needed now
@@ -3159,22 +3167,21 @@ async function augmentLatestSections() {
                 // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
                 nativeContainer.innerHTML = '';
 
-                // Initialize Lazy Loader for this section
-                // Initialize Lazy Loader for this section
-                const sectionImageObserver = new IntersectionObserver((entries, observer) => {
+                // Prepare Lazy Loader Observer for this batch
+                const lazyObserver = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
-                            const lazyImg = entry.target;
-                            const bg = lazyImg.getAttribute('data-legitflix-bg');
-                            // console.log('[LegitFlix] Lazy loading image:', bg); // Debug
+                            const target = entry.target;
+                            const bg = target.getAttribute('data-bg-src');
                             if (bg) {
-                                lazyImg.style.backgroundImage = bg;
-                                lazyImg.removeAttribute('data-legitflix-bg'); // Prevent re-set
-                                observer.unobserve(lazyImg);
+                                target.style.backgroundImage = `url('${bg}')`;
+                                target.removeAttribute('data-bg-src');
+                                target.classList.remove('lazy-loading-pending');
                             }
+                            observer.unobserve(target);
                         }
                     });
-                }, { root: null, rootMargin: '600px 0px' }); // Load well before visible (viewport based)
+                }, { root: nativeContainer, rootMargin: '200px' }); // Load usually when 200px away
 
                 itemsData.Items.forEach(item => {
                     // Clone
@@ -3185,45 +3192,23 @@ async function augmentLatestSections() {
                     card.setAttribute('data-id', item.Id);
                     card.setAttribute('data-type', item.Type);
 
-                    // Update Image with Fallback and Lazy Loading
+                    // Update Image via Lazy Loading
                     const imgContainer = card.querySelector('.cardImageContainer');
                     if (imgContainer) {
-                        // Determine Image URL (Primary -> Backdrop -> Thumb -> Fallback)
-                        let imgType = 'Primary';
-                        let tag = item.ImageTags && item.ImageTags.Primary;
+                        const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
 
-                        if (!tag && item.ImageTags && item.ImageTags.Backdrop) {
-                            imgType = 'Backdrop';
-                            tag = item.ImageTags.Backdrop;
-                        } else if (!tag && item.ImageTags && item.ImageTags.Thumb) {
-                            imgType = 'Thumb';
-                            tag = item.ImageTags.Thumb;
-                        }
+                        // LAZY LOAD: Set data attribute instead of style
+                        imgContainer.setAttribute('data-bg-src', imgUrl);
+                        imgContainer.classList.add('lazy-loading-pending');
 
-                        if (tag) {
-                            const imgUrl = `/Items/${item.Id}/Images/${imgType}?maxHeight=400&maxWidth=300&quality=90&tag=${tag}`;
+                        // Reset style to clear native image (avoid showing wrong image)
+                        imgContainer.style.backgroundImage = 'none';
+                        imgContainer.style.backgroundSize = 'cover';
+                        imgContainer.style.backgroundPosition = 'center';
+                        imgContainer.style.aspectRatio = '2/3';
 
-                            // LAZY LOAD: Don't set style directly. Set data attribute and observe.
-                            // This prevents "ERR_INSUFFICIENT_RESOURCES" when loading 100 items.
-                            // LAZY LOAD: Don't set style directly. Set data attribute and observe.
-                            // This prevents "ERR_INSUFFICIENT_RESOURCES" when loading 100 items.
-                            imgContainer.setAttribute('data-legitflix-bg', `url('${imgUrl}')`);
-                            imgContainer.style.backgroundImage = ''; // Clear initial
-                            imgContainer.style.backgroundColor = '#202020'; // Placeholder color
-                            imgContainer.style.backgroundSize = 'cover';
-                            imgContainer.style.backgroundPosition = 'center';
-                            imgContainer.style.aspectRatio = '2/3'; // Maintain layout before load
-
-                            // Add to Lazy Loader
-                            // We need a global or scoped observer for this. 
-                            // Since we are inside an async function, let's attach to a locally scoped observer for this section
-                            // defined outside the loop.
-                            if (sectionImageObserver) {
-                                sectionImageObserver.observe(imgContainer);
-                            }
-                        } else {
-                            // No image found? Keep placeholder or set default
-                        }
+                        // Observe
+                        lazyObserver.observe(imgContainer);
 
                         // Clear any existing indicators (clone artifacts)
                         const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
@@ -3292,6 +3277,7 @@ async function augmentLatestSections() {
                             console.log(`[LegitFlix] Container nuked by native code (Count: ${nativeContainer.children.length} < ${threshold}). Re-triggering augment.`);
                             section.removeAttribute('data-augmented-latest');
                             nativeContainer.dataset.protected = ''; // Clear flag
+                            lazyObserver.disconnect(); // Clean up lazy observer
                             protector.disconnect();
                         }
                     });
