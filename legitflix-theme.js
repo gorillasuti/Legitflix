@@ -3147,6 +3147,21 @@ async function augmentLatestSections() {
                 // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
                 nativeContainer.innerHTML = '';
 
+                // Initialize Lazy Loader for this section
+                const sectionImageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const lazyImg = entry.target;
+                            const bg = lazyImg.getAttribute('data-legitflix-bg');
+                            if (bg) {
+                                lazyImg.style.backgroundImage = bg;
+                                lazyImg.removeAttribute('data-legitflix-bg'); // Prevent re-set
+                                observer.unobserve(lazyImg);
+                            }
+                        }
+                    });
+                }, { root: nativeContainer, rootMargin: '200px' }); // Load 200px before visible
+
                 itemsData.Items.forEach(item => {
                     // Clone
                     const card = templateCard.cloneNode(true);
@@ -3156,11 +3171,42 @@ async function augmentLatestSections() {
                     card.setAttribute('data-id', item.Id);
                     card.setAttribute('data-type', item.Type);
 
-                    // Update Image
+                    // Update Image with Fallback and Lazy Loading
                     const imgContainer = card.querySelector('.cardImageContainer');
                     if (imgContainer) {
-                        const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+                        // Determine Image URL (Primary -> Backdrop -> Thumb -> Fallback)
+                        let imgType = 'Primary';
+                        let tag = item.ImageTags && item.ImageTags.Primary;
+
+                        if (!tag && item.ImageTags && item.ImageTags.Backdrop) {
+                            imgType = 'Backdrop';
+                            tag = item.ImageTags.Backdrop;
+                        } else if (!tag && item.ImageTags && item.ImageTags.Thumb) {
+                            imgType = 'Thumb';
+                            tag = item.ImageTags.Thumb;
+                        }
+
+                        if (tag) {
+                            const imgUrl = `/Items/${item.Id}/Images/${imgType}?maxHeight=400&maxWidth=300&quality=90&tag=${tag}`;
+
+                            // LAZY LOAD: Don't set style directly. Set data attribute and observe.
+                            // This prevents "ERR_INSUFFICIENT_RESOURCES" when loading 100 items.
+                            imgContainer.setAttribute('data-legitflix-bg', `url('${imgUrl}')`);
+                            imgContainer.style.backgroundImage = ''; // Clear initial
+                            imgContainer.style.backgroundSize = 'cover';
+                            imgContainer.style.backgroundPosition = 'center';
+                            imgContainer.style.aspectRatio = '2/3'; // Maintain layout before load
+
+                            // Add to Lazy Loader
+                            // We need a global or scoped observer for this. 
+                            // Since we are inside an async function, let's attach to a locally scoped observer for this section
+                            // defined outside the loop.
+                            if (sectionImageObserver) {
+                                sectionImageObserver.observe(imgContainer);
+                            }
+                        } else {
+                            // No image found? Keep placeholder or set default
+                        }
 
                         // Clear any existing indicators (clone artifacts)
                         const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
