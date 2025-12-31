@@ -3148,11 +3148,13 @@ async function augmentLatestSections() {
                 nativeContainer.innerHTML = '';
 
                 // Initialize Lazy Loader for this section
+                // Initialize Lazy Loader for this section
                 const sectionImageObserver = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             const lazyImg = entry.target;
                             const bg = lazyImg.getAttribute('data-legitflix-bg');
+                            // console.log('[LegitFlix] Lazy loading image:', bg); // Debug
                             if (bg) {
                                 lazyImg.style.backgroundImage = bg;
                                 lazyImg.removeAttribute('data-legitflix-bg'); // Prevent re-set
@@ -3160,7 +3162,7 @@ async function augmentLatestSections() {
                             }
                         }
                     });
-                }, { root: nativeContainer, rootMargin: '200px' }); // Load 200px before visible
+                }, { root: null, rootMargin: '600px 0px' }); // Load well before visible (viewport based)
 
                 itemsData.Items.forEach(item => {
                     // Clone
@@ -3191,8 +3193,11 @@ async function augmentLatestSections() {
 
                             // LAZY LOAD: Don't set style directly. Set data attribute and observe.
                             // This prevents "ERR_INSUFFICIENT_RESOURCES" when loading 100 items.
+                            // LAZY LOAD: Don't set style directly. Set data attribute and observe.
+                            // This prevents "ERR_INSUFFICIENT_RESOURCES" when loading 100 items.
                             imgContainer.setAttribute('data-legitflix-bg', `url('${imgUrl}')`);
                             imgContainer.style.backgroundImage = ''; // Clear initial
+                            imgContainer.style.backgroundColor = '#202020'; // Placeholder color
                             imgContainer.style.backgroundSize = 'cover';
                             imgContainer.style.backgroundPosition = 'center';
                             imgContainer.style.aspectRatio = '2/3'; // Maintain layout before load
