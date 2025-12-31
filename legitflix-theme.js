@@ -3185,7 +3185,7 @@ async function augmentLatestSections() {
                             observer.unobserve(target);
                         }
                     });
-                }, { root: nativeContainer, rootMargin: '200px' }); // Load usually when 200px away
+                }, { rootMargin: '200px' }); // Use Viewport as root (safer), load when close
 
                 itemsData.Items.forEach(item => {
                     // Clone
