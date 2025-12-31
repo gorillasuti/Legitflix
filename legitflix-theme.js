@@ -3107,7 +3107,8 @@ async function augmentLatestSections() {
                 Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
                 EnableImageTypes: 'Primary,Backdrop,Thumb',
                 ImageTypeLimit: '1',
-                IncludeItemTypes: 'Movie,Series', // Hardcoded filter for Mixed Content
+                // Broaden types to support Music, Home Videos, Photos, etc.
+                IncludeItemTypes: 'Movie,Series,Episode,Video,MusicVideo,Audio,Photo,Book',
                 Filters: 'IsFolder=false' // Ensure no folders, and implicitly NO "IsUnplayed" filter
             });
 
