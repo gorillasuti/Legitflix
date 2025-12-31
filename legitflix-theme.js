@@ -3193,7 +3193,7 @@ const observer = new MutationObserver((mutations) => {
     if (typeof renameMyList === 'function') renameMyList();
     if (typeof fixMixedCards === 'function') fixMixedCards();
     if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
-    if (typeof enhanceLatestSections === 'function') enhanceLatestSections(); // NEW: Custom Latest Sections
+    if (typeof augmentLatestSections === 'function') augmentLatestSections(); // AUGMENT: Native Append Mode
 
     injectPromoBanner();
     tagNativeSections();
