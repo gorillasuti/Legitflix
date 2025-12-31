@@ -3103,28 +3103,91 @@ async function enhanceLatestSections() {
             const itemsData = await itemsRes.json();
 
             if (itemsData.Items && itemsData.Items.length > 0) {
-                // 4. Hide Native Container
                 const nativeContainer = section.querySelector('.itemsContainer');
-                if (nativeContainer) nativeContainer.style.display = 'none';
+                if (!nativeContainer) continue;
 
-                // 5. Render Custom Container
-                const customContainer = document.createElement('div');
-                customContainer.className = 'itemsContainer padded-left padded-right vertical-wrap custom-latest-scroller';
-                // Inline styles to force successful horizontal layout
-                customContainer.style.display = 'flex';
-                customContainer.style.flexDirection = 'row';
-                customContainer.style.overflowX = 'auto'; // Horizontal scroll
-                customContainer.style.overflowY = 'hidden';
-                customContainer.style.gap = '1.2em'; // Consistent spacing
-                customContainer.style.paddingBottom = '20px'; // Scrollbar space
+                // Ensure native container handles overflow
+                nativeContainer.style.display = 'flex';
+                nativeContainer.style.flexDirection = 'row';
+                nativeContainer.style.overflowX = 'auto';
+                nativeContainer.style.flexWrap = 'nowrap'; // Force horizontal
+
+                // Get Template from existing card (native look)
+                // Use first child even if hidden, or check children length
+                const templateCard = nativeContainer.querySelector('.card');
+                if (!templateCard) continue; // Can't clone if empty
+
+                // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
+                nativeContainer.innerHTML = '';
 
                 itemsData.Items.forEach(item => {
-                    const card = createCustomCard(item);
-                    customContainer.appendChild(card);
+                    // Clone
+                    const card = templateCard.cloneNode(true);
+                    card.style.display = ''; // Ensure visible if template was hidden
+
+                    // Update Data Attributes
+                    card.setAttribute('data-id', item.Id);
+                    card.setAttribute('data-type', item.Type);
+
+                    // Update Image
+                    const imgContainer = card.querySelector('.cardImageContainer');
+                    if (imgContainer) {
+                        const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+
+                        // Clear any existing indicators (clone artifacts)
+                        const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
+                        existingIndicators.forEach(el => el.remove());
+
+                        // Add Watched Indicator
+                        const isPlayed = item.UserData && item.UserData.Played;
+                        if (isPlayed) {
+                            const ind = document.createElement('div');
+                            ind.className = 'playedIndicator';
+                            ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                            ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
+                            imgContainer.appendChild(ind);
+                        }
+                    }
+
+                    // Update Text
+                    const texts = card.querySelectorAll('.cardText');
+                    // Usually first is Title, second is Year/Details
+                    if (texts.length > 0) texts[0].innerText = item.Name;
+                    if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
+
+                    // Update Link
+                    const link = card.querySelector('.cardContent') || card;
+                    if (link.tagName === 'A') {
+                        link.setAttribute('href', `#!/details?id=${item.Id}`);
+                        link.onclick = (e) => {
+                            e.preventDefault();
+                            window.location.href = `#!/details?id=${item.Id}`;
+                            return false;
+                        };
+                    } else {
+                        // Sometimes link is nested
+                        const nestedLink = card.querySelector('a');
+                        if (nestedLink) {
+                            nestedLink.setAttribute('href', `#!/details?id=${item.Id}`);
+                            nestedLink.onclick = (e) => {
+                                e.preventDefault();
+                                window.location.href = `#!/details?id=${item.Id}`;
+                                return false;
+                            };
+                        }
+                    }
+
+                    // Cleanup any "Episode" specific classes if template was wrong type (rare in Latest)
+                    card.classList.remove('overflowBackdropCard');
+                    card.classList.add('overflowPortraitCard');
+
+                    // Append
+                    nativeContainer.appendChild(card);
                 });
 
-                // Append to Section
-                section.appendChild(customContainer);
+                // Append to Section (Already there, but ensuring container is visible)
+                // section.appendChild(nativeContainer);
             } else {
                 section.removeAttribute('data-enhanced-latest'); // Retry/Revert
             }
