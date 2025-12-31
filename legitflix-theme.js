@@ -3028,7 +3028,10 @@ function checkPageMode() {
 // --- ENHANCE LATEST SECTIONS (Custom Scroller: 50 Items + Watched) ---
 let _viewsCache = null;
 
-async function enhanceLatestSections() {
+// --- AUGMENT LATEST SECTIONS (Append to Native) ---
+let _viewsCache = null;
+
+async function augmentLatestSections() {
     // Only run on Home/Index
     const hash = window.location.hash.toLowerCase();
     if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') return;
@@ -3052,15 +3055,14 @@ async function enhanceLatestSections() {
     const sections = document.querySelectorAll('.verticalSection');
     for (const section of sections) {
 
-        // CHECK: If already processed, verify if it was overwritten by native code
-        const isEnhanced = section.getAttribute('data-enhanced-latest');
-        if (isEnhanced) {
+        // GUARDIAN CHECK: Verify if native code overwrote our changes
+        const isAugmented = section.getAttribute('data-augmented-latest');
+        if (isAugmented) {
             const cont = section.querySelector('.itemsContainer');
-            // If container exists but has few items (native default is ~10-16, we want 50), it means it was reset.
-            // Our augmented container usually has ~50.
+            // If container exists but has few items (native default is ~10-16), it means it was reset.
             if (cont && cont.children.length < 20) {
                 console.log('[LegitFlix] Detected native overwrite in', section.innerText.split('\n')[0]);
-                section.removeAttribute('data-enhanced-latest'); // Reset to re-process
+                section.removeAttribute('data-augmented-latest'); // Reset to re-process
             } else {
                 continue; // Still healthy
             }
@@ -3085,10 +3087,10 @@ async function enhanceLatestSections() {
         const library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
         if (!library) continue;
 
-        section.setAttribute('data-enhanced-latest', 'true');
+        section.setAttribute('data-augmented-latest', 'true');
 
         try {
-            console.log(`[LegitFlix] Enhancing Latest Section: ${libName} (${library.Id})`);
+            console.log(`[LegitFlix] Augmenting Latest Section: ${libName} (${library.Id})`);
 
             // 3. Fetch Custom Data (50 items, DateCreated Desc, No Filters)
             const userId = window.ApiClient.getCurrentUserId();
@@ -3119,7 +3121,7 @@ async function enhanceLatestSections() {
 
                 // Retry finding container if missing (rendering race condition)
                 if (!nativeContainer) {
-                    section.removeAttribute('data-enhanced-latest');
+                    section.removeAttribute('data-augmented-latest');
                     continue;
                 }
 
@@ -3203,15 +3205,13 @@ async function enhanceLatestSections() {
                     nativeContainer.appendChild(card);
                 });
 
-                // Append to Section (Already there, but ensuring container is visible)
-                // section.appendChild(nativeContainer);
             } else {
-                section.removeAttribute('data-enhanced-latest'); // Retry/Revert
+                section.removeAttribute('data-augmented-latest'); // Retry/Revert
             }
 
         } catch (err) {
-            console.error('[LegitFlix] Failed to enhance section:', libName, err);
-            section.removeAttribute('data-enhanced-latest');
+            console.error('[LegitFlix] Failed to augment section:', libName, err);
+            section.removeAttribute('data-augmented-latest');
         }
     }
 }
