@@ -3052,16 +3052,17 @@ async function augmentLatestSections() {
     const sections = document.querySelectorAll('.verticalSection');
     for (const section of sections) {
 
-        // GLOBAL GUARD: If already marked, skip.
-        // The dedicated 'Protector' observer handles persistence/overwrites now.
-        if (section.getAttribute('data-augmented-latest')) continue;
-
         // CACHE CHECK: If we already fetched data for this section, just re-render/verify
         if (section._legitFlixCachedItems) {
-            section.setAttribute('data-augmented-latest', 'true');
-            renderLatestItems(section, section._legitFlixCachedItems);
+            const cont = section.querySelector('.itemsContainer');
+            if (cont && cont.children.length < 20) {
+                renderLatestItems(section, section._legitFlixCachedItems);
+            }
             continue;
         }
+
+        // INIT CHECK: If already processing, skip (unless we have cache, handled above)
+        if (section.getAttribute('data-augmented-latest')) continue;
 
         const titleEl = section.querySelector('.sectionTitle');
         if (!titleEl) continue;
@@ -3141,72 +3142,72 @@ function renderLatestItems(section, items) {
     let templateCard = nativeContainer.querySelector('.card');
 
     // RENDER: Clear and Fill
+    // We only clear if we found a template or if we are confident we can build from scratch.
+    if (!templateCard && items.length > 0) {
+        // Rare edge case: native container is empty.
+        // Wait for native to simple-render at least one card so we can clone it.
+        return;
+    }
+
     // CLONE & FILL
     nativeContainer.innerHTML = '';
 
     items.forEach(item => {
-        if (templateCard) {
-            // CLONE STRATEGY
-            const card = templateCard.cloneNode(true);
-            card.style.display = '';
+        const card = templateCard.cloneNode(true);
+        card.style.display = '';
 
-            // Attributes
-            card.setAttribute('data-id', item.Id);
-            card.setAttribute('data-type', item.Type);
+        // Attributes
+        card.setAttribute('data-id', item.Id);
+        card.setAttribute('data-type', item.Type);
 
-            // Image
-            const imgContainer = card.querySelector('.cardImageContainer');
-            if (imgContainer) {
-                const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-                imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+        // Image
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+            imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
 
-                // Clean
-                const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
-                existingIndicators.forEach(el => el.remove());
+            // Clean
+            const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
+            existingIndicators.forEach(el => el.remove());
 
-                // Watched
-                const isPlayed = item.UserData && item.UserData.Played;
-                if (isPlayed) {
-                    const ind = document.createElement('div');
-                    ind.className = 'playedIndicator';
-                    ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
-                    ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
-                    imgContainer.appendChild(ind);
-                }
-            }
-
-            // Text
-            const texts = card.querySelectorAll('.cardText');
-            if (texts.length > 0) texts[0].innerText = item.Name;
-            if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
-
-            // Link
-            const link = card.querySelector('a') || card.querySelector('.cardContent') || card;
-            const href = `#!/details?id=${item.Id}`;
-
-            if (link && link.tagName === 'A') {
-                link.setAttribute('href', href);
-            }
-
-            if (link) {
-                (link).onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = href;
-                    return false;
-                };
-            }
-
-            card.classList.remove('overflowBackdropCard');
-            card.classList.add('overflowPortraitCard');
-
-            nativeContainer.appendChild(card);
-        } else {
-            // FALLBACK STRATEGY (Create from scratch)
-            if (typeof createCustomCard === 'function') {
-                const card = createCustomCard(item);
-                nativeContainer.appendChild(card);
+            // Watched
+            const isPlayed = item.UserData && item.UserData.Played;
+            if (isPlayed) {
+                const ind = document.createElement('div');
+                ind.className = 'playedIndicator';
+                ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
+                imgContainer.appendChild(ind);
             }
         }
+
+        // Text
+        const texts = card.querySelectorAll('.cardText');
+        if (texts.length > 0) texts[0].innerText = item.Name;
+        if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
+
+        // Link
+        // Handle various card structures
+        const link = card.querySelector('a') || card.querySelector('.cardContent') || card;
+        const href = `#!/details?id=${item.Id}`;
+
+        // If the element itself is an anchor
+        if (link.tagName === 'A') {
+            link.setAttribute('href', href);
+        }
+
+        // Always attach click handler to the card or interactive part
+        (link).onclick = (e) => {
+            // Stop default just in case
+            e.preventDefault();
+            window.location.href = href;
+            return false;
+        };
+
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
+
+        nativeContainer.appendChild(card);
     });
 
     // RE-ATTACH PROTECTOR (Debounced)
