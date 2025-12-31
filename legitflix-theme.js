@@ -3171,22 +3171,6 @@ async function augmentLatestSections() {
                 // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
                 nativeContainer.innerHTML = '';
 
-                // Prepare Lazy Loader Observer for this batch
-                const lazyObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const target = entry.target;
-                            const bg = target.getAttribute('data-bg-src');
-                            if (bg) {
-                                target.style.backgroundImage = `url('${bg}')`;
-                                target.removeAttribute('data-bg-src');
-                                target.classList.remove('lazy-loading-pending');
-                            }
-                            observer.unobserve(target);
-                        }
-                    });
-                }, { root: null, rootMargin: '600px' }); // Load when close to viewport (high margin for horizontal scroll)
-
                 itemsData.Items.forEach(item => {
                     // Clone
                     const card = templateCard.cloneNode(true);
@@ -3196,23 +3180,12 @@ async function augmentLatestSections() {
                     card.setAttribute('data-id', item.Id);
                     card.setAttribute('data-type', item.Type);
 
-                    // Update Image via Lazy Loading
+                    // Update Image (DIRECT - NO LAZY LOADING for reliability)
                     const imgContainer = card.querySelector('.cardImageContainer');
                     if (imgContainer) {
                         const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
 
-                        // LAZY LOAD: Set data attribute instead of style
-                        imgContainer.setAttribute('data-bg-src', imgUrl);
-                        imgContainer.classList.add('lazy-loading-pending');
-
-                        // Reset style to clear native image (avoid showing wrong image)
-                        imgContainer.style.backgroundImage = 'none';
-                        imgContainer.style.backgroundSize = 'cover';
-                        imgContainer.style.backgroundPosition = 'center';
-                        imgContainer.style.aspectRatio = '2/3';
-
-                        // Observe
-                        lazyObserver.observe(imgContainer);
+                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
 
                         // Clear any existing indicators (clone artifacts)
                         const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
@@ -3281,7 +3254,6 @@ async function augmentLatestSections() {
                             console.log(`[LegitFlix] Container nuked by native code (Count: ${nativeContainer.children.length} < ${threshold}). Re-triggering augment.`);
                             section.removeAttribute('data-augmented-latest');
                             nativeContainer.dataset.protected = ''; // Clear flag
-                            lazyObserver.disconnect(); // Clean up lazy observer
                             protector.disconnect();
                         }
                     });
