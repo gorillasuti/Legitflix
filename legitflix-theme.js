@@ -3129,6 +3129,21 @@ async function augmentLatestSections() {
                 nativeContainer.style.overflowX = 'auto';
                 nativeContainer.style.flexWrap = 'nowrap'; // Force horizontal
 
+                // ATTACH PROTECTION OBSERVER: If native code clears this container, we re-run.
+                if (!nativeContainer.dataset.protected) {
+                    nativeContainer.dataset.protected = 'true';
+                    const protector = new MutationObserver(() => {
+                        if (nativeContainer.children.length < 20) {
+                            console.log('[LegitFlix] Container nuked by native code. Re-triggering augment.');
+                            section.removeAttribute('data-augmented-latest');
+                            nativeContainer.dataset.protected = ''; // Clear flag
+                            protector.disconnect(); // Stop observing this instance
+                            // augmentLatestSections will be picked up by global observer loops
+                        }
+                    });
+                    protector.observe(nativeContainer, { childList: true });
+                }
+
                 // Get Template from existing card (native look)
                 // Use first child even if hidden, or check children length
                 const templateCard = nativeContainer.querySelector('.card');
