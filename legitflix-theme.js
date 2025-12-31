@@ -3025,11 +3025,7 @@ function checkPageMode() {
     }
 }
 
-// --- ENHANCE LATEST SECTIONS (Custom Scroller: 50 Items + Watched) ---
-let _viewsCache = null;
-
 // --- AUGMENT LATEST SECTIONS (Append to Native) ---
-let _viewsCache = null;
 
 async function augmentLatestSections() {
     // Only run on Home/Index
