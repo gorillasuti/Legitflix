@@ -3127,12 +3127,6 @@ function renderLatestItems(section, items) {
     const nativeContainer = section.querySelector('.itemsContainer');
     if (!nativeContainer) return;
 
-    // Ensure style
-    nativeContainer.style.display = 'flex';
-    nativeContainer.style.flexDirection = 'row';
-    nativeContainer.style.overflowX = 'auto';
-    nativeContainer.style.flexWrap = 'nowrap';
-
     // Disconnect existing protector to avoid loops during our own update
     if (nativeContainer._legitFlixProtector) {
         nativeContainer._legitFlixProtector.disconnect();
@@ -3141,74 +3135,96 @@ function renderLatestItems(section, items) {
     // Get Template (try to find valid card, or create fallback if totally empty)
     let templateCard = nativeContainer.querySelector('.card');
 
+    // CACHE TEMPLATE: If we have one, save it for later (e.g. if native nukes it all)
+    if (templateCard) {
+        section._legitFlixTemplate = templateCard.cloneNode(true);
+    } else if (section._legitFlixTemplate) {
+        // RECOVER: Use cached template if native cleared everything
+        templateCard = section._legitFlixTemplate;
+    }
+
     // RENDER: Clear and Fill
     // We only clear if we found a template or if we are confident we can build from scratch.
     if (!templateCard && items.length > 0) {
-        // Rare edge case: native container is empty.
-        // Wait for native to simple-render at least one card so we can clone it.
+        // Should not happen if we cache correctly, but if it does, wait for next cycle.
         return;
     }
 
-    // CLONE & FILL
-    nativeContainer.innerHTML = '';
+    // ---------------------------------------------------------
+    // RENDER LOCK: Stop Global Observer from seeing this massive change
+    // ---------------------------------------------------------
+    _isRendering = true;
 
-    items.forEach(item => {
-        const card = templateCard.cloneNode(true);
-        card.style.display = '';
+    try {
+        // Ensure style
+        nativeContainer.style.display = 'flex';
+        nativeContainer.style.flexDirection = 'row';
+        nativeContainer.style.overflowX = 'auto';
+        nativeContainer.style.flexWrap = 'nowrap';
 
-        // Attributes
-        card.setAttribute('data-id', item.Id);
-        card.setAttribute('data-type', item.Type);
+        // CLONE & FILL
+        nativeContainer.innerHTML = '';
 
-        // Image
-        const imgContainer = card.querySelector('.cardImageContainer');
-        if (imgContainer) {
-            const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-            imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+        items.forEach(item => {
+            const card = templateCard.cloneNode(true);
+            card.style.display = '';
 
-            // Clean
-            const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
-            existingIndicators.forEach(el => el.remove());
+            // Attributes
+            card.setAttribute('data-id', item.Id);
+            card.setAttribute('data-type', item.Type);
 
-            // Watched
-            const isPlayed = item.UserData && item.UserData.Played;
-            if (isPlayed) {
-                const ind = document.createElement('div');
-                ind.className = 'playedIndicator';
-                ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
-                ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
-                imgContainer.appendChild(ind);
+            // Image
+            const imgContainer = card.querySelector('.cardImageContainer');
+            if (imgContainer) {
+                const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
+                imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+
+                // Clean
+                const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
+                existingIndicators.forEach(el => el.remove());
+
+                // Watched
+                const isPlayed = item.UserData && item.UserData.Played;
+                if (isPlayed) {
+                    const ind = document.createElement('div');
+                    ind.className = 'playedIndicator';
+                    ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 100%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                    ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
+                    imgContainer.appendChild(ind);
+                }
             }
-        }
 
-        // Text
-        const texts = card.querySelectorAll('.cardText');
-        if (texts.length > 0) texts[0].innerText = item.Name;
-        if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
+            // Text
+            const texts = card.querySelectorAll('.cardText');
+            if (texts.length > 0) texts[0].innerText = item.Name;
+            if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
 
-        // Link
-        // Handle various card structures
-        const link = card.querySelector('a') || card.querySelector('.cardContent') || card;
-        const href = `#!/details?id=${item.Id}`;
+            // Link
+            const link = card.querySelector('a') || card.querySelector('.cardContent');
+            const href = `#!/details?id=${item.Id}`;
 
-        // If the element itself is an anchor
-        if (link.tagName === 'A') {
-            link.setAttribute('href', href);
-        }
+            if (link.tagName === 'A') {
+                link.setAttribute('href', href);
+            }
 
-        // Always attach click handler to the card or interactive part
-        (link).onclick = (e) => {
-            // Stop default just in case
-            e.preventDefault();
-            window.location.href = href;
-            return false;
-        };
+            link.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = href;
+                return false;
+            };
 
-        card.classList.remove('overflowBackdropCard');
-        card.classList.add('overflowPortraitCard');
+            card.classList.remove('overflowBackdropCard');
+            card.classList.add('overflowPortraitCard');
 
-        nativeContainer.appendChild(card);
-    });
+            nativeContainer.appendChild(card);
+        });
+
+    } catch (e) {
+        console.error('[LegitFlix] Render error:', e);
+    } finally {
+        // Release Lock: Allow observer to resume
+        setTimeout(() => { _isRendering = false; }, 50);
+    }
 
     // RE-ATTACH PROTECTOR (Debounced)
     // We watch for childList changes. If count drops, we re-render from CACHE.
@@ -3278,6 +3294,8 @@ function createCustomCard(item) {
 }
 
 const observer = new MutationObserver((mutations) => {
+    if (_isRendering) return; // STOP LOOP: Ignore changes we made ourselves
+
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
 
