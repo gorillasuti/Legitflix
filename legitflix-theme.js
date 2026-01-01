@@ -645,7 +645,7 @@ async function injectMediaBar() {
 function injectJellyseerr() {
     logger.log('injectJellyseerr: Checking...');
     const jellyseerrUrl = 'https://request.legitflix.eu';
-    const logoUrl = 'https://belginux.com/content/images/size/w1200/2024/03/jellyseerr-1.webp';
+    const logoUrl = 'https://imgur.com/a/swvGmC1';
     const cardId = 'jellyseerr-card';
 
     // 1. My Media Card

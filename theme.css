@@ -2451,7 +2451,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-content: center;
-    justify-content: flex-start;
+    justify-content: flex-start !important;
     align-items: stretch;
 }
 
