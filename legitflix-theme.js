@@ -2866,6 +2866,12 @@ function renameMyList() {
                 const link = parent.querySelector('a');
                 if (link) link.setAttribute('title', newText);
             }
+
+            // Add specific class for styling
+            if (newText === 'Categories') {
+                const section = el.closest('.verticalSection');
+                if (section) section.classList.add('legitflix-categories-section');
+            }
         }
     });
 }
