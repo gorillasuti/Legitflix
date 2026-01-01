@@ -5325,36 +5325,58 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .legitflix-categories-section .itemsContainer {
     flex-wrap: wrap !important;
     justify-content: center;
-    /* Center items if they don't fill row */
     gap: 1.5em;
+    padding-bottom: 2em !important;
     overflow-x: hidden !important;
-    /* Wrap instead of scroll */
 }
 
 .legitflix-categories-section .card {
-    width: 160px !important;
-    /* Fixed Poster Width */
+    width: 14vw !important;
+    /* Dynamic Poster Width */
+    max-width: 200px !important;
+    min-width: 140px !important;
     flex: none !important;
 }
 
 .legitflix-categories-section .cardBox {
     margin: 0 !important;
+    margin-bottom: 1em !important;
+}
+
+/* CRITICAL: Override the aspect ratio container */
+.legitflix-categories-section .cardScalable {
+    aspect-ratio: 2/3 !important;
+    padding-top: 0 !important;
+    /* Remove native padding-hack */
+    height: auto !important;
+    width: 100% !important;
 }
 
 .legitflix-categories-section .cardImageContainer {
-    aspect-ratio: 2/3 !important;
+    width: 100% !important;
+    height: 100% !important;
     background-size: cover !important;
     background-position: center !important;
     border-radius: var(--radius-md) !important;
+    position: relative !important;
+    /* Ensure absolute children position correctly */
 }
 
-/* Ensure inner image (if used) also follows suit */
+/* Ensure inner image (if used) fills the container */
 .legitflix-categories-section .cardImage {
     object-fit: cover !important;
+    width: 100% !important;
+    height: 100% !important;
     aspect-ratio: 2/3 !important;
 }
 
 /* Hide backdrop styling overlay if present */
 .legitflix-categories-section .cardOverlayContainer {
     background: transparent !important;
+}
+
+/* Fix Labels */
+.legitflix-categories-section .cardText {
+    text-align: center !important;
+    margin-top: 0.5em !important;
 }
