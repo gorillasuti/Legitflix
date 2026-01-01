@@ -5350,6 +5350,15 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     /* Remove native padding-hack */
     height: auto !important;
     width: 100% !important;
+    display: flex !important;
+    /* Context for children */
+    position: relative !important;
+}
+
+/* HIDE THE NATIVE PADDER that causes the blank overlay */
+.legitflix-categories-section .cardPadder {
+    display: none !important;
+    padding: 0 !important;
 }
 
 .legitflix-categories-section .cardImageContainer {
@@ -5358,8 +5367,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     background-size: cover !important;
     background-position: center !important;
     border-radius: var(--radius-md) !important;
-    position: relative !important;
-    /* Ensure absolute children position correctly */
+    position: absolute !important;
+    /* Fill the scalable parent */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 /* Ensure inner image (if used) fills the container */
