@@ -407,11 +407,20 @@ function createMediaBarHTML(items) {
         const playOnClick = `window.legitFlixPlay('${actionId}', event)`;
         const infoOnClick = `window.openInfoModal('${item.Id}')`; // Always open Modal for Series/Movie parent
 
-        // Logo vs Text Logic
-        const hasLogo = item.ImageTags && item.ImageTags.Logo;
-        const titleHtml = hasLogo
-            ? `<img src="/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90" class="hero-logo" alt="${title}" />`
-            : `<h1 class="hero-title">${title}</h1>`;
+        // Progressive Logo Logic: Try to load logo, fallback to text if fails.
+        // We render BOTH (Text visible, Logo hidden).
+        // If logo loads -> Hide Text, Show Logo.
+        // If logo fails -> Keep Text, Remove Logo.
+        const logoUrl = `/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90`;
+        const titleHtml = `
+            <h1 class="hero-title" id="ht-${item.Id}">${title}</h1>
+            <img src="${logoUrl}" 
+                 class="hero-logo" 
+                 alt="${title}" 
+                 style="display: none;" 
+                 onload="this.style.display='block'; document.getElementById('ht-${item.Id}').style.display='none';" 
+                 onerror="this.remove();" />
+        `;
 
         return `
             <div class="hero-slide ${activeClass}" data-index="${index}">
@@ -3942,11 +3951,34 @@ window.legitFlixUpdateIndicators = function (id, type, isActive) {
 })();
 
 
+// --- SECTION TAGGER ---
+function tagNativeHoverSections() {
+    const targets = ['Continue Watching', 'Next Up', 'History', 'Latest Media'];
+
+    document.querySelectorAll('.verticalSection').forEach(section => {
+        if (section.classList.contains('native-hover-section')) return;
+
+        // Check ID
+        const testId = section.getAttribute('data-test-id') || '';
+        if (testId.includes('continue-watching') || testId.includes('next-up')) {
+            section.classList.add('native-hover-section');
+            return;
+        }
+
+        // Check Header Title
+        const title = section.querySelector('.sectionTitle')?.textContent || '';
+        if (targets.some(t => title.includes(t))) {
+            section.classList.add('native-hover-section');
+        }
+    });
+}
+
 // --- CONTINUOUS MONITORING ---
 // Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
 function monitorPageLoop() {
     pollForUI();      // Restore Nav, Prefs, Jellyseerr
     injectMediaBar(); // Handles Home and Detail page logic
+    tagNativeHoverSections(); // Restore "Remove" buttons for specific sections
 
     // Series Detail monitoring now handled by the loaded module (LFSeriesDetail.startMonitoring)
     // The module auto-starts when it detects ApiClient
