@@ -2326,17 +2326,7 @@ async function injectPromoBanner() {
         }
         const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
 
-        // A. Get Resume/History Items to Exclude
-        // Resume
-        const resumeRes = await fetch(`/Users/${auth.UserId}/Items?Limit=20&Recursive=true&Filters=IsResumable&SortBy=DatePlayed&SortOrder=Descending`, { headers });
-        const resumeJson = await resumeRes.json();
-
-        // Next Up
-        const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
-        const nextUpJson = await nextUpRes.json();
-
-        // B. Get Candidates (Latest Movies/Series)
-        // Limit to 3 strictly. Sort by DateCreated Descending.
+        // A. Get Candidates (Latest Movies/Series) - Limit to 3 strictly. Sort by DateCreated Descending.
         const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
         const candidatesJson = await candidatesRes.json();
 
@@ -2348,26 +2338,47 @@ async function injectPromoBanner() {
             return;
         }
 
-        // 4. Build HTML
+        // 4. PRELOAD IMAGES (Strict Loading)
         const item1 = selected[0]; // Hero
         const item2 = selected[1]; // Sub 1 (Optional)
         const item3 = selected[2]; // Sub 2 (Optional)
 
-        console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2?.Name, item3?.Name);
+        console.log('[LegitFlix] Promo Banner Candidates:', item1.Name, item2?.Name, item3?.Name);
 
         // Helpers for images
         const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
-        // Revert to Thumb for sub-items
         const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
         const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
-
         const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
 
+        // Create Image Objects to preload
+        const preloadImage = (src) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(src);
+                img.onerror = () => reject(src);
+                img.src = src;
+            });
+        };
+
+        const mainBgUrl = getBackdrop(item1);
+
+        // Wait for MAIN background strictly
+        try {
+            await preloadImage(mainBgUrl);
+            console.log('[LegitFlix] Promo Banner Main Image Loaded');
+        } catch (e) {
+            console.warn('[LegitFlix] Promo Banner Main Image Failed to load. Skipping Injection.');
+            _promoInjectionInProgress = false;
+            return;
+        }
+
+        // 5. Build HTML
         const html = `
-            <div class="legitflix-promo-container">
+            <div class="legitflix-promo-container" style="opacity: 0; animation: fadeIn 1s forwards;">
                 <!-- Top Banner (Item 1) -->
                 <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
-                    <img src="${getBackdrop(item1)}" class="promo-bg">
+                    <img src="${mainBgUrl}" class="promo-bg">
                     <div class="promo-content">
                          ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
                          <button class="btn-watch">WATCH NOW</button>
@@ -2405,7 +2416,7 @@ async function injectPromoBanner() {
             </div>
             `;
 
-        // 5. Inject
+        // 6. Inject
         historySection.insertAdjacentHTML('afterend', html);
         console.log('[LegitFlix] Promo Banner Injected Successfully');
         // Done!
@@ -3195,8 +3206,14 @@ async function augmentLatestSections() {
                         imgContainer.removeAttribute('data-src');
                         imgContainer.classList.remove('lazy', 'lazy-hidden', 'blurhashed');
 
+                        // FIX: Prevent collapse by sizing parent
+                        const scalable = card.querySelector('.cardScalable');
+                        if (scalable) {
+                            scalable.style.cssText = 'aspect-ratio: 2/3 !important; display: flex !important; position: relative !important; width: 100% !important;';
+                        }
+
                         // Force styles
-                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3 !important; display: block !important;`);
+                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; position: absolute !important; width: 100% !important; height: 100% !important; display: block !important;`);
 
                         // Clear any existing indicators (clone artifacts)
                         const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
