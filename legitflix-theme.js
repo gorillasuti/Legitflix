@@ -3191,11 +3191,24 @@ async function augmentLatestSections() {
                     if (imgContainer) {
                         const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
 
-                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3;`);
+                        // REMOVE Lazy attributes to prevent native interference
+                        imgContainer.removeAttribute('data-src');
+                        imgContainer.classList.remove('lazy', 'lazy-hidden', 'blurhashed');
+
+                        // Force styles
+                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; aspect-ratio: 2/3 !important; display: block !important;`);
 
                         // Clear any existing indicators (clone artifacts)
                         const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
                         existingIndicators.forEach(el => el.remove());
+
+                        // Remove blocking overlays
+                        const padder = card.querySelector('.cardPadder');
+                        if (padder) padder.style.display = 'none';
+                        const icon = card.querySelector('.cardImageIcon');
+                        if (icon) icon.style.display = 'none';
+                        const canvas = card.querySelector('canvas'); // Blurhash
+                        if (canvas) canvas.remove();
 
                         // Add Watched Indicator
                         const isPlayed = item.UserData && item.UserData.Played;
