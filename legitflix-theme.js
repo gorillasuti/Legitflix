@@ -3396,8 +3396,7 @@ function monitorPageLoop() {
 }
 
 // Start the loop
-monitorPageLoop();
-/**
+monitorPageLoop();/**
  * LegitFlix Series Detail Page Revamp
  * Crunchyroll-inspired series page injection module
  * 
@@ -5618,29 +5617,6 @@ monitorPageLoop();
     }
 
     /**
-     * Fetch movie details from API
-     */
-    async function fetchMovieData(movieId) {
-        const auth = await getAuth();
-        if (!auth) return null;
-
-        try {
-            const fields = 'Overview,Genres,Studios,OfficialRating,CommunityRating,ImageTags,BackdropImageTags,People,RemoteTrailers,MediaSources,UserData';
-            const url = `/Users/${auth.UserId}/Items/${movieId}?Fields=${fields}`;
-            const response = await fetch(url, {
-                headers: { 'X-Emby-Token': auth.AccessToken }
-            });
-            const item = await response.json();
-
-            // Return item directly (People, UserData, etc. are already on item)
-            return item;
-        } catch (e) {
-            log('Error fetching movie data:', e);
-            return null;
-        }
-    }
-
-    /**
      * Fetch seasons for a series
      */
     async function fetchSeasons(seriesId) {
@@ -5873,7 +5849,7 @@ monitorPageLoop();
             html += createPlayerSection(movieData);
 
             // Format people for display
-            const people = movieData.People ? formatPeople(movieData.People) : [];
+            const people = formatPeople(movieData.People);
             if (people.length > 0) html += createCastSection(people);
 
             if (similar && similar.length > 0) html += createSimilarSection(similar);
