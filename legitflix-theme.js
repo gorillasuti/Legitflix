@@ -407,19 +407,17 @@ function createMediaBarHTML(items) {
         const playOnClick = `window.legitFlixPlay('${actionId}', event)`;
         const infoOnClick = `window.openInfoModal('${item.Id}')`; // Always open Modal for Series/Movie parent
 
-        // Progressive Logo Logic: Try to load logo, fallback to text if fails.
-        // We render BOTH (Text visible, Logo hidden).
-        // If logo loads -> Hide Text, Show Logo.
-        // If logo fails -> Keep Text, Remove Logo.
+        // Optimistic Logo Logic (Fix for First Item): 
+        // Assume Logo Exists (Show Logo, Hide Text).
+        // If Logo Fails -> Hide Logo, Show Text.
         const logoUrl = `/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90`;
         const titleHtml = `
-            <h1 class="hero-title" id="ht-${item.Id}">${title}</h1>
             <img src="${logoUrl}" 
                  class="hero-logo" 
                  alt="${title}" 
-                 style="display: none;" 
-                 onload="this.style.display='block'; document.getElementById('ht-${item.Id}').style.display='none';" 
-                 onerror="this.remove();" />
+                 style="display: block;" 
+                 onerror="this.style.display='none'; document.getElementById('ht-${item.Id}').style.display='block';" />
+            <h1 class="hero-title" id="ht-${item.Id}" style="display: none;">${title}</h1>
         `;
 
         return `
@@ -3953,21 +3951,32 @@ window.legitFlixUpdateIndicators = function (id, type, isActive) {
 
 // --- SECTION TAGGER ---
 function tagNativeHoverSections() {
-    const targets = ['Continue Watching', 'Next Up', 'History', 'Latest Media'];
+    // Broader list of targets (case-insensitive checking below)
+    const targets = ['continue watching', 'next up', 'history', 'latest', 'recently played', 'up next'];
 
     document.querySelectorAll('.verticalSection').forEach(section => {
         if (section.classList.contains('native-hover-section')) return;
 
+        let matched = false;
+
         // Check ID
-        const testId = section.getAttribute('data-test-id') || '';
-        if (testId.includes('continue-watching') || testId.includes('next-up')) {
-            section.classList.add('native-hover-section');
-            return;
+        const testId = (section.getAttribute('data-test-id') || '').toLowerCase();
+        if (testId.includes('continue-watching') || testId.includes('next-up') || testId.includes('history')) {
+            matched = true;
         }
 
         // Check Header Title
-        const title = section.querySelector('.sectionTitle')?.textContent || '';
-        if (targets.some(t => title.includes(t))) {
+        if (!matched) {
+            const titleEl = section.querySelector('.sectionTitle');
+            if (titleEl) {
+                const title = titleEl.textContent.toLowerCase();
+                if (targets.some(t => title.includes(t))) {
+                    matched = true;
+                }
+            }
+        }
+
+        if (matched) {
             section.classList.add('native-hover-section');
         }
     });
