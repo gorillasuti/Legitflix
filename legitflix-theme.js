@@ -2374,12 +2374,17 @@ async function injectPromoBanner() {
              </div>`;
         };
 
-        // Create Image Objects to preload
+        // Create Image Objects to preload (with Timeout)
         const preloadImage = (src) => {
             return new Promise((resolve, reject) => {
                 const img = new Image();
-                img.onload = () => resolve(src);
-                img.onerror = () => reject(src);
+                const timeout = setTimeout(() => {
+                    img.src = ''; // Cancel
+                    reject(new Error('Image Load Timeout'));
+                }, 4000); // 4s timeout
+
+                img.onload = () => { clearTimeout(timeout); resolve(src); };
+                img.onerror = () => { clearTimeout(timeout); reject(src); };
                 img.src = src;
             });
         };
@@ -2400,7 +2405,7 @@ async function injectPromoBanner() {
         const html = `
             <div class="legitflix-promo-container">
                 <!-- Top Banner (Item 1) -->
-                <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
+                <div class="promo-item promo-item-large" onclick="window.legitFlixPlay('${item1.Id}', event)" style="cursor: pointer;">
                     <img src="${mainBgUrl}" class="promo-bg">
                     <div class="promo-content">
                      ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
@@ -2418,7 +2423,7 @@ async function injectPromoBanner() {
                 ${(item2 || item3) ? `
                 <div class="promo-grid-row">
                     ${item2 ? `
-                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
+                    <div class="promo-item promo-item-small" onclick="window.legitFlixPlay('${item2.Id}', event)" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
                                  ${item2.ImageTags && item2.ImageTags.Logo ? `<img src="${getLogo(item2)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item2.Name}</h3>`}
@@ -2435,7 +2440,7 @@ async function injectPromoBanner() {
                          </div>
                     </div>` : ''}
                     ${item3 ? `
-                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
+                    <div class="promo-item promo-item-small" onclick="window.legitFlixPlay('${item3.Id}', event)" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
                                  ${item3.ImageTags && item3.ImageTags.Logo ? `<img src="${getLogo(item3)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item3.Name}</h3>`}

@@ -1015,7 +1015,16 @@
         const genres = (series.genres || []).slice(0, 3).join(', ');
         const studios = (series.studios || []).slice(0, 2).map(s => s.Name || s).join(', ');
         const cast = (series.people || []).filter(p => p.Type === 'Actor').slice(0, 3).map(p => p.Name).join(', ');
-        const logoUrl = series.logoUrl || '';
+
+        // Logo Logic: Use pre-calculated or construct from ImageTags
+        let logoUrl = series.logoUrl;
+        if (!logoUrl && series.ImageTags && series.ImageTags.Logo) {
+            logoUrl = `/Items/${series.id || series.Id}/Images/Logo?maxHeight=200&maxWidth=500&quality=90`;
+        }
+
+        const titleHtml = logoUrl
+            ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo-title" style="max-width: 450px; max-height: 180px; width: auto; object-fit: contain; margin-bottom: 16px; display: block;">`
+            : `<h1 class="lf-series-hero__title">${title}</h1>`;
 
         return `
             <section class="lf-series-hero" id="lfSeriesHero">
@@ -1026,13 +1035,14 @@
                     <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
 
-                ${logoUrl ? `<img class="lf-series-hero__logo" src="${logoUrl}" alt="${title} Logo">` : ''}
+                <!-- (Original Clean View Logo removed slightly to avoid double-up, or we can keep it for transitions) -->
+                <!-- We'll keep the logic simple: Main Title Slot is now either Text or Logo -->
 
                 <div class="lf-series-hero__content">
                     <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
 
                     <div class="lf-series-hero__info">
-                        <h1 class="lf-series-hero__title">${title}</h1>
+                        ${titleHtml}
 
                         <div class="lf-series-hero__meta">
                             ${year ? `<span>${year}</span><span>•</span>` : ''}
