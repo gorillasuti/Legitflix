@@ -3953,22 +3953,33 @@ monitorPageLoop();
 window.legitFlixPlay = function (itemId) {
     console.log('[LegitFlix] legitFlixPlay: Requesting playback for', itemId);
 
+    if (typeof require === 'undefined') {
+        console.error('[LegitFlix] legitFlixPlay: AMD require not found! Cannot load playbackManager.');
+        return;
+    }
+
     // Use Jellyfin's AMD require to get the playbackManager
     require(['playbackManager'], function (playbackManager) {
         if (!playbackManager) {
             console.error('[LegitFlix] legitFlixPlay: playbackManager module not found!');
+            // Fallback: Try to find a global?
             return;
         }
 
+        console.log('[LegitFlix] legitFlixPlay: playbackManager found. Calling play({ ids: [' + itemId + '] })');
         playbackManager.play({
             ids: [itemId]
         });
-        console.log('[LegitFlix] legitFlixPlay: playbackManager.play called.');
     });
 };
 
 window.legitFlixPlayTrailer = function (itemId) {
     console.log('[LegitFlix] legitFlixPlayTrailer: Requesting trailer for', itemId);
+
+    if (typeof require === 'undefined') {
+        console.error('[LegitFlix] legitFlixPlayTrailer: AMD require not found!');
+        return;
+    }
 
     require(['playbackManager'], function (playbackManager) {
         if (!playbackManager) {
@@ -3984,29 +3995,49 @@ window.legitFlixPlayTrailer = function (itemId) {
 
 // --- EPISODE CLICK INTERCEPTION (Direct Play for Episode Rows) ---
 // Hijack clicks on episode list items to skip the detail screen and play immediately
+// --- CLICK INTERCEPTION (Episode Rows & Main Play Buttons) ---
 document.addEventListener('click', function (e) {
-    // 1. Find the closest LIST ITEM that is an EPISODE
+    // A. Episode Rows (List Items)
     const episodeItem = e.target.closest('.listItem[data-type="Episode"], .card[data-type="Episode"]');
 
-    // 2. If valid episode item found...
     if (episodeItem) {
         const id = episodeItem.getAttribute('data-id');
         if (!id) return;
 
-        // 3. IGNORE if clicking a checklist/menu/interactive element inside the item
+        // Ignore interactive children
         if (e.target.closest('.customCheckbox') ||
             e.target.closest('.itemAction') ||
-            e.target.closest('.cardOverlayButton') || // Hover card internal buttons
+            e.target.closest('.cardOverlayButton') ||
             e.target.closest('.listViewDragHandle') ||
             e.target.closest('.btn-more')) {
             return;
         }
 
-        // 4. PREVENT DEFAULT NAVIGATION
         e.preventDefault();
         e.stopPropagation();
-
         console.log('[LegitFlix] Episode Click Intercepted: Playing', id);
         window.legitFlixPlay(id);
+        return;
     }
-}, true); // Capture phase to beat other listeners if necessary
+
+    // B. Main "Play" / "Resume" Buttons (Detail Pages)
+    // Target standard Jellyfin play buttons if they aren't working naturally
+    const playBtn = e.target.closest('.btnPlay, .btnResume, .btn-play-hero');
+    if (playBtn) {
+        // Check if it has an Item ID context (usually data-id or data-itemid)
+        let id = playBtn.getAttribute('data-id') || playBtn.getAttribute('data-itemid');
+
+        // If no ID on button, try to find it in the parent container (Detail Page context)
+        if (!id) {
+            const container = playBtn.closest('[data-id], [data-itemid]');
+            if (container) id = container.getAttribute('data-id') || container.getAttribute('data-itemid');
+        }
+
+        if (id) {
+            console.log('[LegitFlix] Play Button Intercepted: Playing', id);
+            e.preventDefault();
+            e.stopPropagation();
+            window.legitFlixPlay(id);
+        }
+    }
+}, true); // Capture phase
