@@ -336,6 +336,9 @@ function createMediaBarHTML(items) {
     if (!items || items.length === 0) return '';
 
     const slides = items.map((item, index) => {
+        // DEBUG: Check Logo availability
+        console.log(`[LegitFlix] Carousel Item ${index}: ${item.Name}`, item.ImageTags);
+
         const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=96`; // Improved quality
         const activeClass = index === 0 ? 'active' : '';
 
@@ -4041,12 +4044,17 @@ document.addEventListener('click', function (e) {
         const id = episodeItem.getAttribute('data-id');
         if (!id) return;
 
-        // Ignore interactive children
+        // Ignore interactive children, Selection Mode, or Menu Buttons
         if (e.target.closest('.customCheckbox') ||
             e.target.closest('.itemAction') ||
             e.target.closest('.cardOverlayButton') ||
             e.target.closest('.listViewDragHandle') ||
-            e.target.closest('.btn-more')) {
+            e.target.closest('.btn-more') ||
+            e.target.closest('[data-action="menu"]') || // Ignore standard Menu triggers
+            e.target.closest('.listItemButton') || // Ignore List Item Menu buttons
+            e.target.closest('.with-selection') ||
+            document.querySelector('.selectionCommandsPanel:not(.hide)')
+        ) {
             return;
         }
 

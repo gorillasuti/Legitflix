@@ -1023,7 +1023,7 @@
         }
 
         const titleHtml = logoUrl
-            ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo-title" style="max-width: 450px; max-height: 180px; width: auto; object-fit: contain; margin-bottom: 16px; display: block;">`
+            ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo-title" style="max-width: 200px; max-height: 180px; width: auto; object-fit: contain; margin-bottom: 16px; display: block;">`
             : `<h1 class="lf-series-hero__title">${title}</h1>`;
 
         return `
