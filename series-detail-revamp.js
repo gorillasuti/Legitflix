@@ -3350,6 +3350,10 @@
                     selectorBtnText.textContent = this.querySelector('span').textContent;
                 }
 
+                // IMPROVEMENT: Close dropdown immediately
+                const seasonSelector = container.querySelector('#lfSeasonSelector');
+                if (seasonSelector) seasonSelector.classList.remove('is-open');
+
                 // If in selection mode, exit it on season change?
                 if (typeof isSelectionMode !== 'undefined' && isSelectionMode) toggleSelectionMode(false);
 
