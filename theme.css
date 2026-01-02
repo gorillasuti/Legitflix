@@ -2458,6 +2458,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     align-content: flex-start;
     justify-content: flex-start;
     flex-wrap: nowrap !important;
+    margin-bottom: 3rem !important;
     row-gap: 0.75rem !important;
 }
 
@@ -2575,8 +2576,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .promo-grid-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 1.5rem;
 }
 
@@ -2966,7 +2966,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     margin: 0 !important;
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     width: 100%;
     height: 36px;
     display: flex;
@@ -5425,6 +5425,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     align-items: center !important;
     gap: 1rem !important;
     margin-top: 10px !important;
+    justify-content: flex-end !important;
 }
 
 /* Watch Button - Primary Theme Color */
