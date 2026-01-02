@@ -8,6 +8,7 @@
 console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- FORCE SLEEK SCROLLBAR (JS Injection) ---
+// User requested "Use JS freely" to fix stubborn scrollbars.
 setTimeout(() => {
     try {
         const existing = document.getElementById('legitflix-scrollbar-override');
@@ -275,7 +276,7 @@ async function fetchMediaBarItems(retryCount = 0) {
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres,MediaStreams,UserData';
 
-    // "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
+    // User Request: "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
     const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
@@ -306,7 +307,7 @@ async function fetchMediaBarItems(retryCount = 0) {
         for (const item of validItems) {
             if (item.Type === 'Series') {
                 try {
-                    const nextUpUrl = `/Shows/NextUp?SeriesId=${item.Id}&Limit=1&UserId=${auth.UserId}&Fields=UserData`;
+                    const nextUpUrl = `/Shows/${item.Id}/NextUp?Limit=1&UserId=${auth.UserId}&Fields=UserData`;
                     const nextUpRes = await fetch(nextUpUrl, { headers: { 'X-Emby-Token': auth.AccessToken } });
                     if (!nextUpRes.ok) continue; // Skip failing items silently
                     const nextUpData = await nextUpRes.json();
@@ -336,9 +337,6 @@ function createMediaBarHTML(items) {
     if (!items || items.length === 0) return '';
 
     const slides = items.map((item, index) => {
-        // DEBUG: Check Logo availability
-        console.log(`[LegitFlix] Carousel Item ${index}: ${item.Name}`, item.ImageTags);
-
         const backdropUrl = `/Items/${item.Id}/Images/Backdrop/0?maxHeight=1080&quality=96`; // Improved quality
         const activeClass = index === 0 ? 'active' : '';
 
@@ -356,6 +354,7 @@ function createMediaBarHTML(items) {
         }
         // Simple heuristic: If multiple audio, likely Dub? Or if language matches user? 
         // For now, just show "Sub | Dub" if both exist, or specific.
+        // User requested strict text "Sub | Dub" if applicable.
         const hasSub = subLangs.size > 0;
         const hasDub = audioLangs.size > 1; // Assuming >1 audio track (Original + Dub) implies Dub availability
         const subDubText = (hasSub && hasDub) ? 'Sub | Dub' : (hasSub ? 'Sub' : 'Dub');
@@ -404,30 +403,21 @@ function createMediaBarHTML(items) {
 
         const title = item.Name;
         const desc = item.Overview || '';
-        const playOnClick = `window.legitFlixPlay('${actionId}', event)`;
+        const playOnClick = `window.legitFlixPlay('${actionId}')`;
         const infoOnClick = `window.openInfoModal('${item.Id}')`; // Always open Modal for Series/Movie parent
 
-        // Optimistic Logo Logic (Fix for First Item): 
-        // Assume Logo Exists (Show Logo, Hide Text).
-        // If Logo Fails -> Hide Logo, Show Text.
-        const logoUrl = `/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90`;
-        const titleHtml = `
-            <img src="${logoUrl}" 
-                 class="hero-logo" 
-                 alt="${title}" 
-                 style="display: block;" 
-                 onerror="this.style.display='none'; document.getElementById('ht-${item.Id}').style.display='block';" />
-            <h1 class="hero-title" id="ht-${item.Id}" style="display: none;">${title}</h1>
-        `;
+        // Logo vs Text Logic
+        const hasLogo = item.ImageTags && item.ImageTags.Logo;
+        const titleHtml = hasLogo
+            ? `<img src="/Items/${item.Id}/Images/Logo?maxHeight=200&maxWidth=450&quality=90" class="hero-logo" alt="${title}" />`
+            : `<h1 class="hero-title">${title}</h1>`;
 
         return `
             <div class="hero-slide ${activeClass}" data-index="${index}">
                 <div class="hero-backdrop" style="background-image: url('${backdropUrl}')"></div>
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
-                    <div class="hero-header-area">
-                        ${titleHtml}
-                    </div>
+                    ${titleHtml}
                     
                     <div class="hero-meta-line">
                         <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
@@ -655,7 +645,7 @@ async function injectMediaBar() {
 function injectJellyseerr() {
     logger.log('injectJellyseerr: Checking...');
     const jellyseerrUrl = 'https://request.legitflix.eu';
-    const logoUrl = 'https://i.imgur.com/LAJPiYf_d.webp?maxwidth=760&fidelity=grand';
+    const logoUrl = 'https://belginux.com/content/images/size/w1200/2024/03/jellyseerr-1.webp';
     const cardId = 'jellyseerr-card';
 
     // 1. My Media Card
@@ -1882,6 +1872,7 @@ async function injectCustomNav() {
                         link.className = 'nav-link';
 
                         const serverId = view.ServerId || window.ApiClient.serverId();
+                        // User requested #/list format
                         link.href = `#!/list?parentId=${view.Id}&serverId=${serverId}`;
 
                         // Map collection types to icons
@@ -2130,6 +2121,7 @@ async function pollForUI() {
                 };
 
                 // Insert BEFORE Admin Tabs (Dashboard/Metadata) if present, else Logout
+                // User Request: Advanced - Admin tabs - Sign out
                 const dashboardTab = navTabs.querySelector('a[href*="dashboard"]');
                 const metadataTab = navTabs.querySelector('a[href*="metadata"]');
                 const logoutTab = navTabs.querySelector('.logout-tab');
@@ -2277,7 +2269,91 @@ window.ensurePasswordForm = function () {
     }
 };
 
+// --- LEGACY INIT REMOVED ---
+// The hashchange cleanup logic is removed as the new monitor loop handles state.
 
+
+// --- RENAME SECTIONS (My List->Categories, Next Up->History, Recently Added->Latest) ---
+function renameMyList() {
+    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
+        let text = el.innerText.trim();
+        const lowerText = text.toLowerCase();
+        let newText = null;
+
+        // 1. My List / My Media -> Categories
+        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
+            newText = 'Categories';
+        }
+        // 2. Next Up -> History
+        else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
+            newText = 'History';
+        }
+        // 3. Recently Added in [Type] -> Latest [Type]
+        else if (lowerText.startsWith('recently added in ')) {
+            // "Recently Added in " is 18 chars
+            const type = text.substring(18);
+            newText = `Latest ${type}`;
+        }
+
+        if (newText) {
+            el.innerText = newText;
+            // Also update the link if it exists for tooltip/accessibility
+            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
+            if (parent) {
+                const link = parent.querySelector('a');
+                if (link) link.setAttribute('title', newText);
+            }
+        }
+    });
+}
+// Run initially and on mutation
+renameMyList();
+
+// --- FIX MIXED CONTENT CARDS (Convert Thumb->Primary & Backdrop->Portrait) ---
+function fixMixedCards() {
+    // Find Backdrops that should be Posters (Movies/Series)
+    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
+    const cards = document.querySelectorAll(selector);
+
+    cards.forEach(card => {
+        // 1. Swap Card Class (Backdrop -> Portrait)
+        // This fixes dimensions and grid layout
+        card.classList.remove('overflowBackdropCard');
+        card.classList.add('overflowPortraitCard');
+
+        // 2. Swap Padder Class
+        const padder = card.querySelector('.cardPadder-overflowBackdrop');
+        if (padder) {
+            padder.classList.remove('cardPadder-overflowBackdrop');
+            padder.classList.add('cardPadder-overflowPortrait');
+        }
+
+        // 3. Swap Image URL (Thumb -> Primary)
+        // This gets the correct Poster image from server
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            const style = imgContainer.getAttribute('style') || '';
+            // Improved Lazy-Loader Fighting Logic
+            const swapImage = () => {
+                const s = imgContainer.getAttribute('style') || '';
+                if (s.includes('Images/Thumb')) {
+                    // Replace Thumb with Primary
+                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
+                    if (s !== ns) imgContainer.setAttribute('style', ns);
+                }
+            };
+
+            // Run immediately
+            swapImage();
+
+            // Observe for lazy loader changes
+            if (!imgContainer._observerAttached) {
+                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
+                imgContainer._observerAttached = true;
+            }
+        }
+    });
+}
 
 // Run initially and on mutation
 renameMyList();
@@ -2287,11 +2363,6 @@ let _promoInjectionInProgress = false; // Guard for race conditions
 let _injectedBanner = false; // Track if banner already injected
 
 async function injectPromoBanner() {
-    // RESET CHECK: If flag says injected, but element is missing (SPA navigation cleared it), reset flag.
-    if (_injectedBanner && !document.querySelector('.legitflix-promo-container')) {
-        _injectedBanner = false;
-    }
-
     if (_promoInjectionInProgress || _injectedBanner) return;
 
     // Strict Home Page Check (Relaxed for root)
@@ -2339,7 +2410,17 @@ async function injectPromoBanner() {
         }
         const headers = { 'X-Emby-Token': auth.AccessToken, 'Accept': 'application/json' };
 
-        // A. Get Candidates (Latest Movies/Series) - Limit to 3 strictly. Sort by DateCreated Descending.
+        // A. Get Resume/History Items to Exclude
+        // Resume
+        const resumeRes = await fetch(`/Users/${auth.UserId}/Items?Limit=20&Recursive=true&Filters=IsResumable&SortBy=DatePlayed&SortOrder=Descending`, { headers });
+        const resumeJson = await resumeRes.json();
+
+        // Next Up
+        const nextUpRes = await fetch(`/Shows/NextUp?Limit=20&UserId=${auth.UserId}`, { headers });
+        const nextUpJson = await nextUpRes.json();
+
+        // B. Get Candidates (Latest Movies/Series)
+        // Limit to 3 strictly. Sort by DateCreated Descending.
         const candidatesRes = await fetch(`/Users/${auth.UserId}/Items?Limit=3&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&ImageTypeLimit=1&EnableImageTypes=Primary,Backdrop,Thumb,Logo&Fields=Overview,ProductionYear,ImageTags`, { headers });
         const candidatesJson = await candidatesRes.json();
 
@@ -2351,117 +2432,55 @@ async function injectPromoBanner() {
             return;
         }
 
-        // 4. PRELOAD IMAGES (Strict Loading)
+        // 4. Build HTML
         const item1 = selected[0]; // Hero
         const item2 = selected[1]; // Sub 1 (Optional)
         const item3 = selected[2]; // Sub 2 (Optional)
 
-        console.log('[LegitFlix] Promo Banner Candidates:', item1.Name, item2?.Name, item3?.Name);
+        console.log('[LegitFlix] Promo Banner Items:', item1.Name, item2?.Name, item3?.Name);
 
         // Helpers for images
         const getBackdrop = (item) => `/Items/${item.Id}/Images/Backdrop/0?maxWidth=2000`;
+        // Revert to Thumb for sub-items
         const getThumb = (item) => `/Items/${item.Id}/Images/Thumb/0?maxWidth=800` || `/Items/${item.Id}/Images/Backdrop/0?maxWidth=800`;
         const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
+
         const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
 
-        const getMetaHtml = (item) => {
-            let endsAtHtml = '';
-            if (item.RunTimeTicks && item.Type !== 'Series') {
-                const ms = item.RunTimeTicks / 10000;
-                const endTime = new Date(Date.now() + ms);
-                const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                endsAtHtml = `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">Ends at ${timeStr}</span>`;
-            }
-            const ratingStar = item.CommunityRating ? `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
-            const genres = item.Genres ? `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">${item.Genres.slice(0, 2).join(', ')}</span>` : '';
-
-            return `
-             <div class="hero-meta-line" style="margin-bottom: 8px; font-size: 0.8rem;">
-                <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
-                ${genres}
-                ${ratingStar}
-                ${endsAtHtml}
-             </div>`;
-        };
-
-        // Create Image Objects to preload (with Timeout)
-        const preloadImage = (src) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                const timeout = setTimeout(() => {
-                    img.src = ''; // Cancel
-                    reject(new Error('Image Load Timeout'));
-                }, 4000); // 4s timeout
-
-                img.onload = () => { clearTimeout(timeout); resolve(src); };
-                img.onerror = () => { clearTimeout(timeout); reject(src); };
-                img.src = src;
-            });
-        };
-
-        const mainBgUrl = getBackdrop(item1);
-
-        // Wait for MAIN background strictly
-        try {
-            await preloadImage(mainBgUrl);
-            console.log('[LegitFlix] Promo Banner Main Image Loaded');
-        } catch (e) {
-            console.warn('[LegitFlix] Promo Banner Main Image Failed to load. Skipping Injection.');
-            _promoInjectionInProgress = false;
-            return;
-        }
-
-        // 5. Build HTML
         const html = `
             <div class="legitflix-promo-container">
                 <!-- Top Banner (Item 1) -->
-                <div class="promo-item promo-item-large" onclick="window.legitFlixPlay('${item1.Id}', event)" style="cursor: pointer;">
-                    <img src="${mainBgUrl}" class="promo-bg">
+                <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
+                    <img src="${getBackdrop(item1)}" class="promo-bg">
                     <div class="promo-content">
-                     ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
-                     <p class="promo-desc">${item1.Overview || ''}</p>
-                     <div class="promo-actions">
-                         <button class="btn-watch" onclick="window.legitFlixPlay('${item1.Id}', event);">WATCH NOW</button>
-                         <button class="btn-info" onclick="window.openInfoModal('${item1.Id}'); event.stopPropagation();">
-                            <span class="material-icons" style="font-size: 1.2rem;">info</span> More Info
-                         </button>
-                     </div>
+                         ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
+                         <button class="btn-watch">WATCH NOW</button>
+                    </div>
                 </div>
-            </div>
                 
                 <!-- Bottom Grid (Items 2 & 3) -->
                 ${(item2 || item3) ? `
                 <div class="promo-grid-row">
                     ${item2 ? `
-                    <div class="promo-item promo-item-small" onclick="window.legitFlixPlay('${item2.Id}', event)" style="cursor: pointer;">
+                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 ${item2.ImageTags && item2.ImageTags.Logo ? `<img src="${getLogo(item2)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item2.Name}</h3>`}
-                                 ${getMetaHtml(item2)}
+                                 <h3>${item2.Name}</h3>
+                                 <p>${item2.ProductionYear || ''}</p>
                                  <p class="desc">${item2.Overview || ''}</p>
-                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item2.Id}', event);">Watch Now</button>
-                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        <span class="material-icons">info</span>
-                                     </button>
-                                 </div>
+                                 <button class="btn-orange">START WATCHING</button>
                              </div>
                              <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}'">
                          </div>
                     </div>` : ''}
                     ${item3 ? `
-                    <div class="promo-item promo-item-small" onclick="window.legitFlixPlay('${item3.Id}', event)" style="cursor: pointer;">
+                    <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 ${item3.ImageTags && item3.ImageTags.Logo ? `<img src="${getLogo(item3)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item3.Name}</h3>`}
-                                 ${getMetaHtml(item3)}
+                                 <h3>${item3.Name}</h3>
+                                 <p>${item3.ProductionYear || ''}</p>
                                  <p class="desc">${item3.Overview || ''}</p>
-                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item3.Id}', event);">Watch Now</button>
-                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        <span class="material-icons">info</span>
-                                     </button>
-                                 </div>
+                                 <button class="btn-orange">START WATCHING</button>
                              </div>
                              <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}'">
                          </div>
@@ -2470,7 +2489,7 @@ async function injectPromoBanner() {
             </div>
             `;
 
-        // 6. Inject
+        // 5. Inject
         historySection.insertAdjacentHTML('afterend', html);
         console.log('[LegitFlix] Promo Banner Injected Successfully');
         // Done!
@@ -2575,18 +2594,12 @@ function setupHoverCards() {
 
     document.body.addEventListener('mouseout', (e) => {
         // Check if we left the card AND the overlay
+        // This is tricky with body append. we need a check.
+        // Simplified: If we hover mainly on the overlay, we keep it.
+        // If we leave overlay and card, we close.
         const toElement = e.relatedTarget;
-
-        // FIX: Close if we leave to something that isn't the overlay AND
-        // (isn't a card OR is a DIFFERENT card than the active one)
-        const toOverlay = toElement?.closest('.legitflix-hover-overlay');
-        const toCard = toElement?.closest('.card');
-
-        if (_activeOverlay && !toOverlay) {
-            // If not going to a card, OR going to a different card
-            if (!toCard || (toCard.dataset.id !== _activeOverlay.dataset.sourceId)) {
-                closeHoverCard();
-            }
+        if (_activeOverlay && !toElement?.closest('.legitflix-hover-overlay') && !toElement?.closest('.card')) {
+            closeHoverCard();
         }
     });
 
@@ -2802,9 +2815,6 @@ async function createHoverCard(card, id) {
             const method = isFav ? 'POST' : 'DELETE';
             fetch(`${server}/Users/${userId}/FavoriteItems/${id}?api_key=${token}`, { method });
 
-            // Realtime Update
-            if (window.legitFlixUpdateIndicators) window.legitFlixUpdateIndicators(id, 'fav', isFav);
-
         } else if (type === 'played') {
             isPlayed = newState; // Update closure var
             if (details.UserData) details.UserData.Played = isPlayed; // Update Cache
@@ -2815,9 +2825,6 @@ async function createHoverCard(card, id) {
 
             const method = isPlayed ? 'POST' : 'DELETE';
             fetch(`${server}/Users/${userId}/PlayedItems/${id}?api_key=${token}`, { method });
-
-            // Realtime Update
-            if (window.legitFlixUpdateIndicators) window.legitFlixUpdateIndicators(id, 'played', isPlayed);
         }
     };
 
@@ -2918,163 +2925,6 @@ async function createHoverCard(card, id) {
     }
 }
 
-// --- GLOBAL HELPERS (Moved out of setupHoverCards for scope access) ---
-
-// 1. RENAME SECTIONS
-function renameMyList() {
-    document.querySelectorAll('.sectionTitle, .sectionTitle-cards').forEach(el => {
-        let text = el.innerText.trim();
-        const lowerText = text.toLowerCase();
-        let newText = null;
-
-        if (lowerText === 'my list' || lowerText === 'my media' || lowerText === 'mes médias') {
-            newText = 'Categories';
-        } else if (lowerText === 'next up' || lowerText === 'continuar viendo') {
-            newText = 'History';
-        } else if (lowerText.startsWith('recently added in ')) {
-            const type = text.substring(18);
-            newText = `Latest ${type}`;
-        }
-
-        if (newText) {
-            el.innerText = newText;
-            const parent = el.closest('.sectionHeader, .sectionTitleContainer');
-            if (parent) {
-                const link = parent.querySelector('a');
-                if (link) link.setAttribute('title', newText);
-            }
-
-            // Add specific class for styling
-            if (newText === 'Categories') {
-                const section = el.closest('.verticalSection');
-                if (section) section.classList.add('legitflix-categories-section');
-            }
-        }
-    });
-}
-
-// 2. FIX MIXED CONTENT CARDS (Layout Fix)
-function fixMixedCards() {
-    const selector = '.overflowBackdropCard[data-type="Movie"], .overflowBackdropCard[data-type="Series"]';
-    const cards = document.querySelectorAll(selector);
-
-    cards.forEach(card => {
-        card.classList.remove('overflowBackdropCard');
-        card.classList.add('overflowPortraitCard');
-
-        const padder = card.querySelector('.cardPadder-overflowBackdrop');
-        if (padder) {
-            padder.classList.remove('cardPadder-overflowBackdrop');
-            padder.classList.add('cardPadder-overflowPortrait');
-        }
-
-        const imgContainer = card.querySelector('.cardImageContainer');
-        if (imgContainer) {
-            const style = imgContainer.getAttribute('style') || '';
-            const swapImage = () => {
-                const s = imgContainer.getAttribute('style') || '';
-                if (s.includes('Images/Thumb')) {
-                    const ns = s.replace(/Images\/Thumb/g, 'Images/Primary');
-                    if (s !== ns) imgContainer.setAttribute('style', ns);
-                }
-            };
-            swapImage();
-            if (!imgContainer._observerAttached) {
-                new MutationObserver(swapImage).observe(imgContainer, { attributes: true, attributeFilter: ['style'] });
-                imgContainer._observerAttached = true;
-            }
-        }
-    });
-}
-
-// 3. FIX LATEST EPISODES (Convert Episode -> Series in Latest Sections)
-async function fixLatestEpisodes() {
-    // Only target sections that are likely "Latest" (Vertical/Poster grids)
-    const sections = document.querySelectorAll('.verticalSection, .sectionTitleContainer');
-
-    for (const section of sections) {
-        // Find title
-        const titleEl = section.querySelector('.sectionTitle') || section; // fallback
-        const title = titleEl.innerText.toLowerCase();
-
-        // Check if it's a "Latest" section (and NOT Continue Watching/Next Up)
-        // "Latest Anime" -> yes. "Recently Added" -> yes.
-        const isLatest = (title.includes('latest') || title.includes('recently')) &&
-            !title.includes('continue') &&
-            !title.includes('next up') &&
-            !title.includes('history');
-
-        if (isLatest) {
-            // Find Episode cards in this section
-            // Look for card siblings in itemsContainer
-            const container = section.closest('.verticalSection')?.querySelector('.itemsContainer')
-                || section.nextElementSibling; // usually itemsContainer is next sibling
-
-            if (container) {
-                const episodeCards = container.querySelectorAll('.card[data-type="Episode"]');
-
-                for (const card of episodeCards) {
-                    if (card.getAttribute('data-fixed-episode')) continue;
-                    card.setAttribute('data-fixed-episode', 'true'); // Mark processed
-
-                    const episodeId = card.getAttribute('data-id');
-
-                    try {
-                        // Fetch Item to get Series Info
-                        const userId = window.ApiClient.getCurrentUserId();
-                        const item = await window.ApiClient.getItem(userId, episodeId);
-
-                        if (item && item.SeriesId) {
-                            // CONVERT TO SERIES CARD
-
-                            // 1. Update ID & Type
-                            card.setAttribute('data-id', item.SeriesId);
-                            card.setAttribute('data-type', 'Series');
-
-                            // 2. Update Image (Series Primary)
-                            const imgContainer = card.querySelector('.cardImageContainer');
-                            if (imgContainer) {
-                                // Force Poster Ratio (CSS handles this globally now, but ensure image is correct)
-                                const imgUrl = `/Items/${item.SeriesId}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-                                imgContainer.style.backgroundImage = `url('${imgUrl}')`;
-                            }
-
-                            // 3. Update Title (Series Name)
-                            // Usually cardText contains episode name "S1:E22 - ...".
-                            // We want "Your Lie in April" (item.SeriesName)
-                            const titleDiv = card.querySelector('.cardText');
-                            if (titleDiv) {
-                                titleDiv.innerText = item.SeriesName || item.Name;
-                            }
-
-                            // 4. Update Link
-                            const link = card.querySelector('.itemAction');
-                            if (link && item.SeriesId) {
-                                const newUrl = `#!/details?id=${item.SeriesId}`;
-                                link.setAttribute('href', newUrl);
-                                link.onclick = (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    window.location.href = newUrl;
-                                    return false;
-                                };
-                            }
-
-                            // 5. Cleanup Overlay (Remove Play Button overlay if present intended for episode)
-                            // Series cards usually just open details, manual play button logic might interfere
-                            const overlay = card.querySelector('.hover-overlay, .cardOverlayFab');
-                            if (overlay) overlay.style.display = 'none';
-                        }
-                    } catch (e) {
-                        console.error('[LegitFlix] fixLatestEpisodes error:', e);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 // Call setup
 try {
     setupHoverCards();
@@ -3108,347 +2958,11 @@ function checkPageMode() {
     }
 }
 
-// --- AUGMENT LATEST SECTIONS (Append to Native) ---
-let _viewsCache = null;
-
-async function augmentLatestSections() {
-    // Only run on Home/Index
-    const hash = window.location.hash.toLowerCase();
-    if (!hash.includes('home') && !hash.endsWith('/web/index.html') && hash !== '#!/' && hash !== '' && hash !== '#/') return;
-
-    // 1. Fetch Views (Libraries) ONCE
-    if (!_viewsCache) {
-        try {
-            const userId = window.ApiClient.getCurrentUserId();
-            const viewsRes = await fetch(window.ApiClient.getUrl(`/Users/${userId}/Views`), {
-                headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
-            });
-            const viewsData = await viewsRes.json();
-            _viewsCache = viewsData.Items || [];
-        } catch (e) {
-            console.error('[LegitFlix] Error fetching views:', e);
-            return;
-        }
-    }
-
-    // 2. Scan Sections
-    const sections = document.querySelectorAll('.verticalSection');
-    for (const section of sections) {
-
-        // GUARDIAN CHECK: Verify if native code overwrote our changes
-        const isAugmented = section.getAttribute('data-augmented-latest');
-        if (isAugmented) {
-            const cont = section.querySelector('.itemsContainer');
-            // Dynamic threshold: If we expected 10 items, don't reset just because it's < 20
-            const expected = parseInt(section.getAttribute('data-expected-count') || '20');
-            const threshold = Math.min(20, expected);
-
-            // If container exists but has fewer items than our threshold, it implies a Reset (or empty).
-            if (cont && cont.children.length < threshold) {
-                console.log(`[LegitFlix] Detected native overwrite in ${section.innerText.split('\n')[0]} (Count: ${cont.children.length} < ${threshold})`);
-                section.removeAttribute('data-augmented-latest');
-                // Fall through to re-process immediately
-            } else {
-                continue; // Still healthy, skip this section
-            }
-        }
-
-        const titleEl = section.querySelector('.sectionTitle');
-        if (!titleEl) continue;
-
-        let titleText = titleEl.innerText.trim();
-        let libName = null;
-
-        // Parse Title (e.g. "Latest Anime", "Recently Added in TV")
-        if (titleText.startsWith('Latest ')) {
-            libName = titleText.substring(7);
-        } else if (titleText.startsWith('Recently Added in ')) {
-            libName = titleText.substring(18);
-        }
-
-        if (!libName) continue;
-
-        // Find Matching Library
-        let library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
-
-        // ROBUSTNESS: If library not found, maybe cache is stale (new library added)?
-        if (!library && !window._legitFlixViewsRefreshed) {
-            console.log(`[LegitFlix] Library "${libName}" not found in cache. Refreshing views...`);
-            try {
-                const userId = window.ApiClient.getCurrentUserId();
-                const viewsRes = await fetch(window.ApiClient.getUrl(`/Users/${userId}/Views`), {
-                    headers: { 'X-Emby-Token': window.ApiClient.accessToken() }
-                });
-                const viewsData = await viewsRes.json();
-                _viewsCache = viewsData.Items; // Update Global Cache
-                window._legitFlixViewsRefreshed = true; // Only try once per reload to avoid loops
-
-                // Retry finding library
-                library = _viewsCache.find(l => l.Name.toLowerCase() === libName.toLowerCase());
-            } catch (e) {
-                console.error('[LegitFlix] Failed to refresh views:', e);
-            }
-        }
-
-        if (!library) continue; // Still not found, skip
-
-        section.setAttribute('data-augmented-latest', 'true');
-
-        try {
-            console.log(`[LegitFlix] Augmenting Latest Section [v3]: ${libName} (${library.Id})`);
-
-            // 3. Fetch Custom Data (100 items, DateCreated Desc, No Filters)
-            const userId = window.ApiClient.getCurrentUserId();
-            if (!userId) {
-                console.warn('[LegitFlix] augmentLatestSections: No API Client or User ID. Skipping.');
-                continue;
-            }
-            // Build Query
-            const query = new URLSearchParams({
-                UserId: userId,
-                ParentId: library.Id,
-                Recursive: 'true',
-                SortBy: 'DateCreated',
-                SortOrder: 'Descending',
-                Limit: '100', // REQUESTED: Even more items
-                Fields: 'PrimaryImageAspectRatio,ProductionYear,Overview',
-                EnableImageTypes: 'Primary,Backdrop,Thumb',
-                ImageTypeLimit: '1',
-                IncludeItemTypes: 'Movie,Series', // Hardcoded filter for Mixed Content
-                Filters: 'IsFolder%3Dfalse' // Ensure no folders
-            });
-
-            // NO extra query.append needed now
-
-            const itemsUrl = window.ApiClient.getUrl(`/Users/${userId}/Items?${query.toString()}`);
-
-
-            const itemsRes = await fetch(itemsUrl, { headers: { 'X-Emby-Token': window.ApiClient.accessToken() } });
-            const itemsData = await itemsRes.json();
-
-            if (itemsData.Items && itemsData.Items.length > 0) {
-                const nativeContainer = section.querySelector('.itemsContainer');
-
-                // Retry finding container if missing (rendering race condition)
-                if (!nativeContainer) {
-                    section.removeAttribute('data-augmented-latest');
-                    continue;
-                }
-
-                // Store expected count for Guardian check
-                section.setAttribute('data-expected-count', itemsData.Items.length);
-
-                // Ensure native container handles overflow
-                nativeContainer.style.display = 'flex';
-                nativeContainer.style.flexDirection = 'row';
-                nativeContainer.style.overflowX = 'auto';
-                nativeContainer.style.flexWrap = 'nowrap'; // Force horizontal
-
-
-
-                // Get Template from existing card (native look)
-                // Use first child even if hidden, or check children length
-                const templateCard = nativeContainer.querySelector('.card');
-                if (!templateCard) continue; // Can't clone if empty
-
-                // CLEAR CONTAINER (To remove native filtered list and replace with our full list)
-                nativeContainer.innerHTML = '';
-
-                itemsData.Items.forEach(item => {
-                    // Clone
-                    const card = templateCard.cloneNode(true);
-                    card.style.display = ''; // Ensure visible if template was hidden
-
-                    // Update Data Attributes
-                    card.setAttribute('data-id', item.Id);
-                    card.setAttribute('data-type', item.Type);
-
-                    // Update Image (DIRECT - NO LAZY LOADING for reliability)
-                    const imgContainer = card.querySelector('.cardImageContainer');
-                    if (imgContainer) {
-                        const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-
-                        // REMOVE Lazy attributes to prevent native interference
-                        imgContainer.removeAttribute('data-src');
-                        imgContainer.classList.remove('lazy', 'lazy-hidden', 'blurhashed');
-
-                        // FIX: Prevent collapse by sizing parent
-                        const scalable = card.querySelector('.cardScalable');
-                        if (scalable) {
-                            scalable.style.cssText = 'aspect-ratio: 2/3 !important; display: flex !important; position: relative !important; width: 100% !important;';
-                        }
-
-                        // Force styles
-                        imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; position: absolute !important; width: 100% !important; height: 100% !important; display: block !important;`);
-
-                        // Clear any existing indicators (clone artifacts)
-                        const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator, .legit-indicator');
-                        existingIndicators.forEach(el => el.remove());
-
-                        // INJECT CUSTOM INDICATORS
-                        // 1. Favorite (Orange Bookmark - Top Right)
-                        if (item.UserData && item.UserData.IsFavorite) {
-                            const favInd = document.createElement('div');
-                            favInd.className = 'legit-indicator fav';
-                            favInd.innerHTML = '<span class="material-icons">bookmark</span>';
-                            imgContainer.appendChild(favInd);
-                        }
-
-                        // 2. Played (Green Check - Top Left)
-                        if (item.UserData && item.UserData.Played) {
-                            const playedInd = document.createElement('div');
-                            playedInd.className = 'legit-indicator played';
-                            playedInd.innerHTML = '<span class="material-icons">check_circle</span>';
-                            imgContainer.appendChild(playedInd);
-                        }
-
-                        // Remove blocking overlays
-                        const padder = card.querySelector('.cardPadder');
-                        if (padder) padder.style.display = 'none';
-                        const icon = card.querySelector('.cardImageIcon');
-                        if (icon) icon.style.display = 'none';
-                        const canvas = card.querySelector('canvas'); // Blurhash
-                        if (canvas) canvas.remove();
-
-                        // Add Watched Indicator
-                        const isPlayed = item.UserData && item.UserData.Played;
-                        if (isPlayed) {
-                            const ind = document.createElement('div');
-                            ind.className = 'playedIndicator';
-                            ind.style.cssText = "position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
-                            ind.innerHTML = '<i class="material-icons" style="font-size: 1em;">check</i>';
-                            imgContainer.appendChild(ind);
-                        }
-                    }
-
-                    // Update Text
-                    const texts = card.querySelectorAll('.cardText');
-                    // Usually first is Title, second is Year/Details
-                    if (texts.length > 0) texts[0].innerText = item.Name;
-                    if (texts.length > 1) texts[1].innerText = item.ProductionYear || '';
-
-                    // Update Link
-                    const link = card.querySelector('.cardContent') || card;
-                    if (link.tagName === 'A') {
-                        link.setAttribute('href', `#!/details?id=${item.Id}`);
-                        link.onclick = (e) => {
-                            e.preventDefault();
-                            window.location.href = `#!/details?id=${item.Id}`;
-                            return false;
-                        };
-                    } else {
-                        // Sometimes link is nested
-                        const nestedLink = card.querySelector('a');
-                        if (nestedLink) {
-                            nestedLink.setAttribute('href', `#!/details?id=${item.Id}`);
-                            nestedLink.onclick = (e) => {
-                                e.preventDefault();
-                                window.location.href = `#!/details?id=${item.Id}`;
-                                return false;
-                            };
-                        }
-                    }
-
-                    // Cleanup any "Episode" specific classes if template was wrong type (rare in Latest)
-                    card.classList.remove('overflowBackdropCard');
-                    card.classList.add('overflowPortraitCard');
-
-                    // Append
-                    nativeContainer.appendChild(card);
-                });
-
-                // ATTACH PROTECTION OBSERVER (AFTER SETUP): If native code clears this container, we re-run.
-                // We do this LAST so we don't trigger ourselves when we cleared the container a moment ago.
-                if (!nativeContainer.dataset.protected) {
-                    nativeContainer.dataset.protected = 'true';
-                    const fetchedCount = itemsData.Items.length;
-
-                    const protector = new MutationObserver(() => {
-                        // Dynamic Threshold from fetched count
-                        const threshold = Math.min(20, fetchedCount);
-
-                        // Only trigger if children count is distressingly low (indicating native reset)
-                        // AND we are not currently empty (which might happen during a valid re-render)
-                        if (nativeContainer.children.length > 0 && nativeContainer.children.length < threshold) {
-                            console.log(`[LegitFlix] Container nuked by native code (Count: ${nativeContainer.children.length} < ${threshold}). Re-triggering augment.`);
-                            section.removeAttribute('data-augmented-latest');
-                            nativeContainer.dataset.protected = ''; // Clear flag
-                            protector.disconnect();
-                        }
-                    });
-                    protector.observe(nativeContainer, { childList: true });
-                }
-
-            } else {
-                section.removeAttribute('data-augmented-latest'); // Retry/Revert
-            }
-
-        } catch (err) {
-            console.error('[LegitFlix] Failed to augment section:', libName, err);
-            section.removeAttribute('data-augmented-latest');
-        }
-    }
-}
-
-function createCustomCard(item) {
-    const card = document.createElement('div');
-    // Use standard classes for styling inheritance
-    card.className = 'card scalableCard card-hoverable overflowPortraitCard';
-    card.dataset.id = item.Id;
-    card.dataset.type = item.Type;
-    card.style.minWidth = '14vw'; // Ensure decent size
-    card.style.maxWidth = '14vw';
-
-    // Image, Link & Indicators
-    const imgUrl = `/Items/${item.Id}/Images/Primary?maxHeight=400&maxWidth=300&quality=90`;
-    const linkUrl = `#!/details?id=${item.Id}`;
-
-    const isPlayed = item.UserData && item.UserData.Played;
-    const playedHtml = isPlayed ?
-        `<div class="playedIndicator" style="position: absolute; top: 0.5em; right: 0.5em; background: #00A4DC; color: white; border-radius: 50%; width: 1.5em; height: 1.5em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);"><i class="material-icons" style="font-size: 1em;">check</i></div>`
-        : '';
-
-    const unplayedCount = item.UserData && item.UserData.UnplayedItemCount;
-    const countHtml = (unplayedCount && !isPlayed) ?
-        `<div class="countIndicator" style="position:absolute; top:0.5em; right:0.5em; background:#cc3333; color:white; border-radius:50%; width:1.5em; height:1.5em; display:flex; align-items:center; justify-content:center; font-size:0.8em; font-weight:bold;">${unplayedCount}</div>`
-        : '';
-
-    card.innerHTML = `
-        <div class="cardBox visualCardBox">
-            <div class="cardScalable">
-                <div class="cardPadder cardPadder-overflowPortrait"></div>
-                <a class="cardContent cardImageContainer" href="${linkUrl}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
-                    ${playedHtml}
-                    ${countHtml}
-                </a>
-            </div>
-            <div class="cardFooter">
-                <div class="cardText centered cardText-first" style="text-align: left; padding-top: 5px;">${item.Name}</div>
-                <div class="cardText centered cardText-secondary" style="text-align: left;">${item.ProductionYear || ''}</div>
-            </div>
-        </div>
-    `;
-
-    const a = card.querySelector('a');
-    a.onclick = (e) => {
-        e.preventDefault();
-        window.location.href = linkUrl;
-        return false;
-    };
-
-    return card;
-}
-
 const observer = new MutationObserver((mutations) => {
     checkPageMode(); // Check URL on every mutation (navigation often doesn't trigger reload)
     if (!document.querySelector('.legit-nav-links')) _injectedNav = false;
-
-    // Call global helpers
-    if (typeof renameMyList === 'function') renameMyList();
-    if (typeof fixMixedCards === 'function') fixMixedCards();
-    if (typeof fixLatestEpisodes === 'function') fixLatestEpisodes();
-    if (typeof augmentLatestSections === 'function') augmentLatestSections(); // AUGMENT: Native Append Mode
-
+    renameMyList();
+    fixMixedCards();
     injectPromoBanner();
     tagNativeSections();
 });
@@ -3728,7 +3242,7 @@ window.openInfoModal = async function (id) {
                         ${logoHtml}
                         
                         <div class="info-actions">
-                            <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}', event)">
+                            <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}')">
                                 <span class="material-icons">play_arrow</span> Play
                             </button>
                             
@@ -3737,7 +3251,7 @@ window.openInfoModal = async function (id) {
                                     type="button" 
                                     class="button-flat btnPlayTrailer detailButton emby-button btn-native-trailer" 
                                     title="Play Trailer"
-                                    onclick="window.legitFlixPlayTrailer('${details.Id}', event)"
+                                    onclick="window.legitFlixPlayTrailer('${details.Id}')"
                                     data-item-id="${details.Id}">
                                 <div class="detailButton-content">
                                     <span class="material-icons detailButton-icon theaters" aria-hidden="true"></span>
@@ -3830,8 +3344,9 @@ window.openInfoModal = async function (id) {
     }
 
     // Fav Button
+    // ...
 
-    // --- IDLE ANIMATION LOGIC  ---
+    // --- IDLE ANIMATION LOGIC (User Request) ---
     const heroContent = modal.querySelector('.info-hero-content');
     const videoContainer = modal.querySelector('.info-video-container');
     let idleTimer;
@@ -3862,6 +3377,7 @@ window.openInfoModal = async function (id) {
 
 
 
+
 // --- INITIALIZATION ---
 try {
     injectCustomFooter();
@@ -3870,304 +3386,17 @@ try {
     console.error('LegitFlix Init Error:', e);
 }
 
-// --- LOAD SERIES DETAIL REVAMP MODULE ---
-// This dynamically loads the series-detail-revamp.js module
-// --- REALTIME INDICATOR UPDATER ---
-window.legitFlixUpdateIndicators = function (id, type, isActive) {
-    console.log(`[LegitFlix] Realtime Update: ${id} - ${type} = ${isActive}`);
-    // Find all cards for this item
-    const cards = document.querySelectorAll(`.card[data-id="${id}"]`);
-    cards.forEach(card => {
-        // 1. Update Image Container Indicators
-        const imgContainer = card.querySelector('.cardImageContainer');
-        if (imgContainer) {
-            // Remove existing specific indicator
-            const selector = type === 'fav' ? '.legit-indicator.fav' : '.legit-indicator.played';
-            const existing = imgContainer.querySelector(selector);
-            if (existing) existing.remove();
-
-            // Add if active
-            if (isActive) {
-                const ind = document.createElement('div');
-                if (type === 'fav') {
-                    ind.className = 'legit-indicator fav';
-                    ind.innerHTML = '<span class="material-icons">bookmark</span>';
-                } else {
-                    ind.className = 'legit-indicator played';
-                    ind.innerHTML = '<span class="material-icons">check_circle</span>';
-                }
-                imgContainer.appendChild(ind);
-            }
-        }
-    });
-};
-
-(function loadSeriesDetailModule() {
-    // Check if already loaded
-    if (window.LFSeriesDetail) {
-        console.log('[LegitFlix] Series Detail module already loaded.');
-        return;
-    }
-
-    // Get the base path from the current script
-    const scripts = document.querySelectorAll('script[src*="legitflix"]');
-    let basePath = '';
-    scripts.forEach(script => {
-        const src = script.src;
-        if (src.includes('legitflix-theme.js')) {
-            basePath = src.replace('legitflix-theme.js', '');
-        }
-    });
-
-    // Fallback paths to try
-    const pathsToTry = [
-        basePath + 'series-detail-revamp.js',
-        '/web/Legitflix/series-detail-revamp.js',
-        '/Legitflix/series-detail-revamp.js',
-        './series-detail-revamp.js'
-    ];
-
-    function tryLoadScript(paths, index) {
-        if (index >= paths.length) {
-            console.warn('[LegitFlix] Could not load series-detail-revamp.js from any path.');
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = paths[index];
-        script.onload = () => {
-            console.log('[LegitFlix] Series Detail module loaded from:', paths[index]);
-        };
-        script.onerror = () => {
-            console.log('[LegitFlix] Failed to load from:', paths[index], '- trying next...');
-            tryLoadScript(paths, index + 1);
-        };
-        document.head.appendChild(script);
-    }
-
-    tryLoadScript(pathsToTry, 0);
-
-    // --- LOAD MOVIE DETAIL MODULE ---
-    const moviePaths = [
-        basePath + 'movie-detail-revamp.js',
-        '/web/Legitflix/movie-detail-revamp.js',
-        '/Legitflix/movie-detail-revamp.js',
-        './movie-detail-revamp.js'
-    ];
-    tryLoadScript(moviePaths, 0); // Reusing the same helper is fine if scoped properly, else need new closures or logic. 
-    // Wait, tryLoadScript is defined inside the IIFE above. To reuse it, I should duplicate the loader block OR make it shared.
-    // The previous IIFE closed at line 3951. 'tryLoadScript' is not valid here if I append outside.
-    // Ah, I should look at where I am inserting.
-    // The previous loader was inside `(function() { ... })()`.
-    // I should probably insert this *inside* that IIFE or creating a new one.
-    // Creating a new IIFE is safer.
-})();
-
-(function () {
-    // Duplicate Loader for Movie Module (Separate Scope to avoid conflicts)
-    const scripts = document.getElementsByTagName('script');
-    const currentScript = scripts[scripts.length - 1];
-    let basePath = '';
-    if (currentScript.src) {
-        basePath = currentScript.src.substring(0, currentScript.src.lastIndexOf('/') + 1);
-    }
-
-    function load(paths, index) {
-        if (index >= paths.length) return;
-        const script = document.createElement('script');
-        script.src = paths[index];
-        script.onload = () => console.log('[LegitFlix] Movie Module Loaded');
-        script.onerror = () => load(paths, index + 1);
-        document.head.appendChild(script);
-    }
-
-    load([
-        basePath + 'movie-detail-revamp.js',
-        '/web/Legitflix/movie-detail-revamp.js',
-        'movies-detail-revamp.js'
-    ], 0);
-
-})();
-
-// --- SECTION TAGGER ---
-function tagNativeHoverSections() {
-    // Broader list of targets (case-insensitive checking below)
-    const targets = ['continue watching', 'next up', 'history', 'latest', 'recently played', 'up next'];
-
-    document.querySelectorAll('.verticalSection').forEach(section => {
-        if (section.classList.contains('native-hover-section')) return;
-
-        let matched = false;
-
-        // Check ID
-        const testId = (section.getAttribute('data-test-id') || '').toLowerCase();
-        if (testId.includes('continue-watching') || testId.includes('next-up') || testId.includes('history')) {
-            matched = true;
-        }
-
-        // Check Header Title
-        if (!matched) {
-            const titleEl = section.querySelector('.sectionTitle');
-            if (titleEl) {
-                const title = titleEl.textContent.toLowerCase();
-                if (targets.some(t => title.includes(t))) {
-                    matched = true;
-                }
-            }
-        }
-
-        if (matched) {
-            section.classList.add('native-hover-section');
-        }
-    });
-}
 
 // --- CONTINUOUS MONITORING ---
 // Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
 function monitorPageLoop() {
     pollForUI();      // Restore Nav, Prefs, Jellyseerr
     injectMediaBar(); // Handles Home and Detail page logic
-    tagNativeHoverSections(); // Restore "Remove" buttons for specific sections
-
-    // Series Detail monitoring now handled by the loaded module (LFSeriesDetail.startMonitoring)
-    // The module auto-starts when it detects ApiClient
-
     setTimeout(monitorPageLoop, 800);
 }
 
 // Start the loop
 monitorPageLoop();
-
-// --- PLAYBACK HELPER (Direct Play via Jellyfin Internals) ---
-// --- PLAYBACK HELPER (Navigation Fallback Strategy) ---
-window.legitFlixPlay = function (itemId, event) {
-    if (event) {
-        // Prevent container clicks
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    console.log('[LegitFlix] legitFlixPlay: Requesting playback for', itemId);
-
-    // 1. Try Global Manager (if exposed)
-    const deepLinkPlay = () => {
-        // Fallback: Navigate to Details with Auto-Play param
-        console.log('[LegitFlix] legitFlixPlay: Manager not found. Using Navigation Fallback.');
-        const currentHash = window.location.hash;
-        if (currentHash.includes(itemId) && currentHash.includes('startPlaying=true')) {
-            window.location.reload();
-        } else {
-            // Use /#!/details format which is standard for Jellyfin Web
-            window.location.hash = `#!/details?id=${itemId}&startPlaying=true`;
-        }
-    };
-
-    if (window.playbackManager) {
-        window.playbackManager.play({ ids: [itemId] });
-    } else if (window.Jellyfin && window.Jellyfin.playbackManager) {
-        window.Jellyfin.playbackManager.play({ ids: [itemId] });
-    } else {
-        // 2. Try Require (Last ditch)
-        if (typeof require !== 'undefined') {
-            require(['playbackManager'], function (playbackManager) {
-                if (playbackManager) {
-                    playbackManager.play({ ids: [itemId] });
-                } else {
-                    deepLinkPlay();
-                }
-            }, function (err) {
-                deepLinkPlay();
-            });
-        } else {
-            deepLinkPlay();
-        }
-    }
-};
-
-window.legitFlixPlayTrailer = function (itemId, event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    window.location.hash = `#!/details?id=${itemId}`;
-};
-
-// --- AUTO-PLAY CHECKER ---
-function checkAutoPlay() {
-    if (window.location.hash.includes('&startPlaying=true')) {
-        // Find Native Play/Resume Button
-        // Try multiple selectors
-        const btn = document.querySelector('.btnPlay') ||
-            document.querySelector('.btnResume') ||
-            document.querySelector('[data-type="Episode"] .itemAction[data-action="play"]') ||
-            document.querySelector('[is="emby-playbutton"]');
-
-        if (btn) {
-            console.log('[LegitFlix] Auto-Play: Button found! Clicking...');
-            btn.click();
-
-            // Cleanup URL
-            const cleanUrl = window.location.hash.replace('&startPlaying=true', '');
-            history.replaceState(null, '', cleanUrl);
-        }
-    }
-}
-setInterval(checkAutoPlay, 800); // Check periodically
-
-
-// --- EPISODE CLICK INTERCEPTION (Direct Play for Episode Rows) ---
-// Hijack clicks on episode list items to skip the detail screen and play immediately
-// --- CLICK INTERCEPTION (Episode Rows & Main Play Buttons) ---
-document.addEventListener('click', function (e) {
-    // A. Episode Rows (List Items)
-    const episodeItem = e.target.closest('.listItem[data-type="Episode"], .card[data-type="Episode"]');
-
-    if (episodeItem) {
-        const id = episodeItem.getAttribute('data-id');
-        if (!id) return;
-
-        // Ignore interactive children, Selection Mode, or Menu Buttons
-        if (e.target.closest('.customCheckbox') ||
-            e.target.closest('.itemAction') ||
-            e.target.closest('.cardOverlayButton') ||
-            e.target.closest('.listViewDragHandle') ||
-            e.target.closest('.btn-more') ||
-            e.target.closest('[data-action="menu"]') || // Ignore standard Menu triggers
-            e.target.closest('.listItemButton') || // Ignore List Item Menu buttons
-            e.target.closest('.with-selection') ||
-            document.querySelector('.selectionCommandsPanel:not(.hide)')
-        ) {
-            return;
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('[LegitFlix] Episode Click Intercepted: Playing', id);
-        window.legitFlixPlay(id);
-        return;
-    }
-
-    // B. Main "Play" / "Resume" Buttons (Detail Pages)
-    // Target standard Jellyfin play buttons if they aren't working naturally
-    const playBtn = e.target.closest('.btnPlay, .btnResume, .btn-play-hero');
-    if (playBtn) {
-        // Check if it has an Item ID context (usually data-id or data-itemid)
-        let id = playBtn.getAttribute('data-id') || playBtn.getAttribute('data-itemid');
-
-        // If no ID on button, try to find it in the parent container (Detail Page context)
-        if (!id) {
-            const container = playBtn.closest('[data-id], [data-itemid]');
-            if (container) id = container.getAttribute('data-id') || container.getAttribute('data-itemid');
-        }
-
-        if (id) {
-            console.log('[LegitFlix] Play Button Intercepted: Playing', id);
-            e.preventDefault();
-            e.stopPropagation();
-            window.legitFlixPlay(id);
-        }
-    }
-}, true); // Capture phase
-
 /**
  * LegitFlix Series Detail Page Revamp
  * Crunchyroll-inspired series page injection module
