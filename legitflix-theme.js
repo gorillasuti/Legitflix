@@ -4192,12 +4192,9 @@ document.addEventListener('click', function (e) {
     const log = (...args) => CONFIG.debug && console.log('[LF-Movie]', ...args);
 
     // =========================================================================
-    // CSS STYLES (Merged Movie + Series Features)
+    // SHARED CSS (Variables & Buttons) - Extracted from Series Module
     // =========================================================================
-    const MOVIE_DETAIL_CSS = `
-        /* ============================================
-           LEGITFLIX SHARED STYLES
-           ============================================ */
+    const LF_SHARED_CSS = `
         :root {
             --clr-accent: #ff6a00;
             --clr-accent-hover: #FF8C00;
@@ -4217,6 +4214,57 @@ document.addEventListener('click', function (e) {
             --content-padding: 3%;
         }
 
+        /* BUTTONS */
+        .lf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .lf-btn--primary { background: var(--clr-accent); color: white; }
+        .lf-btn--primary:hover { background: var(--clr-accent-hover); }
+
+        .lf-btn--glass { background: var(--clr-bg-glass); color: white; backdrop-filter: blur(10px); }
+        .lf-btn--glass:hover { background: var(--clr-bg-glass-hover); }
+
+        .lf-btn--icon-only { padding: 12px; }
+
+        .lf-btn--heart { transition: background 0.2s ease, border-color 0.2s ease; border: 1px solid transparent; }
+        .lf-btn--heart:hover { background: var(--clr-bg-glass-hover); }
+        .lf-btn--heart.is-liked { background: rgba(233, 30, 99, 0.2); border-color: var(--clr-heart); }
+        .lf-btn--heart.is-liked .material-icons { color: var(--clr-heart); }
+
+        .lf-meta-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        /* SHARED DIVIDER */
+        .lf-section-divider {
+            border: none;
+            border-top: 1px solid var(--clr-divider);
+            margin: 0 var(--content-padding);
+            display: block;
+            width: auto;
+        }
+    `;
+
+    // =========================================================================
+    // CSS STYLES (Merged Movie + Series Features)
+    // =========================================================================
+    const MOVIE_DETAIL_CSS = `
+        /* INHERITS FROM SHARED CSS */
         .lf-movie-container {
             width: 100%;
             overflow-x: hidden;
@@ -4383,48 +4431,8 @@ document.addEventListener('click', function (e) {
             gap: 12px;
             margin-top: 16px;
         }
-
-        .lf-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-family: var(--font-primary);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            text-decoration: none;
-        }
-
-        .lf-btn--primary {
-            background: var(--clr-accent);
-            color: white;
-        }
-        .lf-btn--primary:hover { background: var(--clr-accent-hover); }
-
-        .lf-btn--glass {
-            background: var(--clr-bg-glass);
-            color: white;
-            backdrop-filter: blur(10px);
-        }
-        .lf-btn--glass:hover { background: var(--clr-bg-glass-hover); }
-
-        .lf-btn--icon-only { padding: 10px; } 
-
-        /* Heart Active State */
-        .lf-btn--heart {
-            transition: background 0.2s ease, border-color 0.2s ease;
-            border: 1px solid transparent;
-        }
-        .lf-btn--heart:hover { background: var(--clr-bg-glass-hover); }
-        .lf-btn--heart.is-liked {
-            background: rgba(233, 30, 99, 0.2);
-            border-color: var(--clr-heart);
-        }
-        .lf-btn--heart.is-liked .material-icons { color: var(--clr-heart); }
+        
+        /* NOTE: .lf-btn styles are now inherited from LF_SHARED_CSS */
 
         /* Mute Button */
         .lf-mute-btn {
@@ -4741,9 +4749,9 @@ document.addEventListener('click', function (e) {
         if (document.getElementById(CONFIG.cssId)) return;
         const style = document.createElement('style');
         style.id = CONFIG.cssId;
-        style.textContent = MOVIE_DETAIL_CSS;
+        style.textContent = LF_SHARED_CSS + '\n' + MOVIE_DETAIL_CSS;
         document.head.appendChild(style);
-        log('CSS injected');
+        log('CSS injected (Shared + Movie)');
     }
 
     // =========================================================================

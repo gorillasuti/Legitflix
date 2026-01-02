@@ -22,26 +22,9 @@
     // =========================================================================
     const MOVIE_DETAIL_CSS = `
         /* ============================================
-           LEGITFLIX SHARED STYLES
+           LEGITFLIX SHARED STYLES (INHERITED)
            ============================================ */
-        :root {
-            --clr-accent: #ff6a00;
-            --clr-accent-hover: #FF8C00;
-            --clr-bg-main: #141414;
-            --clr-bg-surface: #1f1f1f;
-            --clr-bg-glass: rgba(255, 255, 255, 0.1);
-            --clr-bg-glass-hover: rgba(255, 255, 255, 0.2);
-            --clr-text-main: #ffffff;
-            --clr-text-muted: #bcbcbc;
-            --clr-divider: rgba(255, 255, 255, 0.1);
-            --clr-heart: #e91e63;
-            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-display: 'Outfit', sans-serif;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --content-padding: 3%;
-        }
+        /* See legitflix-theme.js LF_SHARED_CSS */
 
         .lf-movie-container {
             width: 100%;
@@ -189,12 +172,7 @@
             color: var(--clr-divider);
         }
 
-        .lf-meta-badge {
-            background: rgba(255,255,255,0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
+        /* NOTE: .lf-btn, .lf-meta-badge, and .lf-section-divider styles are inherited from LF_SHARED_CSS */
 
         .lf-series-hero__rating {
             display: flex;
@@ -209,48 +187,6 @@
             gap: 12px;
             margin-top: 16px;
         }
-
-        .lf-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-family: var(--font-primary);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            text-decoration: none;
-        }
-
-        .lf-btn--primary {
-            background: var(--clr-accent);
-            color: white;
-        }
-        .lf-btn--primary:hover { background: var(--clr-accent-hover); }
-
-        .lf-btn--glass {
-            background: var(--clr-bg-glass);
-            color: white;
-            backdrop-filter: blur(10px);
-        }
-        .lf-btn--glass:hover { background: var(--clr-bg-glass-hover); }
-
-        .lf-btn--icon-only { padding: 10px; } 
-
-        /* Heart Active State */
-        .lf-btn--heart {
-            transition: background 0.2s ease, border-color 0.2s ease;
-            border: 1px solid transparent;
-        }
-        .lf-btn--heart:hover { background: var(--clr-bg-glass-hover); }
-        .lf-btn--heart.is-liked {
-            background: rgba(233, 30, 99, 0.2);
-            border-color: var(--clr-heart);
-        }
-        .lf-btn--heart.is-liked .material-icons { color: var(--clr-heart); }
 
         /* Mute Button */
         .lf-mute-btn {
@@ -656,7 +592,7 @@
                 ${logoUrl ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo">` : ''}
 
                 <div class="lf-series-hero__content">
-                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
+                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}" onerror="this.src='https://raw.githubusercontent.com/google/material-design-icons/master/png/image/movie/materialicons/48dp/2x/baseline_movie_white_48dp.png'">
                     
                     <div class="lf-series-hero__info">
                         ${titleHtml}
@@ -1062,8 +998,19 @@
             }
         } catch (e) { log('Error fetching similar:', e); }
 
+        // CONTAINER FINDER STRATEGY
+        let parentContainer = document.querySelector('.pageContainer');
+        if (!parentContainer) parentContainer = document.querySelector('.mainAnimatedPages');
+        if (!parentContainer) parentContainer = document.querySelector('.skinBody');
+        if (!parentContainer) parentContainer = document.querySelector('.view');
+        if (!parentContainer) parentContainer = document.body;
+
         container.innerHTML = html;
-        document.querySelector('.pageContainer').appendChild(container);
+        if (parentContainer) {
+            parentContainer.appendChild(container);
+        } else {
+            console.error('[LF] Critical: No valid parent container found for injection.');
+        }
 
         // WIRE UP
         wireUpEvents(container, item);
