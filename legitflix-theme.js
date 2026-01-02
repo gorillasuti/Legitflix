@@ -2381,10 +2381,16 @@ async function injectPromoBanner() {
                 <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
                     <img src="${mainBgUrl}" class="promo-bg">
                     <div class="promo-content">
-                         ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
-                         <button class="btn-watch">WATCH NOW</button>
-                    </div>
+                     ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
+                     <p class="promo-desc">${item1.Overview || ''}</p>
+                     <div class="promo-actions">
+                         <button class="btn-watch" onclick="location.href='${getLink(item1)}'; event.stopPropagation();">WATCH NOW</button>
+                         <button class="btn-info" onclick="window.openInfoModal('${item1.Id}'); event.stopPropagation();">
+                            <span class="material-icons" style="font-size: 1.2rem;">info</span> More Info
+                         </button>
+                     </div>
                 </div>
+            </div>
                 
                 <!-- Bottom Grid (Items 2 & 3) -->
                 ${(item2 || item3) ? `

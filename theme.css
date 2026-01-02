@@ -5384,3 +5384,90 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     text-align: center !important;
     margin-top: 0.5em !important;
 }
+
+/* =========================================
+   PROMO BANNER REFRESHED STYLES
+   ========================================= */
+.legitflix-promo-container .promo-item-large .promo-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    gap: 15px !important;
+    padding-bottom: 40px !important;
+    z-index: 2 !important;
+    text-align: left !important;
+}
+
+.promo-title {
+    font-size: 3rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    margin-bottom: 0.2em !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+.promo-desc {
+    font-size: 1.1rem !important;
+    color: #e0e0e0 !important;
+    max-width: 600px !important;
+    line-height: 1.5 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+    margin: 0 !important;
+}
+
+.promo-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    margin-top: 10px !important;
+}
+
+/* Watch Button - Primary Theme Color */
+.legitflix-promo-container .btn-watch {
+    background: var(--clr-accent) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0.8rem 2rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.legitflix-promo-container .btn-watch:hover {
+    background: var(--clr-accent-hover) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Info Button - Glass / Netflix Style */
+.legitflix-promo-container .btn-info {
+    background: rgba(109, 109, 110, 0.7) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0.8rem 2rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    backdrop-filter: blur(5px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.legitflix-promo-container .btn-info:hover {
+    background: rgba(109, 109, 110, 0.5) !important;
+    transform: translateY(-2px) !important;
+}
