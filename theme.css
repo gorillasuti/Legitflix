@@ -5509,29 +5509,35 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
-/* Favorite - Orange Bookmark (Top Right) */
-/* SVG-less styling using Border trick or Clip Path for Ribbon shape */
+/* Favorite - Glass Triangle (Top Right) */
 .legit-indicator.fav {
-    top: -4px !important;
-    /* Hang slightly off top */
-    right: 12px !important;
-    color: white !important;
-    background: var(--clr-accent) !important;
-    width: 24px !important;
-    height: 36px !important;
-    display: flex !important;
-    justify-content: center !important;
-    padding-top: 4px !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 60px !important;
+    height: 60px !important;
+    background: rgba(229, 9, 20, 0.65) !important;
+    /* Translucent Accent */
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
 
-    /* Ribbon Shape */
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%) !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
-    /* Note: clip-path clips shadow too generally, but filter handles it */
+    /* Triangle Geometry: Top-Left -> Top-Right -> Bottom-Right */
+    clip-path: polygon(0 0, 100% 0, 100% 100%) !important;
+
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    padding: 8px 8px 0 0 !important;
+    /* Position icon in top-right */
+    box-shadow: none !important;
+    /* clip-path hides standard shadow, requires filter on parent if needed */
 }
 
 .legit-indicator.fav .material-icons {
-    font-size: 16px !important;
-    font-weight: bold !important;
+    font-size: 20px !important;
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    transform: translate(2px, -2px);
+    /* Fine-tune position */
 }
 
 /* Played - Green Check (Top Left) */
