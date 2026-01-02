@@ -5391,12 +5391,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .legitflix-promo-container .promo-item-large .promo-content {
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-start !important;
-    justify-content: flex-end !important;
-    gap: 15px !important;
-    padding-bottom: 40px !important;
+    align-items: flex-start;
+    gap: 12px !important;
     z-index: 2 !important;
     text-align: left !important;
+    justify-content: center;
+    flex-wrap: nowrap;
 }
 
 .promo-title {
@@ -5408,15 +5408,15 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 }
 
 .promo-desc {
-    font-size: 1.1rem !important;
+    font-size: 1rem !important;
     color: #e0e0e0 !important;
-    max-width: 600px !important;
+    max-width: 550px !important;
     line-height: 1.5 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 3 !important;
+    line-clamp: 3 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
     margin: 0 !important;
 }
 
@@ -5432,10 +5432,10 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     background: var(--clr-accent) !important;
     color: white !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: var(--radius-sm) !important;
     padding: 0.8rem 2rem !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
     cursor: pointer !important;
@@ -5451,23 +5451,87 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* Info Button - Glass / Netflix Style */
 .legitflix-promo-container .btn-info {
-    background: rgba(109, 109, 110, 0.7) !important;
+    background: rgba(109, 109, 110, 0.5) !important;
     color: white !important;
     border: none !important;
     border-radius: 6px !important;
     padding: 0.8rem 2rem !important;
-    font-size: 1.1rem !important;
-    font-weight: 700 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
     cursor: pointer !important;
-    backdrop-filter: blur(5px) !important;
+    backdrop-filter: blur(12px) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
+    gap: 6px !important;
     transition: all 0.2s ease !important;
 }
 
 .legitflix-promo-container .btn-info:hover {
     background: rgba(109, 109, 110, 0.5) !important;
     transform: translateY(-2px) !important;
+}
+
+/* =========================================
+   HERO CAROUSEL STABILITY FIXES
+   ========================================= */
+.hero-header-area {
+    min-height: 220px !important;
+    max-height: 220px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+    margin-bottom: 10px !important;
+}
+
+.hero-logo {
+    margin-bottom: 0 !important;
+    /* Let container handle spacing */
+    max-height: 100% !important;
+}
+
+/* Fix lint warning for line-clamp */
+.hero-desc,
+.promo-desc {
+    line-clamp: 3;
+}
+
+/* =========================================
+   CUSTOM CARD INDICATORS (Fav & Played)
+   ========================================= */
+.legit-indicator {
+    position: absolute !important;
+    z-index: 10 !important;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) !important;
+    pointer-events: none !important;
+    /* Let clicks pass to card */
+}
+
+/* Favorite - Orange Bookmark (Top Right) */
+.legit-indicator.fav {
+    top: -6px !important;
+    right: 10px !important;
+    color: var(--clr-accent) !important;
+}
+
+.legit-indicator.fav .material-icons {
+    font-size: 36px !important;
+}
+
+/* Played - Green Check (Top Left) */
+.legit-indicator.played {
+    top: 10px !important;
+    left: 10px !important;
+    color: #2ecc71 !important;
+    /* Vivid Green */
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2px !important;
+}
+
+.legit-indicator.played .material-icons {
+    font-size: 20px !important;
 }

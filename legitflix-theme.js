@@ -415,7 +415,9 @@ function createMediaBarHTML(items) {
                 <div class="hero-backdrop" style="background-image: url('${backdropUrl}')"></div>
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
-                    ${titleHtml}
+                    <div class="hero-header-area">
+                        ${titleHtml}
+                    </div>
                     
                     <div class="hero-meta-line">
                         <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
@@ -3223,8 +3225,25 @@ async function augmentLatestSections() {
                         imgContainer.setAttribute('style', `background-image: url('${imgUrl}'); background-size: cover; background-position: center; position: absolute !important; width: 100% !important; height: 100% !important; display: block !important;`);
 
                         // Clear any existing indicators (clone artifacts)
-                        const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator');
+                        const existingIndicators = imgContainer.querySelectorAll('.playedIndicator, .countIndicator, .indicator, .legit-indicator');
                         existingIndicators.forEach(el => el.remove());
+
+                        // INJECT CUSTOM INDICATORS
+                        // 1. Favorite (Orange Bookmark - Top Right)
+                        if (item.UserData && item.UserData.IsFavorite) {
+                            const favInd = document.createElement('div');
+                            favInd.className = 'legit-indicator fav';
+                            favInd.innerHTML = '<span class="material-icons">bookmark</span>';
+                            imgContainer.appendChild(favInd);
+                        }
+
+                        // 2. Played (Green Check - Top Left)
+                        if (item.UserData && item.UserData.Played) {
+                            const playedInd = document.createElement('div');
+                            playedInd.className = 'legit-indicator played';
+                            playedInd.innerHTML = '<span class="material-icons">check_circle</span>';
+                            imgContainer.appendChild(playedInd);
+                        }
 
                         // Remove blocking overlays
                         const padder = card.querySelector('.cardPadder');
