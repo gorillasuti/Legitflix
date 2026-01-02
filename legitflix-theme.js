@@ -4830,7 +4830,7 @@ document.addEventListener('click', function (e) {
                 ${logoUrl ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo">` : ''}
 
                 <div class="lf-series-hero__content">
-                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
+                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}" onerror="this.src='https://raw.githubusercontent.com/google/material-design-icons/master/png/image/movie/materialicons/48dp/2x/baseline_movie_white_48dp.png'">
                     
                     <div class="lf-series-hero__info">
                         ${titleHtml}
@@ -5236,8 +5236,19 @@ document.addEventListener('click', function (e) {
             }
         } catch (e) { log('Error fetching similar:', e); }
 
+        // CONTAINER FINDER STRATEGY
+        let parentContainer = document.querySelector('.pageContainer');
+        if (!parentContainer) parentContainer = document.querySelector('.mainAnimatedPages');
+        if (!parentContainer) parentContainer = document.querySelector('.skinBody');
+        if (!parentContainer) parentContainer = document.querySelector('.view');
+        if (!parentContainer) parentContainer = document.body;
+
         container.innerHTML = html;
-        document.querySelector('.pageContainer').appendChild(container);
+        if (parentContainer) {
+            parentContainer.appendChild(container);
+        } else {
+            console.error('[LF] Critical: No valid parent container found for injection.');
+        }
 
         // WIRE UP
         wireUpEvents(container, item);
