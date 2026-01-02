@@ -2673,14 +2673,12 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Buttons */
 .btn-watch,
 .btn-orange {
-    background: #f47521;
-    /* Crunchyroll Orange/Generic Promo Color */
-    color: black;
+    background: var(--clr-accent);
+    color: white;
     border: none;
     border-radius: 4px;
-    /* Slightly squarer than pill */
     padding: 0.6rem 1.5rem;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.9rem;
     text-transform: uppercase;
     cursor: pointer;
@@ -2691,8 +2689,8 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .btn-watch:hover,
 .btn-orange:hover {
-    background: white;
-    transform: scale(1.02);
+    background: var(--clr-accent-hover) !important;
+    transform: translateY(-2px) !important;
 }
 
 .btn-watch {
@@ -2836,23 +2834,28 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* Footer & Actions */
 .hover-footer {
-    padding: 0 1rem 1rem 1rem;
+    padding: 0.5rem;
     background: transparent;
     margin-top: auto;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
+    flex-direction: column;
+    gap: 8px;
+    align-content: center;
+    flex-wrap: wrap;
 }
 
 
 
 /* Slot for the hijacked Native Button */
 .hover-native-btn-slot {
-    width: 48px;
-    height: 48px;
+    width: 100%;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: row;
 }
 
 /* Override native button styles when inside our slot */
@@ -2878,15 +2881,23 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 /* Custom Action Buttons */
 .hover-icon-row {
-    display: contents;
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    align-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    flex: 1;
+    justify-content: space-evenly;
 }
 
 .hover-icon-btn {
     background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
+    width: 42px !important;
+    height: 42px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2977,21 +2988,19 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     pointer-events: auto !important;
     position: static !important;
     margin: 0 !important;
-
-    /* Match .hover-icon-btn styles */
     background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 50%;
-    width: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-sm);
+    width: 100%;
     height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: white !important;
-    /* Force white icon */
     transition: all 0.2s ease;
     padding: 0;
+    flex-direction: row;
 }
 
 .hover-footer .cardOverlayButton:hover {
@@ -5388,6 +5397,34 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* =========================================
    PROMO BANNER REFRESHED STYLES
    ========================================= */
+.legitflix-promo-container {
+    display: grid !important;
+    grid-template-columns: 1.6fr 1fr !important;
+    /* Adjusted ratio: Large smaller, Small larger */
+    gap: 20px !important;
+    height: 550px !important;
+    margin-bottom: 40px !important;
+    width: 100% !important;
+}
+
+.promo-item {
+    position: relative !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.promo-grid-row {
+    display: grid !important;
+    grid-template-rows: 1fr 1fr !important;
+    gap: 20px !important;
+    height: 100% !important;
+}
+
+.promo-item-large {
+    height: 100% !important;
+}
+
 .legitflix-promo-container .promo-item-large .promo-content {
     display: flex !important;
     flex-direction: column !important;
@@ -5446,7 +5483,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .legitflix-promo-container .btn-watch:hover {
     background: var(--clr-accent-hover) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Info Button - Glass / Netflix Style */
@@ -5503,7 +5539,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .legit-indicator {
     position: absolute !important;
     z-index: 10 !important;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) !important;
     pointer-events: none !important;
     /* Let clicks pass to card */
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
@@ -5513,51 +5548,45 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .legit-indicator.fav {
     top: 0 !important;
     right: 0 !important;
-    width: 60px !important;
-    height: 60px !important;
-    background: rgba(229, 9, 20, 0.65) !important;
-    /* Translucent Accent */
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-
-    /* Triangle Geometry: Top-Left -> Top-Right -> Bottom-Right */
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    background: #111111fa;
     clip-path: polygon(0 0, 100% 0, 100% 100%) !important;
-
     display: flex !important;
     align-items: flex-start !important;
     justify-content: flex-end !important;
     padding: 8px 8px 0 0 !important;
-    /* Position icon in top-right */
     box-shadow: none !important;
-    /* clip-path hides standard shadow, requires filter on parent if needed */
 }
 
 .legit-indicator.fav .material-icons {
-    font-size: 20px !important;
-    color: white !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    font-size: 1.125rem !important;
+    color: var(--clr-accent) !important;
     transform: translate(2px, -2px);
-    /* Fine-tune position */
 }
 
 /* Played - Green Check (Top Left) */
 .legit-indicator.played {
     top: 8px !important;
     left: 8px !important;
-    color: white !important;
-    background: #2ecc71 !important;
-    /* Vivid Green */
-    width: 24px !important;
-    height: 24px !important;
-    border-radius: 50% !important;
+    color: var(--clr-accent) !important;
+    background: #111111fa !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    border-radius: 100% !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4) !important;
+    align-items: center;
+    justify-content: center;
 }
 
 .legit-indicator.played .material-icons {
-    font-size: 16px !important;
+    font-size: 0.9rem !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    flex-direction: row;
 }
 
 /* Animation for Realtime Update */

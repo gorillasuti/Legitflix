@@ -2354,6 +2354,26 @@ async function injectPromoBanner() {
         const getLogo = (item) => `/Items/${item.Id}/Images/Logo/0?maxWidth=400`;
         const getLink = (item) => `#/details?id=${item.Id}&serverId=${auth.ServerId}`;
 
+        const getMetaHtml = (item) => {
+            let endsAtHtml = '';
+            if (item.RunTimeTicks && item.Type !== 'Series') {
+                const ms = item.RunTimeTicks / 10000;
+                const endTime = new Date(Date.now() + ms);
+                const timeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                endsAtHtml = `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">Ends at ${timeStr}</span>`;
+            }
+            const ratingStar = item.CommunityRating ? `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">⭐ ${item.CommunityRating.toFixed(1)}</span>` : '';
+            const genres = item.Genres ? `<span class="hero-meta-divider">•</span> <span class="hero-meta-text">${item.Genres.slice(0, 2).join(', ')}</span>` : '';
+
+            return `
+             <div class="hero-meta-line" style="margin-bottom: 8px; font-size: 0.8rem;">
+                <span class="hero-badge-age">${item.OfficialRating || '13+'}</span>
+                ${genres}
+                ${ratingStar}
+                ${endsAtHtml}
+             </div>`;
+        };
+
         // Create Image Objects to preload
         const preloadImage = (src) => {
             return new Promise((resolve, reject) => {
@@ -2401,10 +2421,15 @@ async function injectPromoBanner() {
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 <h3>${item2.Name}</h3>
-                                 <p>${item2.ProductionYear || ''}</p>
+                                 ${item2.ImageTags && item2.ImageTags.Logo ? `<img src="${getLogo(item2)}" class="promo-logo-small" style="display:block; max-height: 80px; width: auto; margin-bottom: 10px;">` : `<h3>${item2.Name}</h3>`}
+                                 ${getMetaHtml(item2)}
                                  <p class="desc">${item2.Overview || ''}</p>
-                                 <button class="btn-orange">START WATCHING</button>
+                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto;">
+                                     <button class="btn-watch" onclick="location.href='${getLink(item2)}'; event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <span class="material-icons">info</span>
+                                     </button>
+                                 </div>
                              </div>
                              <img src="${getThumb(item2)}" class="promo-poster" onerror="this.src='${getBackdrop(item2)}'">
                          </div>
@@ -2413,10 +2438,15 @@ async function injectPromoBanner() {
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 <h3>${item3.Name}</h3>
-                                 <p>${item3.ProductionYear || ''}</p>
+                                 ${item3.ImageTags && item3.ImageTags.Logo ? `<img src="${getLogo(item3)}" class="promo-logo-small" style="display:block; max-height: 80px; width: auto; margin-bottom: 10px;">` : `<h3>${item3.Name}</h3>`}
+                                 ${getMetaHtml(item3)}
                                  <p class="desc">${item3.Overview || ''}</p>
-                                 <button class="btn-orange">START WATCHING</button>
+                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto;">
+                                     <button class="btn-watch" onclick="location.href='${getLink(item3)}'; event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <span class="material-icons">info</span>
+                                     </button>
+                                 </div>
                              </div>
                              <img src="${getThumb(item3)}" class="promo-poster" onerror="this.src='${getBackdrop(item3)}'">
                          </div>
@@ -2530,12 +2560,18 @@ function setupHoverCards() {
 
     document.body.addEventListener('mouseout', (e) => {
         // Check if we left the card AND the overlay
-        // This is tricky with body append. we need a check.
-        // Simplified: If we hover mainly on the overlay, we keep it.
-        // If we leave overlay and card, we close.
         const toElement = e.relatedTarget;
-        if (_activeOverlay && !toElement?.closest('.legitflix-hover-overlay') && !toElement?.closest('.card')) {
-            closeHoverCard();
+
+        // FIX: Close if we leave to something that isn't the overlay AND
+        // (isn't a card OR is a DIFFERENT card than the active one)
+        const toOverlay = toElement?.closest('.legitflix-hover-overlay');
+        const toCard = toElement?.closest('.card');
+
+        if (_activeOverlay && !toOverlay) {
+            // If not going to a card, OR going to a different card
+            if (!toCard || (toCard.dataset.id !== _activeOverlay.dataset.sourceId)) {
+                closeHoverCard();
+            }
         }
     });
 
