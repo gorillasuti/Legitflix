@@ -2421,12 +2421,12 @@ async function injectPromoBanner() {
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item2)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 ${item2.ImageTags && item2.ImageTags.Logo ? `<img src="${getLogo(item2)}" class="promo-logo-small" style="display:block; max-height: 80px; width: auto; margin-bottom: 10px;">` : `<h3>${item2.Name}</h3>`}
+                                 ${item2.ImageTags && item2.ImageTags.Logo ? `<img src="${getLogo(item2)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item2.Name}</h3>`}
                                  ${getMetaHtml(item2)}
                                  <p class="desc">${item2.Overview || ''}</p>
-                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto;">
+                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
                                      <button class="btn-watch" onclick="location.href='${getLink(item2)}'; event.stopPropagation();">Watch Now</button>
-                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
                                  </div>
@@ -2438,12 +2438,12 @@ async function injectPromoBanner() {
                     <div class="promo-item promo-item-small" onclick="location.href='${getLink(item3)}'" style="cursor: pointer;">
                          <div class="promo-split">
                              <div class="promo-text">
-                                 ${item3.ImageTags && item3.ImageTags.Logo ? `<img src="${getLogo(item3)}" class="promo-logo-small" style="display:block; max-height: 80px; width: auto; margin-bottom: 10px;">` : `<h3>${item3.Name}</h3>`}
+                                 ${item3.ImageTags && item3.ImageTags.Logo ? `<img src="${getLogo(item3)}" class="promo-logo-small" style="display:block; max-height: 80px; width: 75%; margin-bottom: 8px;">` : `<h3>${item3.Name}</h3>`}
                                  ${getMetaHtml(item3)}
                                  <p class="desc">${item3.Overview || ''}</p>
-                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto;">
+                                 <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
                                      <button class="btn-watch" onclick="location.href='${getLink(item3)}'; event.stopPropagation();">Watch Now</button>
-                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                     <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
                                  </div>
