@@ -2537,9 +2537,17 @@
                 fetchSeasons(seriesId),
                 fetchSimilar(seriesId),
                 // Fetch 1 item from NextUp to get the SeasonId
-                fetch(`/Shows/NextUp?SeriesId=${seriesId}&UserId=${auth.UserId}&Limit=1&Fields=SeasonId,SeasonName`)
-                    .then(r => r.json())
-                    .catch(() => ({}))
+                fetch(`/Shows/NextUp?SeriesId=${seriesId}&UserId=${auth.UserId}&Limit=1&Fields=SeasonId,SeasonName`, {
+                    headers: { 'X-Emby-Token': auth.AccessToken }
+                })
+                    .then(r => {
+                        if (r.ok) return r.json();
+                        throw new Error(r.statusText);
+                    })
+                    .catch(e => {
+                        log('[Auto-Season] NextUp fetch failed:', e);
+                        return {};
+                    })
             ]);
 
             if (!seriesData || seasons.length === 0) {
