@@ -5849,7 +5849,7 @@ monitorPageLoop();/**
             html += createPlayerSection(movieData);
 
             // Format people for display
-            const people = formatPeople(movieData.People);
+            const people = movieData.People ? formatPeople(movieData.People) : [];
             if (people.length > 0) html += createCastSection(people);
 
             if (similar && similar.length > 0) html += createSimilarSection(similar);
