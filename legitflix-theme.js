@@ -3982,12 +3982,81 @@ function tagNativeHoverSections() {
     });
 }
 
+// --- CUSTOM HISTORY REMOVE BUTTON ---
+function injectHistoryRemoveButtons() {
+    // Only target known "History" sections
+    const historySections = Array.from(document.querySelectorAll('.native-hover-section')).filter(section => {
+        const title = (section.querySelector('.sectionTitle')?.textContent || '').toLowerCase();
+        const testId = (section.getAttribute('data-test-id') || '').toLowerCase();
+        return title.includes('history') || title.includes('recently played') || testId.includes('history');
+    });
+
+    historySections.forEach(section => {
+        const cards = section.querySelectorAll('.card');
+        cards.forEach(card => {
+            // Check if button already exists
+            if (card.querySelector('.custom-history-remove')) return;
+
+            const overlay = card.querySelector('.cardOverlay');
+            if (!overlay) return;
+
+            // Create Button
+            const btn = document.createElement('button');
+            btn.className = 'cardOverlayButton cardOverlayButton-tr itemAction custom-history-remove'; // Top Right
+            btn.type = 'button';
+            btn.title = 'Remove from History';
+            btn.setAttribute('data-action', 'custom-remove');
+            btn.innerHTML = '<span class="material-icons cardOverlayButtonIcon">delete_outline</span>';
+
+            // Custom positioning/styles to ensure visibility
+            btn.style.position = 'absolute';
+            btn.style.top = '5px';
+            btn.style.right = '5px';
+            btn.style.zIndex = '100';
+            btn.style.display = 'flex'; // Enforce flex
+            btn.style.pointerEvents = 'auto'; // Enforce clickability
+
+            // Event Listener
+            btn.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const id = card.getAttribute('data-id');
+                if (!id || !window.ApiClient) return;
+
+                const icon = btn.querySelector('.material-icons');
+                if (icon) icon.textContent = 'hourglass_empty'; // Loading
+
+                try {
+                    const userId = window.ApiClient.getCurrentUserId();
+                    await window.ApiClient.markUnplayed(userId, id);
+                    console.log('[LegitFlix] Marked as Unplayed:', id);
+
+                    // Remove card from UI
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        card.remove();
+                    }, 300);
+                } catch (err) {
+                    console.error('[LegitFlix] Failed to remove from history:', err);
+                    if (icon) icon.textContent = 'error_outline';
+                }
+            };
+
+            overlay.appendChild(btn);
+        });
+    });
+}
+
 // --- CONTINUOUS MONITORING ---
 // Jellyfin is a SPA; we must check URL changes periodically to inject Heroes
 function monitorPageLoop() {
     pollForUI();      // Restore Nav, Prefs, Jellyseerr
     injectMediaBar(); // Handles Home and Detail page logic
-    tagNativeHoverSections(); // Restore "Remove" buttons for specific sections
+    tagNativeHoverSections(); // Restore "Remove" buttons for specific sections (if native exists)
+    injectHistoryRemoveButtons(); // Inject custom "Remove" buttons for History rows
 
     // Series Detail monitoring now handled by the loaded module (LFSeriesDetail.startMonitoring)
     // The module auto-starts when it detects ApiClient
