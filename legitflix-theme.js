@@ -401,7 +401,7 @@ function createMediaBarHTML(items) {
 
         const title = item.Name;
         const desc = item.Overview || '';
-        const playOnClick = `window.legitFlixPlay('${actionId}')`;
+        const playOnClick = `window.legitFlixPlay('${actionId}', event)`;
         const infoOnClick = `window.openInfoModal('${item.Id}')`; // Always open Modal for Series/Movie parent
 
         // Logo vs Text Logic
@@ -2406,7 +2406,7 @@ async function injectPromoBanner() {
                      ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
                      <p class="promo-desc">${item1.Overview || ''}</p>
                      <div class="promo-actions">
-                         <button class="btn-watch" onclick="window.legitFlixPlay('${item1.Id}'); event.stopPropagation();">WATCH NOW</button>
+                         <button class="btn-watch" onclick="window.legitFlixPlay('${item1.Id}', event);">WATCH NOW</button>
                          <button class="btn-info" onclick="window.openInfoModal('${item1.Id}'); event.stopPropagation();">
                             <span class="material-icons" style="font-size: 1.2rem;">info</span> More Info
                          </button>
@@ -2425,7 +2425,7 @@ async function injectPromoBanner() {
                                  ${getMetaHtml(item2)}
                                  <p class="desc">${item2.Overview || ''}</p>
                                  <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item2.Id}'); event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item2.Id}', event);">Watch Now</button>
                                      <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
@@ -2442,7 +2442,7 @@ async function injectPromoBanner() {
                                  ${getMetaHtml(item3)}
                                  <p class="desc">${item3.Overview || ''}</p>
                                  <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item3.Id}'); event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item3.Id}', event);">Watch Now</button>
                                      <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
@@ -3713,7 +3713,7 @@ window.openInfoModal = async function (id) {
                         ${logoHtml}
                         
                         <div class="info-actions">
-                            <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}')">
+                            <button class="btn-play-hero" onclick="window.legitFlixPlay('${details.Id}', event)">
                                 <span class="material-icons">play_arrow</span> Play
                             </button>
                             
@@ -3722,7 +3722,7 @@ window.openInfoModal = async function (id) {
                                     type="button" 
                                     class="button-flat btnPlayTrailer detailButton emby-button btn-native-trailer" 
                                     title="Play Trailer"
-                                    onclick="window.legitFlixPlayTrailer('${details.Id}')"
+                                    onclick="window.legitFlixPlayTrailer('${details.Id}', event)"
                                     data-item-id="${details.Id}">
                                 <div class="detailButton-content">
                                     <span class="material-icons detailButton-icon theaters" aria-hidden="true"></span>
@@ -3950,48 +3950,80 @@ function monitorPageLoop() {
 monitorPageLoop();
 
 // --- PLAYBACK HELPER (Direct Play via Jellyfin Internals) ---
-window.legitFlixPlay = function (itemId) {
+// --- PLAYBACK HELPER (Navigation Fallback Strategy) ---
+window.legitFlixPlay = function (itemId, event) {
+    if (event) {
+        // Prevent container clicks
+        event.preventDefault();
+        event.stopPropagation();
+    }
     console.log('[LegitFlix] legitFlixPlay: Requesting playback for', itemId);
 
-    if (typeof require === 'undefined') {
-        console.error('[LegitFlix] legitFlixPlay: AMD require not found! Cannot load playbackManager.');
-        return;
-    }
-
-    // Use Jellyfin's AMD require to get the playbackManager
-    require(['playbackManager'], function (playbackManager) {
-        if (!playbackManager) {
-            console.error('[LegitFlix] legitFlixPlay: playbackManager module not found!');
-            // Fallback: Try to find a global?
-            return;
+    // 1. Try Global Manager (if exposed)
+    const deepLinkPlay = () => {
+        // Fallback: Navigate to Details with Auto-Play param
+        console.log('[LegitFlix] legitFlixPlay: Manager not found. Using Navigation Fallback.');
+        const currentHash = window.location.hash;
+        if (currentHash.includes(itemId) && currentHash.includes('startPlaying=true')) {
+            window.location.reload();
+        } else {
+            // Use /#!/details format which is standard for Jellyfin Web
+            window.location.hash = `#!/details?id=${itemId}&startPlaying=true`;
         }
+    };
 
-        console.log('[LegitFlix] legitFlixPlay: playbackManager found. Calling play({ ids: [' + itemId + '] })');
-        playbackManager.play({
-            ids: [itemId]
-        });
-    });
+    if (window.playbackManager) {
+        window.playbackManager.play({ ids: [itemId] });
+    } else if (window.Jellyfin && window.Jellyfin.playbackManager) {
+        window.Jellyfin.playbackManager.play({ ids: [itemId] });
+    } else {
+        // 2. Try Require (Last ditch)
+        if (typeof require !== 'undefined') {
+            require(['playbackManager'], function (playbackManager) {
+                if (playbackManager) {
+                    playbackManager.play({ ids: [itemId] });
+                } else {
+                    deepLinkPlay();
+                }
+            }, function (err) {
+                deepLinkPlay();
+            });
+        } else {
+            deepLinkPlay();
+        }
+    }
 };
 
-window.legitFlixPlayTrailer = function (itemId) {
-    console.log('[LegitFlix] legitFlixPlayTrailer: Requesting trailer for', itemId);
-
-    if (typeof require === 'undefined') {
-        console.error('[LegitFlix] legitFlixPlayTrailer: AMD require not found!');
-        return;
+window.legitFlixPlayTrailer = function (itemId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
-
-    require(['playbackManager'], function (playbackManager) {
-        if (!playbackManager) {
-            console.error('[LegitFlix] legitFlixPlayTrailer: playbackManager module not found!');
-            return;
-        }
-
-        playbackManager.playTrailer({
-            Id: itemId
-        });
-    });
+    window.location.hash = `#!/details?id=${itemId}`;
 };
+
+// --- AUTO-PLAY CHECKER ---
+function checkAutoPlay() {
+    if (window.location.hash.includes('&startPlaying=true')) {
+        // Find Native Play/Resume Button
+        // Try multiple selectors
+        const btn = document.querySelector('.btnPlay') ||
+            document.querySelector('.btnResume') ||
+            document.querySelector('[data-type="Episode"] .itemAction[data-action="play"]') ||
+            document.querySelector('[is="emby-playbutton"]');
+
+        if (btn) {
+            console.log('[LegitFlix] Auto-Play: Button found! Clicking...');
+            btn.click();
+
+            // Cleanup URL
+            const cleanUrl = window.location.hash.replace('&startPlaying=true', '');
+            history.replaceState(null, '', cleanUrl);
+        }
+    }
+}
+setInterval(checkAutoPlay, 800); // Check periodically
+
 
 // --- EPISODE CLICK INTERCEPTION (Direct Play for Episode Rows) ---
 // Hijack clicks on episode list items to skip the detail screen and play immediately
