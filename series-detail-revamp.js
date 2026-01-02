@@ -2554,13 +2554,29 @@
 
             if (nextUpRes && nextUpRes.Items && nextUpRes.Items.length > 0) {
                 const nextUpItem = nextUpRes.Items[0];
-                // Try to find by ID
-                const foundIndex = seasons.findIndex(s => s.id === nextUpItem.SeasonId);
+                const nextUpSeasonId = nextUpItem.SeasonId;
+                const nextUpSeasonName = nextUpItem.SeasonName;
+
+                log('[Auto-Season] NextUp Found:', nextUpItem.Name, '| SeasonId:', nextUpSeasonId, '| SeasonName:', nextUpSeasonName);
+
+                // Strategy 1: Find by ID (Exact)
+                let foundIndex = seasons.findIndex(s => s.id === nextUpSeasonId);
+
+                // Strategy 2: Find by Name (Fallback)
+                if (foundIndex === -1 && nextUpSeasonName) {
+                    log('[Auto-Season] ID match failed. Trying Name match...');
+                    foundIndex = seasons.findIndex(s => s.name === nextUpSeasonName);
+                }
+
                 if (foundIndex !== -1) {
                     targetSeasonIndex = foundIndex;
                     targetSeason = seasons[foundIndex];
-                    log(`[Auto-Season] Selected "${targetSeason.name}" based on NextUp: ${nextUpItem.Name}`);
+                    log(`[Auto-Season] SUCCESS: Selected "${targetSeason.name}" (Index: ${foundIndex})`);
+                } else {
+                    log('[Auto-Season] FAILED: Could not find matching season in list:', seasons);
                 }
+            } else {
+                log('[Auto-Season] No NextUp item returned by API.');
             }
 
             // Expose vars globally for SubtitleManager fallback
