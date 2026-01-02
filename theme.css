@@ -284,7 +284,6 @@ h4,
 
 .profile-avatar-container {
     position: absolute;
-    /* top: 60px; REMOVED per user request */
     margin-top: -80px;
     /* Overlap the banner bottom */
     margin-left: 20px;
@@ -781,7 +780,6 @@ h4,
     color: white !important;
 }
 
-/* User Requested Global Accent Overrides */
 .emby-checkbox:checked+span+.checkboxOutline,
 .itemProgressBarForeground {
     background-color: var(--clr-accent) !important;
@@ -2268,8 +2266,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 .hero-overlay {
     position: absolute;
     inset: 0;
-    /* USER REQUEST: Strong gradient from left (background color) to transparent */
-    /* Adjust usage of local variables if needed, or hardcode dark theme color */
     background: linear-gradient(90deg,
             rgba(16, 16, 16, 1) -10%,
             rgba(16, 16, 16, 0.95) 27.5%,
@@ -3628,8 +3624,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     text-decoration: underline;
 }
 
-/* --- REFINED MODAL STYLES (User Request) --- */
-
 /* 1. Mute Button Alignment */
 .video-mute-overlay {
     position: absolute;
@@ -3905,7 +3899,6 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     width: 32px;
     /* Initial Width */
     height: 8px;
-    /* Thicker (User Req) */
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     overflow: hidden;
@@ -3985,7 +3978,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     }
 
     /* =========================================
-   WORKING THEME OVERRIDES (Added via User Request)
+   WORKING THEME OVERRIDES
    ========================================= */
 
     /* Variables */

@@ -8,7 +8,6 @@
 console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- FORCE SLEEK SCROLLBAR (JS Injection) ---
-// User requested "Use JS freely" to fix stubborn scrollbars.
 setTimeout(() => {
     try {
         const existing = document.getElementById('legitflix-scrollbar-override');
@@ -276,7 +275,7 @@ async function fetchMediaBarItems(retryCount = 0) {
 
     const fields = 'PrimaryImageAspectRatio,Overview,BackdropImageTags,ImageTags,ProductionYear,OfficialRating,CommunityRating,RunTimeTicks,Genres,MediaStreams,UserData';
 
-    // User Request: "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
+    // "Latest 6 items after promo (3)" -> Fetch 20, Slice in JS (Safer)
     const url = `/Users/${auth.UserId}/Items?IncludeItemTypes=${CONFIG.heroMediaTypes}&Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=20&Fields=${fields}&ImageTypeLimit=1&EnableImageTypes=Backdrop,Primary,Logo`;
 
     try {
@@ -354,7 +353,6 @@ function createMediaBarHTML(items) {
         }
         // Simple heuristic: If multiple audio, likely Dub? Or if language matches user? 
         // For now, just show "Sub | Dub" if both exist, or specific.
-        // User requested strict text "Sub | Dub" if applicable.
         const hasSub = subLangs.size > 0;
         const hasDub = audioLangs.size > 1; // Assuming >1 audio track (Original + Dub) implies Dub availability
         const subDubText = (hasSub && hasDub) ? 'Sub | Dub' : (hasSub ? 'Sub' : 'Dub');
@@ -1872,7 +1870,6 @@ async function injectCustomNav() {
                         link.className = 'nav-link';
 
                         const serverId = view.ServerId || window.ApiClient.serverId();
-                        // User requested #/list format
                         link.href = `#!/list?parentId=${view.Id}&serverId=${serverId}`;
 
                         // Map collection types to icons
@@ -2121,7 +2118,6 @@ async function pollForUI() {
                 };
 
                 // Insert BEFORE Admin Tabs (Dashboard/Metadata) if present, else Logout
-                // User Request: Advanced - Admin tabs - Sign out
                 const dashboardTab = navTabs.querySelector('a[href*="dashboard"]');
                 const metadataTab = navTabs.querySelector('a[href*="metadata"]');
                 const logoutTab = navTabs.querySelector('.logout-tab');
@@ -2279,6 +2275,11 @@ let _promoInjectionInProgress = false; // Guard for race conditions
 let _injectedBanner = false; // Track if banner already injected
 
 async function injectPromoBanner() {
+    // RESET CHECK: If flag says injected, but element is missing (SPA navigation cleared it), reset flag.
+    if (_injectedBanner && !document.querySelector('.legitflix-promo-container')) {
+        _injectedBanner = false;
+    }
+
     if (_promoInjectionInProgress || _injectedBanner) return;
 
     // Strict Home Page Check (Relaxed for root)
@@ -2375,7 +2376,7 @@ async function injectPromoBanner() {
 
         // 5. Build HTML
         const html = `
-            <div class="legitflix-promo-container" style="opacity: 0; animation: fadeIn 1s forwards;">
+            <div class="legitflix-promo-container">
                 <!-- Top Banner (Item 1) -->
                 <div class="promo-item promo-item-large" onclick="location.href='${getLink(item1)}'" style="cursor: pointer;">
                     <img src="${mainBgUrl}" class="promo-bg">
@@ -3747,9 +3748,8 @@ window.openInfoModal = async function (id) {
     }
 
     // Fav Button
-    // ...
 
-    // --- IDLE ANIMATION LOGIC (User Request) ---
+    // --- IDLE ANIMATION LOGIC  ---
     const heroContent = modal.querySelector('.info-hero-content');
     const videoContainer = modal.querySelector('.info-video-container');
     let idleTimer;
