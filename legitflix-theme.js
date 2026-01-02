@@ -2751,6 +2751,9 @@ async function createHoverCard(card, id) {
             const method = isFav ? 'POST' : 'DELETE';
             fetch(`${server}/Users/${userId}/FavoriteItems/${id}?api_key=${token}`, { method });
 
+            // Realtime Update
+            if (window.legitFlixUpdateIndicators) window.legitFlixUpdateIndicators(id, 'fav', isFav);
+
         } else if (type === 'played') {
             isPlayed = newState; // Update closure var
             if (details.UserData) details.UserData.Played = isPlayed; // Update Cache
@@ -2761,6 +2764,9 @@ async function createHoverCard(card, id) {
 
             const method = isPlayed ? 'POST' : 'DELETE';
             fetch(`${server}/Users/${userId}/PlayedItems/${id}?api_key=${token}`, { method });
+
+            // Realtime Update
+            if (window.legitFlixUpdateIndicators) window.legitFlixUpdateIndicators(id, 'played', isPlayed);
         }
     };
 
@@ -3815,6 +3821,36 @@ try {
 
 // --- LOAD SERIES DETAIL REVAMP MODULE ---
 // This dynamically loads the series-detail-revamp.js module
+// --- REALTIME INDICATOR UPDATER ---
+window.legitFlixUpdateIndicators = function (id, type, isActive) {
+    console.log(`[LegitFlix] Realtime Update: ${id} - ${type} = ${isActive}`);
+    // Find all cards for this item
+    const cards = document.querySelectorAll(`.card[data-id="${id}"]`);
+    cards.forEach(card => {
+        // 1. Update Image Container Indicators
+        const imgContainer = card.querySelector('.cardImageContainer');
+        if (imgContainer) {
+            // Remove existing specific indicator
+            const selector = type === 'fav' ? '.legit-indicator.fav' : '.legit-indicator.played';
+            const existing = imgContainer.querySelector(selector);
+            if (existing) existing.remove();
+
+            // Add if active
+            if (isActive) {
+                const ind = document.createElement('div');
+                if (type === 'fav') {
+                    ind.className = 'legit-indicator fav';
+                    ind.innerHTML = '<span class="material-icons">bookmark</span>';
+                } else {
+                    ind.className = 'legit-indicator played';
+                    ind.innerHTML = '<span class="material-icons">check_circle</span>';
+                }
+                imgContainer.appendChild(ind);
+            }
+        }
+    });
+};
+
 (function loadSeriesDetailModule() {
     // Check if already loaded
     if (window.LFSeriesDetail) {

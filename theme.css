@@ -5465,6 +5465,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     justify-content: center !important;
     gap: 6px !important;
     transition: all 0.2s ease !important;
+    margin-top: 1rem !important;
 }
 
 .legitflix-promo-container .btn-info:hover {
@@ -5505,33 +5506,71 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) !important;
     pointer-events: none !important;
     /* Let clicks pass to card */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
 /* Favorite - Orange Bookmark (Top Right) */
+/* SVG-less styling using Border trick or Clip Path for Ribbon shape */
 .legit-indicator.fav {
-    top: -6px !important;
-    right: 10px !important;
-    color: var(--clr-accent) !important;
+    top: -4px !important;
+    /* Hang slightly off top */
+    right: 12px !important;
+    color: white !important;
+    background: var(--clr-accent) !important;
+    width: 24px !important;
+    height: 36px !important;
+    display: flex !important;
+    justify-content: center !important;
+    padding-top: 4px !important;
+
+    /* Ribbon Shape */
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+    /* Note: clip-path clips shadow too generally, but filter handles it */
 }
 
 .legit-indicator.fav .material-icons {
-    font-size: 36px !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
 }
 
 /* Played - Green Check (Top Left) */
 .legit-indicator.played {
-    top: 10px !important;
-    left: 10px !important;
-    color: #2ecc71 !important;
+    top: 8px !important;
+    left: 8px !important;
+    color: white !important;
+    background: #2ecc71 !important;
     /* Vivid Green */
-    background: rgba(0, 0, 0, 0.5) !important;
+    width: 24px !important;
+    height: 24px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 2px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4) !important;
 }
 
 .legit-indicator.played .material-icons {
-    font-size: 20px !important;
+    font-size: 16px !important;
+}
+
+/* Animation for Realtime Update */
+@keyframes indicatorPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    80% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.legit-indicator {
+    animation: indicatorPop 0.3s ease-out forwards;
 }
