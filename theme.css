@@ -5367,6 +5367,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 /* Fix Labels */
 .legitflix-categories-section .cardText {
     text-align: center !important;
+    display: none !important;
     margin-top: 0.5em !important;
 }
 
@@ -5415,7 +5416,7 @@ body.legitflix-selection-mode .actionSheetMenuItem:hover .actionSheetItemText {
 
 .promo-actions {
     display: flex !important;
-    align-items: center !important;
+    align-items: flex-end !important;
     gap: 1rem !important;
     margin-top: 10px !important;
     justify-content: flex-end !important;

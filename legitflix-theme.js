@@ -2406,7 +2406,7 @@ async function injectPromoBanner() {
                      ${item1.ImageTags && item1.ImageTags.Logo ? `<img src="${getLogo(item1)}" class="promo-logo" style="display:block;">` : `<h2 class="promo-title">${item1.Name}</h2>`}
                      <p class="promo-desc">${item1.Overview || ''}</p>
                      <div class="promo-actions">
-                         <button class="btn-watch" onclick="location.href='${getLink(item1)}'; event.stopPropagation();">WATCH NOW</button>
+                         <button class="btn-watch" onclick="window.legitFlixPlay('${item1.Id}'); event.stopPropagation();">WATCH NOW</button>
                          <button class="btn-info" onclick="window.openInfoModal('${item1.Id}'); event.stopPropagation();">
                             <span class="material-icons" style="font-size: 1.2rem;">info</span> More Info
                          </button>
@@ -2425,7 +2425,7 @@ async function injectPromoBanner() {
                                  ${getMetaHtml(item2)}
                                  <p class="desc">${item2.Overview || ''}</p>
                                  <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="location.href='${getLink(item2)}'; event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item2.Id}'); event.stopPropagation();">Watch Now</button>
                                      <button class="btn-info-circle" onclick="window.openInfoModal('${item2.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
@@ -2442,7 +2442,7 @@ async function injectPromoBanner() {
                                  ${getMetaHtml(item3)}
                                  <p class="desc">${item3.Overview || ''}</p>
                                  <div class="promo-small-actions" style="display: flex; gap: 10px; margin-top: auto; align-items: flex-end">
-                                     <button class="btn-watch" onclick="location.href='${getLink(item3)}'; event.stopPropagation();">Watch Now</button>
+                                     <button class="btn-watch" onclick="window.legitFlixPlay('${item3.Id}'); event.stopPropagation();">Watch Now</button>
                                      <button class="btn-info-circle" onclick="window.openInfoModal('${item3.Id}'); event.stopPropagation();" title="More Info" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                         <span class="material-icons">info</span>
                                      </button>
