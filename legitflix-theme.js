@@ -3948,3 +3948,65 @@ function monitorPageLoop() {
 
 // Start the loop
 monitorPageLoop();
+
+// --- PLAYBACK HELPER (Direct Play via Jellyfin Internals) ---
+window.legitFlixPlay = function (itemId) {
+    console.log('[LegitFlix] legitFlixPlay: Requesting playback for', itemId);
+
+    // Use Jellyfin's AMD require to get the playbackManager
+    require(['playbackManager'], function (playbackManager) {
+        if (!playbackManager) {
+            console.error('[LegitFlix] legitFlixPlay: playbackManager module not found!');
+            return;
+        }
+
+        playbackManager.play({
+            ids: [itemId]
+        });
+        console.log('[LegitFlix] legitFlixPlay: playbackManager.play called.');
+    });
+};
+
+window.legitFlixPlayTrailer = function (itemId) {
+    console.log('[LegitFlix] legitFlixPlayTrailer: Requesting trailer for', itemId);
+
+    require(['playbackManager'], function (playbackManager) {
+        if (!playbackManager) {
+            console.error('[LegitFlix] legitFlixPlayTrailer: playbackManager module not found!');
+            return;
+        }
+
+        playbackManager.playTrailer({
+            Id: itemId
+        });
+    });
+};
+
+// --- EPISODE CLICK INTERCEPTION (Direct Play for Episode Rows) ---
+// Hijack clicks on episode list items to skip the detail screen and play immediately
+document.addEventListener('click', function (e) {
+    // 1. Find the closest LIST ITEM that is an EPISODE
+    const episodeItem = e.target.closest('.listItem[data-type="Episode"], .card[data-type="Episode"]');
+
+    // 2. If valid episode item found...
+    if (episodeItem) {
+        const id = episodeItem.getAttribute('data-id');
+        if (!id) return;
+
+        // 3. IGNORE if clicking a checklist/menu/interactive element inside the item
+        if (e.target.closest('.customCheckbox') ||
+            e.target.closest('.itemAction') ||
+            e.target.closest('.cardOverlayButton') || // Hover card internal buttons
+            e.target.closest('.listViewDragHandle') ||
+            e.target.closest('.btn-more')) {
+            return;
+        }
+
+        // 4. PREVENT DEFAULT NAVIGATION
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log('[LegitFlix] Episode Click Intercepted: Playing', id);
+        window.legitFlixPlay(id);
+    }
+}, true); // Capture phase to beat other listeners if necessary
