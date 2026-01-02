@@ -1234,8 +1234,9 @@
      * Create episodes section HTML
      * @param {Array} seasons - Season data for selector
      * @param {Array} episodes - Episodes for current season
+     * @param {number} selectedSeasonIndex - Index of currently selected season
      */
-    function createEpisodesSection(seasons, episodes) {
+    function createEpisodesSection(seasons, episodes, selectedSeasonIndex = 0) {
         // ... (truncated for brevity, keeping identifying logic same) ...
         // Find first unwatched episode logic...
         let targetEpisode = null;
@@ -1260,7 +1261,7 @@
             <hr class="lf-section-divider">
             <section class="lf-content-section" id="lfEpisodesSection">
                 <div class="lf-episodes-header">
-                    ${createSeasonSelector(seasons)}
+                    ${createSeasonSelector(seasons, selectedSeasonIndex)}
                     <div class="lf-filter-controls">
                         ${createLanguageSelector(audioStreams, subtitleStreams, targetEpisodeId)}
                         
@@ -2124,7 +2125,7 @@
      * @param {HTMLElement} targetContainer - Container to inject into
      */
     function renderSeriesDetailPage(data, targetContainer) {
-        const { series, seasons, episodes, people, similar } = data;
+        const { series, seasons, episodes, people, similar, initialSeasonIndex = 0 } = data;
 
         // Debug initial episodes data
         if (episodes && episodes.length > 0) {
@@ -2140,7 +2141,7 @@
         const html = `
             <div class="lf-series-container" id="${CONFIG.containerId}">
                 ${createHeroSection(series)}
-                ${createEpisodesSection(seasons, episodes)}
+                ${createEpisodesSection(seasons, episodes, initialSeasonIndex)}
                 ${createCastSection(people)}
                 ${createSimilarSection(similar)}
             </div>
@@ -2530,11 +2531,15 @@
         log('Detected Series page:', seriesId);
 
         try {
-            // Fetch all data
-            const [seriesData, seasons, similar] = await Promise.all([
+            // Fetch all data (Plus NextUp for auto-season select)
+            const [seriesData, seasons, similar, nextUpRes] = await Promise.all([
                 fetchSeriesData(seriesId),
                 fetchSeasons(seriesId),
-                fetchSimilar(seriesId)
+                fetchSimilar(seriesId),
+                // Fetch 1 item from NextUp to get the SeasonId
+                fetch(`/Shows/NextUp?SeriesId=${seriesId}&UserId=${auth.UserId}&Limit=1&Fields=SeasonId,SeasonName`)
+                    .then(r => r.json())
+                    .catch(() => ({}))
             ]);
 
             if (!seriesData || seasons.length === 0) {
@@ -2543,14 +2548,27 @@
                 return;
             }
 
-            // Fetch episodes for first season
-            const firstSeason = seasons[0];
+            // --- AUTO-SELECT SEASON LOGIC ---
+            let targetSeasonIndex = 0;
+            let targetSeason = seasons[0];
+
+            if (nextUpRes && nextUpRes.Items && nextUpRes.Items.length > 0) {
+                const nextUpItem = nextUpRes.Items[0];
+                // Try to find by ID
+                const foundIndex = seasons.findIndex(s => s.id === nextUpItem.SeasonId);
+                if (foundIndex !== -1) {
+                    targetSeasonIndex = foundIndex;
+                    targetSeason = seasons[foundIndex];
+                    log(`[Auto-Season] Selected "${targetSeason.name}" based on NextUp: ${nextUpItem.Name}`);
+                }
+            }
 
             // Expose vars globally for SubtitleManager fallback
             window.LF_CURRENT_SEASONS = seasons;
             window.LF_CURRENT_SERIES = seriesData;
 
-            const episodes = await fetchEpisodes(seriesId, firstSeason.id);
+            // Fetch episodes for the TARGET season
+            const episodes = await fetchEpisodes(seriesId, targetSeason.id);
 
             // Format people for display
             const people = formatPeople(seriesData.people);
@@ -2578,13 +2596,14 @@
                 targetContainer.insertBefore(wrapper, targetContainer.firstChild);
             }
 
-            // Render our UI
+            // Render our UI with initialSeasonIndex
             renderSeriesDetailPage({
                 series: seriesData,
                 seasons: seasons,
                 episodes: episodes,
                 people: people,
-                similar: similar
+                similar: similar,
+                initialSeasonIndex: targetSeasonIndex
             }, wrapper);
 
             // Wire up dynamic buttons after render
