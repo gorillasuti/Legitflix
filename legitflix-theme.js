@@ -6227,6 +6227,8 @@ monitorPageLoop();/**
                     });
                 }
             }
+        } else if (hash.includes('login')) {
+            injectLoginRevamp();
         } else {
             currentMovieId = null;
             const container = document.getElementById(CONFIG.containerId);
@@ -6535,7 +6537,7 @@ monitorPageLoop();/**
     };
 
     // Start after a short delay to let Jellyfin initialize
-    if (window.location.href.includes('login.html')) {
+    if (window.location.href.includes('login') || window.location.hash.includes('login')) {
         injectLoginRevamp();
     }
     setTimeout(checkAndStart, 1000);
