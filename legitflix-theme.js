@@ -3047,7 +3047,7 @@ function injectCustomFooter() {
     footer.innerHTML = `
             <div class="footer-content">
                 <div class="footer-logo">
-                    <span class="logo-text-legit">Legit</span><span class="logo-text-flix">Flix</span>
+                    <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix" style="height: 28px; width: auto; vertical-align: middle;">
                 </div>
                 <div class="footer-divider"></div>
                 <div class="footer-author">Created by <strong>Dani</strong></div>
@@ -3061,8 +3061,12 @@ function injectCustomFooter() {
         const windowHeight = window.innerHeight;
         const docHeight = document.documentElement.scrollHeight;
 
-        // Show if we are close to bottom (e.g. within 100px)
-        if (scrollY + windowHeight >= docHeight - 100) {
+        // Check if Home or Login page
+        const isHome = window.location.hash.includes('home');
+        const isLogin = window.location.hash.includes('login') || document.querySelector('[data-role="page"]#loginPage');
+
+        // Show if we are close to bottom (e.g. within 100px) AND on valid page
+        if ((isHome || isLogin) && scrollY + windowHeight >= docHeight - 100) {
             footer.classList.add('visible');
         } else {
             footer.classList.remove('visible');
@@ -3417,6 +3421,174 @@ monitorPageLoop();/**
     };
 
     const log = (...args) => CONFIG.debug && console.log('[LF-Movie]', ...args);
+
+    // =========================================================================
+    // LOGIN / PROFILE PAGE REVAMP
+    // =========================================================================
+
+    const LOGIN_TITLES = [
+        "Who's going on an adventure?",
+        "Ready for a story?",
+        "Pick your player.",
+        "Who's watching today?",
+        "Who's hanging out?",
+        "Time to relax.",
+        "Welcome back!",
+        "Who's in control?",
+        "Let's watch something.",
+        "Your turn.",
+        "Who's diving in?",
+        "Choose your destiny."
+    ];
+
+    const LOGIN_CSS = `
+        /* Hide Default "Who's watching" text to replace it */
+        #loginPage .sectionTitle {
+            font-size: 0 !important;
+            color: transparent !important;
+        }
+
+        /* Replaced Title Style */
+        #loginPage .sectionTitle::after {
+            content: attr(data-custom-title);
+            font-size: 2.5rem;
+            color: white;
+            font-weight: 700;
+            display: block;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        /* Profile Grid Layout */
+        #loginPage .itemsContainer {
+            justify-content: center !important;
+            gap: 40px !important;
+        }
+
+        /* Profile Card Styling */
+        #loginPage .card {
+            transform: scale(1);
+            transition: transform 0.2s ease;
+        }
+
+        #loginPage .card:hover {
+            transform: scale(1.1);
+        }
+
+        #loginPage .cardBox {
+            margin: 0 !important;
+        }
+
+        #loginPage .cardContent {
+            background: transparent !important;
+            padding: 0 !important;
+            width: 150px !important;
+        }
+
+        #loginPage .cardImageContainer {
+            width: 150px !important;
+            height: 150px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 4px solid #1f1f1f;
+        }
+
+        #loginPage .cardImageContainer::after {
+            display: none !important; 
+        }
+
+        /* Card Text */
+        #loginPage .cardText {
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            color: white !important;
+        }
+
+        /* "Add User" Button - REMOVED per request */
+
+        /* Manage Profiles Button - General Style for secondary actions */
+        #loginPage .raised.emby-button:not(.cardImageContainer):not(.btnManual):not(.btnQuick):not(.btnForgotPassword):not(.btnSelectServer) {
+            background: transparent !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            box-shadow: none !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            margin-top: 40px;
+        }
+
+        /* NATIVE LOGIN ACTIONS (Manual, Quick Connect, Forgot Password) */
+        #loginPage .readOnlyContent {
+            margin-top: 40px !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #loginPage .btnManual,
+        #loginPage .btnQuick,
+        #loginPage .btnForgotPassword,
+        #loginPage .btnSelectServer {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: rgba(255,255,255,0.6) !important;
+            font-size: 0.9rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 20px !important;
+            transition: color 0.2s ease, background 0.2s ease;
+            width: auto !important;
+            display: inline-block !important;
+        }
+
+        #loginPage .btnManual:hover,
+        #loginPage .btnQuick:hover,
+        #loginPage .btnForgotPassword:hover,
+        #loginPage .btnSelectServer:hover {
+            color: white !important;
+            background: rgba(255,255,255,0.05) !important;
+            border-radius: 4px;
+        }
+    `;
+
+    function injectLoginProfileStyles() {
+        // Check if we are on the login/profile selection page
+        const isLogin = window.location.hash.includes('selectServer') || // Mobile sometimes
+            window.location.hash.includes('login') ||
+            document.querySelector('#loginPage');
+
+        if (!isLogin) {
+            document.body.classList.remove('is-login-page');
+            const existing = document.getElementById('lf-login-styles');
+            if (existing) existing.remove();
+            return;
+        }
+
+        document.body.classList.add('is-login-page');
+
+        // 1. Inject CSS
+        if (!document.getElementById('lf-login-styles')) {
+            const style = document.createElement('style');
+            style.id = 'lf-login-styles';
+            style.textContent = LOGIN_CSS;
+            document.head.appendChild(style);
+        }
+
+        // 2. Dynamic Title
+        const titleEl = document.querySelector('#loginPage .sectionTitle');
+        if (titleEl && !titleEl.hasAttribute('data-custom-title')) {
+            const randomTitle = LOGIN_TITLES[Math.floor(Math.random() * LOGIN_TITLES.length)];
+            titleEl.setAttribute('data-custom-title', randomTitle);
+        }
+
+        // 3. Fix "Add User" Button - REMOVED per request
+        // (Card loop removed to prevent circle modification)
+    }
 
     // =========================================================================
     // CSS STYLES (Extracted from Seriespage.html)
@@ -5969,11 +6141,17 @@ monitorPageLoop();/**
      */
     function startMonitoring() {
         log('Starting monitor...');
+
+        const tick = () => {
+            checkUrl();
+            injectLoginProfileStyles();
+        };
+
         // Initial check
-        checkUrl();
+        tick();
 
         // Polling fallback
-        setInterval(checkUrl, 500);
+        setInterval(tick, 500);
     }
 
 
@@ -6060,8 +6238,11 @@ monitorPageLoop();/**
 
     // Check if we're in Jellyfin (ApiClient exists or will exist)
     const checkAndStart = () => {
-        if (window.ApiClient) {
-            log('Detected Jellyfin environment. Starting monitoring...');
+        // Run if ApiClient exists OR if we are on a login/startup page (to inject styles)
+        const isLogin = window.location.hash.includes('login') || window.location.hash.includes('selectServer');
+
+        if (window.ApiClient || isLogin) {
+            log('Detected Jellyfin environment (or Login Page). Starting monitoring...');
             startMonitoring();
         } else if (window.location.href.includes('file://')) {
             log('Detected local file mode. Call LFMovieDetail.demo() to test.');
