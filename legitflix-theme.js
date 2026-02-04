@@ -3860,10 +3860,9 @@ monitorPageLoop();/**
                     const result = await ApiClient.authenticateUserByName(this.currentUser.name, password);
                     console.log('[LF] Auth success:', result);
 
-                    // Force redirect to home/dashboard
+                    // Force redirect to root to let Jellyfin route to home
                     removeLoginOverlay();
-                    window.location.hash = '#/home';
-                    window.location.reload();
+                    window.location.href = '/';
                 } catch (e) {
                     alert('Login failed: ' + e);
                 }
