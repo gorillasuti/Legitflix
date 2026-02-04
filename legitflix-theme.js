@@ -3857,13 +3857,21 @@ monitorPageLoop();/**
                 if (!this.currentUser || !this.currentUser.id) return;
 
                 try {
+                    console.log('[LF] Attempting login for:', this.currentUser.name);
                     const result = await ApiClient.authenticateUserByName(this.currentUser.name, password);
-                    console.log('[LF] Auth success:', result);
+                    console.log('[LF] Auth Result:', result);
+                    console.log('[LF] Current Token:', ApiClient.accessToken());
 
-                    // Force redirect to root to let Jellyfin route to home
-                    removeLoginOverlay();
-                    window.location.href = '/';
+                    if (result && result.AccessToken) {
+                        console.log('[LF] Valid token received. Redirecting to root...');
+                        removeLoginOverlay();
+                        window.location.href = '/';
+                    } else {
+                        console.error('[LF] Login call succeeded but no AccessToken in result!');
+                        alert('Login error: No access token received.');
+                    }
                 } catch (e) {
+                    console.error('[LF] Login Exception:', e);
                     alert('Login failed: ' + e);
                 }
             }
