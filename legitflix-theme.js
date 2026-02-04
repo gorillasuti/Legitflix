@@ -3858,9 +3858,11 @@ monitorPageLoop();/**
 
                 try {
                     await ApiClient.authenticateUserByName(this.currentUser.name, password);
-                    // Login success -> Jellyfin will reload/redirect.
-                    // Clean up overlay immediately just in case
+
+                    // Force redirect to home/dashboard
                     removeLoginOverlay();
+                    window.location.hash = '#/home';
+                    window.location.reload();
                 } catch (e) {
                     alert('Login failed: ' + e);
                 }
