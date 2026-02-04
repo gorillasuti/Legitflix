@@ -3711,6 +3711,13 @@ monitorPageLoop();/**
 
     // 2. Main Logic to Inject
     async function injectLoginRevamp() {
+        // Wait for ApiClient if not ready
+        if (!window.ApiClient) {
+            console.log('[LF] ApiClient not ready, retrying in 100ms...');
+            setTimeout(injectLoginRevamp, 100);
+            return;
+        }
+
         // Check for existing overlay
         if (document.getElementById('lf-login-wrapper')) return;
 
@@ -3841,9 +3848,8 @@ monitorPageLoop();/**
             },
 
             showManual: function () {
-                // Removed Manual Login scene for now, revert to profiles or allow standard
-                // This button in prototype was "Manual Login", lets make it behave like toggle or standard
-                alert('Manual Login not implemented in prototype yet.');
+                // Fallback to standard Jellyfin login
+                removeLoginOverlay();
             },
 
             doLogin: async function () {
@@ -3879,9 +3885,10 @@ monitorPageLoop();/**
     async function fetchPublicUsers() {
         try {
             const users = await ApiClient.getPublicUsers();
+            console.log('[LF] Fetched users:', users);
             return users;
         } catch (e) {
-            console.error('Failed to get users', e);
+            console.error('[LF] Failed to get users', e);
             return [];
         }
     }
