@@ -3455,19 +3455,27 @@ monitorPageLoop();/**
         }
 
         /* Container Reset */
-        #loginPage {
-            width: 100%;
-            height: 100vh !important;
-            display: grid !important;
-            place-items: center !important;
-            position: relative;
+        /* OVERLAY CONTAINER */
+        #lf-login-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99999;
+            background: #141414; /* Fallback */
+            display: grid;
+            place-items: center;
             box-sizing: border-box;
             padding: 20px;
-            background: transparent !important;
+            overflow: hidden !important; 
         }
 
-        /* Hide Default Header/Footer/Backgrounds on Login */
-        .skinHeader, .skinFooter, .backgroundContainer {
+        /* Hide Default Header/Footer/Backgrounds on Login - Global override handled by overlay z-index */
+        body.lf-login-active .skinHeader, 
+        body.lf-login-active .skinFooter, 
+        body.lf-login-active .backgroundContainer,
+        body.lf-login-active .view {
             display: none !important;
         }
 
@@ -3703,36 +3711,41 @@ monitorPageLoop();/**
 
     // 2. Main Logic to Inject
     async function injectLoginRevamp() {
-        // Prevent double injection
-        if (document.getElementById('lf-login-revamp-style')) return;
+        // Check for existing overlay
+        if (document.getElementById('lf-login-wrapper')) return;
 
-        // Inject CSS
-        const style = document.createElement('style');
-        style.id = 'lf-login-revamp-style';
-        style.textContent = LOGIN_REVAMP_CSS;
-        document.head.appendChild(style);
+        // Mark body
+        document.body.classList.add('lf-login-active');
 
-        // Wait for login page to exist
-        const loginPage = document.getElementById('loginPage');
-        if (!loginPage) return;
+        // Inject CSS if missing
+        if (!document.getElementById('lf-login-revamp-style')) {
+            const style = document.createElement('style');
+            style.id = 'lf-login-revamp-style';
+            style.textContent = LOGIN_REVAMP_CSS;
+            document.head.appendChild(style);
+        }
 
-        log('Injecting Login Revamp UI...');
+        log('Injecting Login Revamp Overlay...');
+
+        // Create Container
+        const wrapper = document.createElement('div');
+        wrapper.id = 'lf-login-wrapper';
 
         // Fetch Users (Public)
         const users = await fetchPublicUsers();
 
         // Build Layout
-        const html = `
-            <!-- BRANDING -->
-            <div class="lf-login-brand">
-                <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix">
-            </div>
-
+        wrapper.innerHTML = `
             <!-- BG VIDEO -->
             <video id="bgVideo" autoplay loop muted playsinline>
                 <source src="https://media.istockphoto.com/id/1404209545/hu/vide%C3%B3/s%C3%A1rga-anim%C3%A1lt-pop-art-h%C3%A1tt%C3%A9r.mp4?s=mp4-640x640-is&k=20&c=EVnDWmq8tDTsHbkhn3ikCDDNT6Do-8rufpdLQ9-X-T4=" type="video/mp4">
             </video>
             <div id="bgOverlay"></div>
+
+            <!-- BRANDING -->
+            <div class="lf-login-brand">
+                <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix">
+            </div>
 
             <!-- SCENE 1: PROFILE SELECTION -->
             <div id="scene-profiles" class="visualLoginForm">
@@ -3760,23 +3773,20 @@ monitorPageLoop();/**
                 <div style="display: flex; justify-content: center; gap: 20px; width: 100%; margin-top: 25px; flex-wrap: wrap;">
                     <button class="button-flat" style="font-size: 0.85rem;">Forgot Password?</button>
                     <button class="button-flat" style="font-size: 0.85rem;" onclick="window.LF_Login.showProfiles()">Switch User</button>
-                    <button class="button-flat" style="font-size: 0.85rem;" onclick="window.LF_Login.showQuickConnect()">Quick Connect</button>
                 </div>
             </div>
 
-            <!-- SCENE 3: QUICK CONNECT -->
-            <div id="scene-quick-connect" class="visualLoginForm hidden">
-                <h1>Quick Connect</h1>
-                <p class="qc-instruction">
-                    Enter the code below in your authenticated device to sign in automatically.
-                </p>
-                <div class="qc-code-display" id="qcCode">Loading...</div>
-                <button class="button-flat" style="margin-top: 20px; width: 100%;" onclick="window.LF_Login.showPassword()">Cancel</button>
-            </div>
+            <!-- SCENE 3: QUICK CONNECT (Simulation) -->
+             <div id="scene-quick" class="visualLoginForm hidden">
+                 <h1>Quick Connect</h1>
+                 <p style="color: #ccc; margin-bottom: 20px;">Enter this code on your device</p>
+                 <div class="quick-connect-code">ABCD-1234</div>
+                 <button class="button-flat" onclick="window.LF_Login.showManual()">Cancel</button>
+             </div>
         `;
 
-        // Replace content completely
-        loginPage.innerHTML = html;
+        // Append to BODY
+        document.body.appendChild(wrapper);
 
         // Setup Logic
         window.LF_Login = {
@@ -3799,7 +3809,10 @@ monitorPageLoop();/**
                 }
 
                 // Focus password
-                setTimeout(() => document.getElementById('lf-password').focus(), 100);
+                setTimeout(() => {
+                    const pwInput = document.getElementById('lf-password');
+                    if (pwInput) pwInput.focus();
+                }, 100);
             },
 
             showProfiles: function () {
@@ -3814,21 +3827,23 @@ monitorPageLoop();/**
 
             showQuickConnect: function () {
                 document.querySelectorAll('.visualLoginForm').forEach(el => el.classList.add('hidden'));
-                document.getElementById('scene-quick-connect').classList.remove('hidden');
+                document.getElementById('scene-quick').classList.remove('hidden');
 
                 // Simulate Code Load (Real API would go here)
-                const qc = document.getElementById('qcCode');
-                qc.innerHTML = '<span class="material-icons" style="animation:spin 1s infinite linear">sync</span>';
+                const qc = document.querySelector('.quick-connect-code'); // Updated selector
+                if (qc) {
+                    qc.innerHTML = '<span class="material-icons" style="animation:spin 1s infinite linear">sync</span>';
 
-                setTimeout(() => {
-                    qc.textContent = Math.floor(1000 + Math.random() * 9000); // Mock
-                }, 1000);
+                    setTimeout(() => {
+                        qc.textContent = Math.floor(1000 + Math.random() * 9000); // Mock
+                    }, 1000);
+                }
             },
 
             showManual: function () {
-                // Determine if we need to reload or just show inputs for manual
-                // For now, simpler to just reload to original view or handle manual auth
-                location.reload();
+                // Removed Manual Login scene for now, revert to profiles or allow standard
+                // This button in prototype was "Manual Login", lets make it behave like toggle or standard
+                alert('Manual Login not implemented in prototype yet.');
             },
 
             doLogin: async function () {
@@ -3837,19 +3852,28 @@ monitorPageLoop();/**
 
                 try {
                     await ApiClient.authenticateUser(this.currentUser.id, password);
-                    // On success, redirect or reload
-                    window.location.href = 'index.html';
+                    // Login success -> Jellyfin will reload/redirect.
+                    // Clean up overlay immediately just in case
+                    removeLoginOverlay();
                 } catch (e) {
-                    alert('Login Failed: ' + e);
-                    document.getElementById('lf-password').value = '';
+                    alert('Login failed: ' + e);
                 }
             }
         };
 
         // Listen for Enter key
-        document.getElementById('lf-password').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') window.LF_Login.doLogin();
-        });
+        const pw = document.getElementById('lf-password');
+        if (pw) {
+            pw.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') window.LF_Login.doLogin();
+            });
+        }
+    }
+
+    function removeLoginOverlay() {
+        const wrapper = document.getElementById('lf-login-wrapper');
+        if (wrapper) wrapper.remove();
+        document.body.classList.remove('lf-login-active');
     }
 
     async function fetchPublicUsers() {
@@ -6231,6 +6255,7 @@ monitorPageLoop();/**
         } else if (hash.includes('login')) {
             injectLoginRevamp();
         } else {
+            removeLoginOverlay();
             currentMovieId = null;
             const container = document.getElementById(CONFIG.containerId);
             if (container) {
