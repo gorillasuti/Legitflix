@@ -3857,7 +3857,7 @@ monitorPageLoop();/**
                 if (!this.currentUser || !this.currentUser.id) return;
 
                 try {
-                    await ApiClient.authenticateUser(this.currentUser.id, password);
+                    await ApiClient.authenticateUserByName(this.currentUser.name, password);
                     // Login success -> Jellyfin will reload/redirect.
                     // Clean up overlay immediately just in case
                     removeLoginOverlay();
