@@ -3857,7 +3857,8 @@ monitorPageLoop();/**
                 if (!this.currentUser || !this.currentUser.id) return;
 
                 try {
-                    await ApiClient.authenticateUserByName(this.currentUser.name, password);
+                    const result = await ApiClient.authenticateUserByName(this.currentUser.name, password);
+                    console.log('[LF] Auth success:', result);
 
                     // Force redirect to home/dashboard
                     removeLoginOverlay();
