@@ -3441,7 +3441,7 @@ monitorPageLoop();/**
             width: 100%;
             height: 100%;
             object-fit: cover;
-            z-index: -2;
+            z-index: 0;
         }
 
         #bgOverlay {
@@ -3451,7 +3451,7 @@ monitorPageLoop();/**
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.6);
-            z-index: -1;
+            z-index: 1;
         }
 
         /* Container Reset */
@@ -3487,6 +3487,7 @@ monitorPageLoop();/**
         /* GLASSMORPHISM CARD */
         .visualLoginForm {
             position: relative; 
+            z-index: 10;
             margin: auto; 
             
             background: rgba(20, 20, 20, 0.65);
