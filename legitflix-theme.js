@@ -3425,965 +3425,1421 @@ monitorPageLoop();/**
 
 
     // =========================================================================
+    // LOGIN & PROFILE SEQUENCE REVAMP (Full Replacement)
+    // =========================================================================
+
+    // 1. styles from prototype
+    const LOGIN_REVAMP_CSS = `
+        /* FONT IMPORT - OUTFIT */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+        /* Background Video */
+        #bgVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        #bgOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: -1;
+        }
+
+        /* Container Reset */
+        #loginPage {
+            width: 100%;
+            height: 100vh !important;
+            display: grid !important;
+            place-items: center !important;
+            position: relative;
+            box-sizing: border-box;
+            padding: 20px;
+            background: transparent !important;
+        }
+
+        /* Hide Default Header/Footer/Backgrounds on Login */
+        .skinHeader, .skinFooter, .backgroundContainer {
+            display: none !important;
+        }
+
+        /* BRANDING */
+        .lf-login-brand {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 10;
+        }
+        .lf-login-brand img {
+            height: 28px;
+            width: auto;
+            vertical-align: middle;
+        }
+
+        /* GLASSMORPHISM CARD */
+        .visualLoginForm {
+            position: relative; 
+            margin: auto; 
+            
+            background: rgba(20, 20, 20, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* TYPOGRAPHY */
+        .visualLoginForm h1 {
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 300 !important;
+            color: #ffffff !important;
+            font-size: 1.75rem !important;
+            margin: 0 0 2rem 0;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        /* PROFILES */
+        .itemSelectionPanel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .lf-profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            width: 100px;
+            transition: transform 0.2s ease;
+        }
+        .lf-profile-card:hover {
+            transform: scale(1.05);
+        }
+
+        .lf-profile-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-bottom: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.2);
+            /* Handle image containment */
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .lf-profile-card:hover .lf-profile-img {
+            border-color: #ff6a00;
+            transform: scale(1.05);
+        }
+
+        .lf-profile-text {
+            font-family: 'Outfit', sans-serif !important;
+            font-size: 0.95rem !important;
+            font-weight: 300 !important;
+            color: #ffffff !important;
+            transition: color 0.2s ease;
+        }
+
+        /* PASSWORD ENTRY */
+        .selectedUserHeader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .selectedUserImage {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background-color: #333;
+            margin-bottom: 12px;
+            border: 2px solid #ff6a00;
+            background-size: cover;
+            background-position: center;
+        }
+        .selectedUserName {
+            font-family: 'Outfit', sans-serif !important;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .inputContainer {
+            width: 100%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .inputLabel {
+            font-family: 'Outfit', sans-serif !important;
+            font-size: 0.85rem !important;
+            color: #e0e0e0 !important;
+            margin-bottom: 8px !important;
+            display: block !important;
+            font-weight: 300 !important;
+        }
+
+        .emby-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif !important;
+            padding: 14px 16px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .emby-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ff6a00;
+            box-shadow: 0 0 0 4px rgba(255, 106, 0, 0.15);
+        }
+
+        /* BUTTONS */
+        button.raised {
+            background: linear-gradient(135deg, #ff6a00 0%, #ff8c00 100%);
+            color: white;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+        button.raised:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 106, 0, 0.35);
+            filter: brightness(1.1);
+        }
+
+        .button-flat {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 300;
+            font-size: 0.9rem;
+            margin: 0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .button-flat:hover {
+            color: #ff6a00;
+            text-decoration: underline;
+        }
+
+        /* QUICK CONNECT */
+        .qc-code-display {
+            font-family: 'Outfit', sans-serif !important;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            font-weight: 700;
+            color: #ff6a00;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .qc-instruction {
+            color: #e0e0e0;
+            text-align: center;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 300;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .hidden { display: none !important; }
+    `;
+
+    // 2. Main Logic to Inject
+    async function injectLoginRevamp() {
+        // Prevent double injection
+        if (document.getElementById('lf-login-revamp-style')) return;
+
+        // Inject CSS
+        const style = document.createElement('style');
+        style.id = 'lf-login-revamp-style';
+        style.textContent = LOGIN_REVAMP_CSS;
+        document.head.appendChild(style);
+
+        // Wait for login page to exist
+        const loginPage = document.getElementById('loginPage');
+        if (!loginPage) return;
+
+        log('Injecting Login Revamp UI...');
+
+        // Fetch Users (Public)
+        const users = await fetchPublicUsers();
+
+        // Build Layout
+        const html = `
+            <!-- BRANDING -->
+            <div class="lf-login-brand">
+                <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix">
+            </div>
+
+            <!-- BG VIDEO -->
+            <video id="bgVideo" autoplay loop muted playsinline>
+                <source src="https://media.istockphoto.com/id/1404209545/hu/vide%C3%B3/s%C3%A1rga-anim%C3%A1lt-pop-art-h%C3%A1tt%C3%A9r.mp4?s=mp4-640x640-is&k=20&c=EVnDWmq8tDTsHbkhn3ikCDDNT6Do-8rufpdLQ9-X-T4=" type="video/mp4">
+            </video>
+            <div id="bgOverlay"></div>
+
+            <!-- SCENE 1: PROFILE SELECTION -->
+            <div id="scene-profiles" class="visualLoginForm">
+                <h1>Who's watching?</h1>
+                <div class="itemSelectionPanel">
+                    ${users.map(u => createProfileCard(u)).join('')}
+                </div>
+                <button class="button-flat" style="margin-top: 40px;" onclick="window.LF_Login.showManual()">Manual Login</button>
+            </div>
+
+             <!-- SCENE 2: PASSWORD ENTRY -->
+            <div id="scene-password" class="visualLoginForm hidden">
+                <div class="selectedUserHeader">
+                    <div class="selectedUserImage" id="selectedUserImg"></div>
+                    <div class="selectedUserName" id="selectedUserName">User</div>
+                </div>
+
+                <div class="inputContainer">
+                    <label class="inputLabel" for="lf-password">Password</label>
+                    <input type="password" id="lf-password" class="emby-input" placeholder="Enter your password">
+                </div>
+
+                <button class="raised" onclick="window.LF_Login.doLogin()">Sign In</button>
+
+                <div style="display: flex; justify-content: center; gap: 20px; width: 100%; margin-top: 25px; flex-wrap: wrap;">
+                    <button class="button-flat" style="font-size: 0.85rem;">Forgot Password?</button>
+                    <button class="button-flat" style="font-size: 0.85rem;" onclick="window.LF_Login.showProfiles()">Switch User</button>
+                    <button class="button-flat" style="font-size: 0.85rem;" onclick="window.LF_Login.showQuickConnect()">Quick Connect</button>
+                </div>
+            </div>
+
+            <!-- SCENE 3: QUICK CONNECT -->
+            <div id="scene-quick-connect" class="visualLoginForm hidden">
+                <h1>Quick Connect</h1>
+                <p class="qc-instruction">
+                    Enter the code below in your authenticated device to sign in automatically.
+                </p>
+                <div class="qc-code-display" id="qcCode">Loading...</div>
+                <button class="button-flat" style="margin-top: 20px; width: 100%;" onclick="window.LF_Login.showPassword()">Cancel</button>
+            </div>
+        `;
+
+        // Replace content completely
+        loginPage.innerHTML = html;
+
+        // Setup Logic
+        window.LF_Login = {
+            currentUser: null,
+
+            selectUser: function (id, name, hasImage) {
+                this.currentUser = { id, name };
+                document.getElementById('scene-profiles').classList.add('hidden');
+                document.getElementById('scene-password').classList.remove('hidden');
+
+                // Update Password Screen
+                document.getElementById('selectedUserName').textContent = name;
+                const img = document.getElementById('selectedUserImg');
+                if (hasImage) {
+                    img.style.backgroundImage = `url('/Users/${id}/Images/Primary?fillHeight=100&fillWidth=100&quality=90')`;
+                    img.innerText = '';
+                } else {
+                    img.style.backgroundImage = 'none';
+                    img.style.backgroundColor = '#aa55aa'; // fallback color
+                }
+
+                // Focus password
+                setTimeout(() => document.getElementById('lf-password').focus(), 100);
+            },
+
+            showProfiles: function () {
+                document.querySelectorAll('.visualLoginForm').forEach(el => el.classList.add('hidden'));
+                document.getElementById('scene-profiles').classList.remove('hidden');
+            },
+
+            showPassword: function () {
+                document.querySelectorAll('.visualLoginForm').forEach(el => el.classList.add('hidden'));
+                document.getElementById('scene-password').classList.remove('hidden');
+            },
+
+            showQuickConnect: function () {
+                document.querySelectorAll('.visualLoginForm').forEach(el => el.classList.add('hidden'));
+                document.getElementById('scene-quick-connect').classList.remove('hidden');
+
+                // Simulate Code Load (Real API would go here)
+                const qc = document.getElementById('qcCode');
+                qc.innerHTML = '<span class="material-icons" style="animation:spin 1s infinite linear">sync</span>';
+
+                setTimeout(() => {
+                    qc.textContent = Math.floor(1000 + Math.random() * 9000); // Mock
+                }, 1000);
+            },
+
+            showManual: function () {
+                // Determine if we need to reload or just show inputs for manual
+                // For now, simpler to just reload to original view or handle manual auth
+                location.reload();
+            },
+
+            doLogin: async function () {
+                const password = document.getElementById('lf-password').value;
+                if (!this.currentUser || !this.currentUser.id) return;
+
+                try {
+                    await ApiClient.authenticateUser(this.currentUser.id, password);
+                    // On success, redirect or reload
+                    window.location.href = 'index.html';
+                } catch (e) {
+                    alert('Login Failed: ' + e);
+                    document.getElementById('lf-password').value = '';
+                }
+            }
+        };
+
+        // Listen for Enter key
+        document.getElementById('lf-password').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') window.LF_Login.doLogin();
+        });
+    }
+
+    async function fetchPublicUsers() {
+        try {
+            const users = await ApiClient.getPublicUsers();
+            return users;
+        } catch (e) {
+            console.error('Failed to get users', e);
+            return [];
+        }
+    }
+
+    function createProfileCard(user) {
+        const hasImage = user.PrimaryImageTag ? true : false;
+        const imageUrl = hasImage
+            ? `/Users/${user.Id}/Images/Primary?fillHeight=200&fillWidth=200&quality=90`
+            : '';
+
+        const bgStyle = hasImage ? `background-image: url('${imageUrl}')` : 'background-color: #333';
+        const initial = hasImage ? '' : (user.Name[0] || '?');
+
+        return `
+            <div class="lf-profile-card" onclick="window.LF_Login.selectUser('${user.Id}', '${user.Name}', ${hasImage})">
+                <div class="lf-profile-img" style="${bgStyle}">
+                    ${initial}
+                </div>
+                <div class="lf-profile-text">${user.Name}</div>
+            </div>
+        `;
+    }
+
+    // =========================================================================
     // CSS STYLES (Extracted from Seriespage.html)
     // =========================================================================
     const SERIES_DETAIL_CSS = `
-        /* ============================================
-           LEGITFLIX COLOR VARIABLES
-           ============================================ */
-        .lf-series-container {
-            --clr-accent: #ff6a00;
-            --clr-accent-hover: #FF8C00;
-            --clr-bg-main: #141414;
-            --clr-bg-surface: #1f1f1f;
-            --clr-bg-glass: rgba(255, 255, 255, 0.1);
-            --clr-bg-glass-hover: rgba(255, 255, 255, 0.2);
-            --clr-text-main: #ffffff;
-            --clr-text-muted: #bcbcbc;
-            --clr-divider: rgba(255, 255, 255, 0.1);
-            --clr-heart: #e91e63;
-            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-display: 'Outfit', sans-serif;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --content-padding: 3%;
-        }
+                            /* ============================================
+                               LEGITFLIX COLOR VARIABLES
+                               ============================================ */
+                            .lf - series - container {
+                        --clr - accent: #ff6a00;
+                        --clr - accent - hover: #FF8C00;
+                        --clr - bg - main: #141414;
+                        --clr - bg - surface: #1f1f1f;
+                        --clr - bg - glass: rgba(255, 255, 255, 0.1);
+                        --clr - bg - glass - hover: rgba(255, 255, 255, 0.2);
+                        --clr - text - main: #ffffff;
+                        --clr - text - muted: #bcbcbc;
+                        --clr - divider: rgba(255, 255, 255, 0.1);
+                        --clr - heart: #e91e63;
+                        --font - primary: 'Inter', -apple - system, BlinkMacSystemFont, sans - serif;
+                        --font - display: 'Outfit', sans - serif;
+                        --radius - sm: 4px;
+                        --radius - md: 8px;
+                        --radius - lg: 12px;
+                        --content - padding: 3 %;
+                    }
 
-        .lf-series-container * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        .lf - series - container * {
+                    margin: 0;
+                    padding: 0;
+                    box- sizing: border- box;
+    }
 
         /* ============================================
            SERIES HERO SECTION (70vh, 100% width)
            ============================================ */
-        .lf-series-hero {
-            position: relative;
-            width: 100%;
-            height: 70vh;
-            min-height: 500px;
-            display: flex;
-            align-items: flex-end;
-            padding: 40px var(--content-padding);
-            overflow: hidden;
-        }
+        .lf - series - hero {
+        position: relative;
+        width: 100 %;
+        height: 70vh;
+        min - height: 500px;
+        display: flex;
+        align - items: flex - end;
+        padding: 40px var(--content - padding);
+        overflow: hidden;
+    }
 
-        .lf-series-hero__backdrop {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center top;
-            z-index: 0;
-            transition: opacity 0.5s ease;
-        }
+        .lf - series - hero__backdrop {
+        position: absolute;
+        inset: 0;
+        background - size: cover;
+        background - position: center top;
+        z - index: 0;
+        transition: opacity 0.5s ease;
+    }
 
-        .lf-series-hero__trailer {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
+        .lf - series - hero__trailer {
+        position: absolute;
+        inset: 0;
+        z - index: 1;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer - events: none;
+    }
 
-        .lf-series-hero__trailer.is-playing {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .lf - series - hero__trailer.is - playing {
+        opacity: 1;
+        pointer - events: auto;
+    }
 
-        .lf-series-hero__trailer iframe,
-        .lf-series-hero__trailer video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .lf - series - hero__trailer iframe,
+        .lf - series - hero__trailer video {
+        width: 100 %;
+        height: 100 %;
+        object - fit: cover;
+    }
 
-        .lf-series-hero__backdrop::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top,
-                    var(--clr-bg-main) 0%,
-                    rgba(20, 20, 20, 0.85) 25%,
-                    rgba(20, 20, 20, 0.4) 60%,
-                    transparent 100%);
-            z-index: 1;
-        }
+        .lf - series - hero__backdrop::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear - gradient(to top,
+                    var(--clr - bg - main) 0 %,
+            rgba(20, 20, 20, 0.85) 25 %,
+                rgba(20, 20, 20, 0.4) 60 %,
+                    transparent 100 %);
+        z - index: 1;
+    }
 
-        .lf-series-hero__logo {
-            position: absolute;
-            bottom: 40px;
-            left: var(--content-padding);
-            width: 200px;
-            max-width: 30%;
-            height: auto;
-            object-fit: contain;
-            z-index: 5;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
+        .lf - series - hero__logo {
+        position: absolute;
+        bottom: 40px;
+        left: var(--content - padding);
+        width: 200px;
+        max - width: 30 %;
+        height: auto;
+        object - fit: contain;
+        z - index: 5;
+        opacity: 0;
+        pointer - events: none;
+        transition: opacity 0.5s ease;
+    }
 
-        .lf-series-hero.is-clean-view .lf-series-hero__logo {
-            opacity: 1;
-        }
+        .lf - series - hero.is - clean - view.lf - series - hero__logo {
+        opacity: 1;
+    }
 
-        .lf-series-hero.is-clean-view .lf-series-hero__content {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
-        }
+        .lf - series - hero.is - clean - view.lf - series - hero__content {
+        opacity: 0;
+        pointer - events: none;
+        transform: translateY(20px);
+    }
 
-        .lf-series-hero__content {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            gap: 40px;
-            width: 100%;
-            transition: all 0.5s ease;
-        }
+        .lf - series - hero__content {
+        position: relative;
+        z - index: 2;
+        display: flex;
+        gap: 40px;
+        width: 100 %;
+        transition: all 0.5s ease;
+    }
 
-        .lf-series-hero__poster {
-            flex-shrink: 0;
-            width: 220px;
-            aspect-ratio: 2 / 3;
-            object-fit: cover;
-            border-radius: var(--radius-lg);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            margin-top: auto; /* Align to bottom of padded area */
-        }
+        .lf - series - hero__poster {
+        flex - shrink: 0;
+        width: 220px;
+        aspect - ratio: 2 / 3;
+        object - fit: cover;
+        border - radius: var(--radius - lg);
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        box - shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        margin - top: auto; /* Align to bottom of padded area */
+    }
 
-        .lf-series-hero__info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Expand downwards */
-            padding-top: 40vh; /* Push content down initially */
-            gap: 12px;
-        }
+        .lf - series - hero__info {
+        flex: 1;
+        display: flex;
+        flex - direction: column;
+        justify - content: flex - start; /* Expand downwards */
+        padding - top: 40vh; /* Push content down initially */
+        gap: 12px;
+    }
 
-        .lf-series-hero__title {
-            font-family: var(--font-display);
-            font-size: 2.2rem;
-            font-weight: 700;
-            line-height: 1.2;
-            color: var(--clr-text-main);
-        }
+        .lf - series - hero__title {
+        font - family: var(--font - display);
+        font - size: 2.2rem;
+        font - weight: 700;
+        line - height: 1.2;
+        color: var(--clr - text - main);
+    }
 
-        .lf-series-hero__meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            color: var(--clr-text-muted);
-            font-size: 0.9rem;
-        }
+        .lf - series - hero__meta {
+        display: flex;
+        align - items: center;
+        gap: 16px;
+        color: var(--clr - text - muted);
+        font - size: 0.9rem;
+    }
 
-        .lf-series-hero__rating {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #ffc107;
-        }
+        .lf - series - hero__rating {
+        display: flex;
+        align - items: center;
+        gap: 4px;
+        color: #ffc107;
+    }
 
-        .lf-series-hero__details {
-            display: flex;
-            gap: 3rem;
-            align-items: flex-start;
-        }
+        .lf - series - hero__details {
+        display: flex;
+        gap: 3rem;
+        align - items: flex - start;
+    }
 
-        .lf-series-hero__description {
-            flex: 0 0 60%;
-            color: var(--clr-text-muted);
-            line-height: 1.6;
-            font-size: 0.9rem;
-        }
+        .lf - series - hero__description {
+        flex: 0 0 60 %;
+        color: var(--clr - text - muted);
+        line - height: 1.6;
+        font - size: 0.9rem;
+    }
 
-        .lf-series-hero__description-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
+        .lf - series - hero__description - text {
+        display: -webkit - box;
+        -webkit - line - clamp: 3;
+        -webkit - box - orient: vertical;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
 
-        .lf-series-hero__description-text.is-expanded {
-            -webkit-line-clamp: unset;
-            display: block;
-        }
+        .lf - series - hero__description - text.is - expanded {
+        -webkit - line - clamp: unset;
+        display: block;
+    }
 
-        .lf-series-hero__load-more {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 8px;
-            padding: 0;
-            background: transparent;
-            border: none;
-            color: var(--clr-accent);
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
+        .lf - series - hero__load - more {
+        display: inline - flex;
+        align - items: center;
+        gap: 4px;
+        margin - top: 8px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        color: var(--clr - accent);
+        font - size: 0.85rem;
+        font - weight: 500;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
 
-        .lf-series-hero__load-more:hover {
-            color: var(--clr-accent-hover);
-        }
+        .lf - series - hero__load - more:hover {
+        color: var(--clr - accent - hover);
+    }
 
-        .lf-series-hero__load-more .material-icons {
-            font-size: 18px;
-            transition: transform 0.2s ease;
-        }
+        .lf - series - hero__load - more.material - icons {
+        font - size: 18px;
+        transition: transform 0.2s ease;
+    }
 
-        .lf-series-hero__load-more.is-expanded .material-icons {
-            transform: rotate(180deg);
-        }
+        .lf - series - hero__load - more.is - expanded.material - icons {
+        transform: rotate(180deg);
+    }
 
-        .lf-series-hero__cast-info {
-            flex: 0 0 280px;
-            font-size: 0.85rem;
-            color: var(--clr-text-muted);
-            line-height: 1.8;
-        }
+        .lf - series - hero__cast - info {
+        flex: 0 0 280px;
+        font - size: 0.85rem;
+        color: var(--clr - text - muted);
+        line - height: 1.8;
+    }
 
-        .lf-series-hero__cast-info strong {
-            color: var(--clr-text-main);
-        }
+        .lf - series - hero__cast - info strong {
+        color: var(--clr - text - main);
+    }
 
-        .lf-series-hero__actions {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+        .lf - series - hero__actions {
+        display: flex;
+        gap: 12px;
+        margin - bottom: 16px;
+    }
 
-        .lf-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            font-family: var(--font-primary);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-        }
+        .lf - btn {
+        display: inline - flex;
+        align - items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border - radius: var(--radius - md);
+        font - family: var(--font - primary);
+        font - weight: 600;
+        font - size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
 
-        .lf-btn--primary {
-            background: var(--clr-accent);
-            color: white;
-        }
+        .lf - btn--primary {
+        background: var(--clr - accent);
+        color: white;
+    }
 
-        .lf-btn--primary:hover {
-            background: var(--clr-accent-hover);
-        }
+        .lf - btn--primary:hover {
+        background: var(--clr - accent - hover);
+    }
 
-        .lf-btn--glass {
-            background: var(--clr-bg-glass);
-            color: white;
-            backdrop-filter: blur(10px);
-        }
+        .lf - btn--glass {
+        background: var(--clr - bg - glass);
+        color: white;
+        backdrop - filter: blur(10px);
+    }
 
-        .lf-btn--glass:hover {
-            background: var(--clr-bg-glass-hover);
-        }
+        .lf - btn--glass:hover {
+        background: var(--clr - bg - glass - hover);
+    }
 
-        .lf-btn--icon-only {
-            padding: 12px;
-        }
+        .lf - btn--icon - only {
+        padding: 12px;
+    }
 
-        .lf-btn--heart {
-            transition: background 0.2s ease, border-color 0.2s ease;
-            border: 1px solid transparent;
-        }
+        .lf - btn--heart {
+        transition: background 0.2s ease, border - color 0.2s ease;
+        border: 1px solid transparent;
+    }
 
-        .lf-btn--heart:hover {
-            background: var(--clr-bg-glass-hover);
-        }
+        .lf - btn--heart:hover {
+        background: var(--clr - bg - glass - hover);
+    }
 
-        .lf-btn--heart .material-icons {
-            transition: color 0.2s ease;
-        }
+        .lf - btn--heart.material - icons {
+        transition: color 0.2s ease;
+    }
 
-        .lf-btn--heart.is-liked {
-            background: rgba(233, 30, 99, 0.2);
-            border-color: var(--clr-heart);
-        }
+        .lf - btn--heart.is - liked {
+        background: rgba(233, 30, 99, 0.2);
+        border - color: var(--clr - heart);
+    }
 
-        .lf-btn--heart.is-liked .material-icons {
-            color: var(--clr-heart);
-        }
+        .lf - btn--heart.is - liked.material - icons {
+        color: var(--clr - heart);
+    }
 
-        .lf-btn--heart:active {
-            transform: scale(0.9);
-        }
+        .lf - btn--heart:active {
+        transform: scale(0.9);
+    }
 
-        .lf-btn-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .lf - btn - group {
+        display: flex;
+        align - items: center;
+        gap: 8px;
+    }
 
-        .lf-mute-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px; /* Match button height */
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .lf - mute - btn {
+        display: inline - flex;
+        align - items: center;
+        justify - content: center;
+        width: 44px;
+        height: 44px; /* Match button height */
+        border - radius: 50 %;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
 
-        .lf-mute-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: white;
-        }
+        .lf - mute - btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border - color: white;
+    }
 
-        .lf-mute-btn.is-muted {
-            opacity: 0.7;
-        }
+        .lf - mute - btn.is - muted {
+        opacity: 0.7;
+    }
 
         /* ============================================
            CONTENT SECTIONS
            ============================================ */
-        .lf-content-section {
-            width: 100%;
-            padding: 30px var(--content-padding);
-        }
+        .lf - content - section {
+        width: 100 %;
+        padding: 30px var(--content - padding);
+    }
 
-        .lf-section-divider {
-            border: none;
-            border-top: 1px solid var(--clr-divider);
-            margin: 0 var(--content-padding);
-        }
+        .lf - section - divider {
+        border: none;
+        border - top: 1px solid var(--clr - divider);
+        margin: 0 var(--content - padding);
+    }
 
-        .lf-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
+        .lf - section - header {
+        display: flex;
+        align - items: center;
+        justify - content: space - between;
+        margin - bottom: 20px;
+    }
 
-        .lf-section-title {
-            font-family: var(--font-display);
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--clr-text-main);
-        }
+        .lf - section - title {
+        font - family: var(--font - display);
+        font - size: 1.3rem;
+        font - weight: 600;
+        color: var(--clr - text - main);
+    }
 
         /* ============================================
            SEASON SELECTOR
            ============================================ */
-        .lf-episodes-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
+        .lf - episodes - header {
+        display: flex;
+        align - items: center;
+        justify - content: space - between;
+        margin - bottom: 20px;
+    }
 
-        .lf-season-selector {
-            position: relative;
-            display: inline-block;
-        }
+        .lf - season - selector {
+        position: relative;
+        display: inline - block;
+    }
 
-        .lf-season-selector__button {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            background: var(--clr-bg-surface);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            color: var(--clr-text-main);
-            font-family: var(--font-primary);
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .lf - season - selector__button {
+        display: flex;
+        align - items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: var(--clr - bg - surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border - radius: var(--radius - md);
+        color: var(--clr - text - main);
+        font - family: var(--font - primary);
+        font - size: 0.9rem;
+        font - weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
 
-        .lf-season-selector__button:hover {
-            background: var(--clr-bg-glass-hover);
-            border-color: var(--clr-accent);
-        }
+        .lf - season - selector__button:hover {
+        background: var(--clr - bg - glass - hover);
+        border - color: var(--clr - accent);
+    }
 
-        .lf-season-selector__button .material-icons {
-            font-size: 18px;
-            transition: transform 0.2s ease;
-        }
+        .lf - season - selector__button.material - icons {
+        font - size: 18px;
+        transition: transform 0.2s ease;
+    }
 
-        .lf-season-selector.is-open .lf-season-selector__button .material-icons {
-            transform: rotate(180deg);
-        }
+        .lf - season - selector.is - open.lf - season - selector__button.material - icons {
+        transform: rotate(180deg);
+    }
 
-        .lf-season-selector__dropdown {
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
-            min-width: 180px;
-            background: var(--clr-bg-surface);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
+        .lf - season - selector__dropdown {
+        position: absolute;
+        top: calc(100 % + 6px);
+        left: 0;
+        min - width: 180px;
+        background: var(--clr - bg - surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border - radius: var(--radius - md);
+        box - shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        z - index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s ease;
+    }
 
-        .lf-season-selector.is-open .lf-season-selector__dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
+        .lf - season - selector.is - open.lf - season - selector__dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
 
-        .lf-season-selector__option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            color: var(--clr-text-muted);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            font-size: 0.85rem;
-        }
+        .lf - season - selector__option {
+        display: flex;
+        align - items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        color: var(--clr - text - muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font - size: 0.85rem;
+    }
 
-        .lf-season-selector__option:first-child {
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-        }
+        .lf - season - selector__option: first - child {
+        border - radius: var(--radius - md) var(--radius - md) 0 0;
+    }
 
-        .lf-season-selector__option:last-child {
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-        }
+        .lf - season - selector__option: last - child {
+        border - radius: 0 0 var(--radius - md) var(--radius - md);
+    }
 
-        .lf-season-selector__option:hover {
-            background: var(--clr-bg-glass);
-            color: var(--clr-text-main);
-        }
+        .lf - season - selector__option:hover {
+        background: var(--clr - bg - glass);
+        color: var(--clr - text - main);
+    }
 
-        .lf-season-selector__option.is-selected {
-            color: var(--clr-accent);
-            background: rgba(255, 106, 0, 0.1);
-        }
+        .lf - season - selector__option.is - selected {
+        color: var(--clr - accent);
+        background: rgba(255, 106, 0, 0.1);
+    }
 
-        .lf-season-selector__option-count {
-            margin-left: auto;
-            font-size: 0.8rem;
-            color: var(--clr-text-muted);
-            opacity: 0.7;
-        }
+        .lf - season - selector__option - count {
+        margin - left: auto;
+        font - size: 0.8rem;
+        color: var(--clr - text - muted);
+        opacity: 0.7;
+    }
 
         /* Filter controls */
-        .lf-filter-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .lf - filter - controls {
+        display: flex;
+        gap: 10px;
+        align - items: center;
+    }
 
-        .lf-filter-btn {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            color: var(--clr-text-muted);
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .lf - filter - btn {
+        position: relative;
+        display: flex;
+        align - items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border - radius: var(--radius - md);
+        color: var(--clr - text - muted);
+        font - size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
 
-        .lf-filter-btn:hover {
-            background: var(--clr-bg-glass);
-            color: var(--clr-text-main);
-        }
+        .lf - filter - btn:hover {
+        background: var(--clr - bg - glass);
+        color: var(--clr - text - main);
+    }
 
-        .lf-filter-btn .material-icons {
-            font-size: 18px;
-        }
+        .lf - filter - btn.material - icons {
+        font - size: 18px;
+    }
 
-        .lf-filter-dropdown {
-            position: relative;
-            display: inline-block;
-        }
+        .lf - filter - dropdown {
+        position: relative;
+        display: inline - block;
+    }
 
-        .lf-filter-dropdown__menu {
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            min-width: 150px;
-            background: var(--clr-bg-surface);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
+        .lf - filter - dropdown__menu {
+        position: absolute;
+        top: calc(100 % + 6px);
+        right: 0;
+        min - width: 150px;
+        background: var(--clr - bg - surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border - radius: var(--radius - md);
+        box - shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        z - index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s ease;
+    }
 
-        .lf-filter-dropdown.is-open .lf-filter-dropdown__menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
+        .lf - filter - dropdown.is - open.lf - filter - dropdown__menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
 
-        .lf-filter-dropdown__option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            color: var(--clr-text-muted);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            font-size: 0.85rem;
-        }
+        .lf - filter - dropdown__option {
+        display: flex;
+        align - items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        color: var(--clr - text - muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font - size: 0.85rem;
+    }
 
-        .lf-filter-dropdown__option:first-child {
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-        }
+        .lf - filter - dropdown__option: first - child {
+        border - radius: var(--radius - md) var(--radius - md) 0 0;
+    }
 
-        .lf-filter-dropdown__option:last-child {
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-        }
+        .lf - filter - dropdown__option: last - child {
+        border - radius: 0 0 var(--radius - md) var(--radius - md);
+    }
 
-        .lf-filter-dropdown__option:hover {
-            background: var(--clr-bg-glass);
-            color: var(--clr-text-main);
-        }
+        .lf - filter - dropdown__option:hover {
+        background: var(--clr - bg - glass);
+        color: var(--clr - text - main);
+    }
 
-        .lf-filter-dropdown__option.is-selected {
-            color: var(--clr-accent);
-            background: rgba(255, 106, 0, 0.1);
-        }
+        .lf - filter - dropdown__option.is - selected {
+        color: var(--clr - accent);
+        background: rgba(255, 106, 0, 0.1);
+    }
 
-        .lf-filter-dropdown__option .material-icons {
-            font-size: 16px;
-        }
+        .lf - filter - dropdown__option.material - icons {
+        font - size: 16px;
+    }
 
         /* Language Selector Split */
-        .lf-lang-menu {
-            min-width: 220px;
-            padding: 10px 0;
-        }
-        .lf-lang-section {
-            padding-bottom: 5px;
-        }
-        .lf-dropdown-section-title {
-            padding: 5px 15px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--clr-text-muted);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .lf-lang-separator {
-            height: 1px;
-            background: rgba(255,255,255,0.1);
-            margin: 5px 0;
-        }
-        .lf-lang-footer {
-            padding: 8px 10px 0 10px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin-top: 5px;
-        }
-        .lf-edit-subs-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--clr-text-main);
-            padding: 8px 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .lf-edit-subs-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .lf-edit-subs-btn .material-icons {
-             font-size: 18px;
-        }
+        .lf - lang - menu {
+        min - width: 220px;
+        padding: 10px 0;
+    }
+        .lf - lang - section {
+        padding - bottom: 5px;
+    }
+        .lf - dropdown - section - title {
+        padding: 5px 15px;
+        font - size: 0.75rem;
+        text - transform: uppercase;
+        color: var(--clr - text - muted);
+        font - weight: 600;
+        letter - spacing: 0.5px;
+    }
+        .lf - lang - separator {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 5px 0;
+    }
+        .lf - lang - footer {
+        padding: 8px 10px 0 10px;
+        border - top: 1px solid rgba(255, 255, 255, 0.1);
+        margin - top: 5px;
+    }
+        .lf - edit - subs - btn {
+        width: 100 %;
+        display: flex;
+        align - items: center;
+        justify - content: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--clr - text - main);
+        padding: 8px 12px;
+        border - radius: var(--radius - sm);
+        cursor: pointer;
+        font - size: 0.9rem;
+        transition: all 0.2s;
+        text - decoration: none;
+    }
+        .lf - edit - subs - btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border - color: rgba(255, 255, 255, 0.3);
+    }
+        .lf - edit - subs - btn.material - icons {
+        font - size: 18px;
+    }
 
         /* ============================================
            EPISODE GRID
            ============================================ */
-        .lf-episode-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
+        .lf - episode - grid {
+        display: grid;
+        grid - template - columns: repeat(auto - fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
 
-        .lf-episode-card {
-            display: block;
-            background: var(--clr-bg-surface);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.25s ease;
-            cursor: pointer;
-            grid-column: auto !important; /* Force auto placement in grid */
-            min-width: 0; /* Prevent grid blowout */
-            width: 100%;
-        }
+        .lf - episode - card {
+        display: block;
+        background: var(--clr - bg - surface);
+        border - radius: var(--radius - lg);
+        overflow: hidden;
+        text - decoration: none;
+        color: inherit;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        grid - column: auto!important; /* Force auto placement in grid */
+        min - width: 0; /* Prevent grid blowout */
+        width: 100 %;
+    }
 
-        .lf-episode-card:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-        }
+        .lf - episode - card:hover {
+        transform: translateY(-4px) scale(1.02);
+        box - shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
 
-        .lf-episode-card__thumbnail {
-            position: relative;
-            aspect-ratio: 16 / 9;
-            overflow: hidden;
-        }
+        .lf - episode - card__thumbnail {
+        position: relative;
+        aspect - ratio: 16 / 9;
+        overflow: hidden;
+    }
 
-        .lf-episode-card__thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
+        .lf - episode - card__thumbnail img {
+        width: 100 %;
+        height: 100 %;
+        object - fit: cover;
+        transition: transform 0.3s ease;
+    }
 
-        .lf-episode-card:hover .lf-episode-card__thumbnail img {
-            transform: scale(1.05);
-        }
+        .lf - episode - card: hover.lf - episode - card__thumbnail img {
+        transform: scale(1.05);
+    }
 
-        .lf-episode-card__play-icon {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
+        .lf - episode - card__play - icon {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align - items: center;
+        justify - content: center;
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
 
-        .lf-episode-card:hover .lf-episode-card__play-icon {
-            opacity: 1;
-        }
+        .lf - episode - card: hover.lf - episode - card__play - icon {
+        opacity: 1;
+    }
 
-        .lf-episode-card__play-icon .material-icons {
-            font-size: 40px;
-            color: white;
-            background: var(--clr-accent);
-            border-radius: 50%;
-            padding: 10px;
-        }
+        .lf - episode - card__play - icon.material - icons {
+        font - size: 40px;
+        color: white;
+        background: var(--clr - accent);
+        border - radius: 50 %;
+        padding: 10px;
+    }
 
-        .lf-episode-card__progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .lf - episode - card__progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
+    }
 
-        .lf-episode-card__progress-bar {
-            height: 100%;
-            background: var(--clr-accent);
-            transition: width 0.3s ease;
-        }
+        .lf - episode - card__progress - bar {
+        height: 100 %;
+        background: var(--clr - accent);
+        transition: width 0.3s ease;
+    }
 
-        .lf-episode-card__badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: var(--clr-accent);
-            color: white;
-            font-weight: 700;
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: var(--radius-sm);
-        }
+        .lf - episode - card__badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: var(--clr - accent);
+        color: white;
+        font - weight: 700;
+        font - size: 0.75rem;
+        padding: 3px 8px;
+        border - radius: var(--radius - sm);
+    }
 
-        .lf-episode-card__duration {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            font-size: 0.7rem;
-            padding: 3px 6px;
-            border-radius: var(--radius-sm);
-        }
+        .lf - episode - card__duration {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        font - size: 0.7rem;
+        padding: 3px 6px;
+        border - radius: var(--radius - sm);
+    }
 
-        .lf-episode-card__info {
-            padding: 12px;
-        }
+        .lf - episode - card__info {
+        padding: 12px;
+    }
 
-        .lf-episode-card__title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            color: var(--clr-text-main);
-        }
+        .lf - episode - card__title {
+        font - weight: 600;
+        font - size: 0.9rem;
+        margin - bottom: 4px;
+        display: -webkit - box;
+        -webkit - line - clamp: 1;
+        -webkit - box - orient: vertical;
+        overflow: hidden;
+        color: var(--clr - text - main);
+    }
 
-        .lf-episode-card__subtitle {
-            color: var(--clr-text-muted);
-            font-size: 0.8rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+        .lf - episode - card__subtitle {
+        color: var(--clr - text - muted);
+        font - size: 0.8rem;
+        display: -webkit - box;
+        -webkit - line - clamp: 2;
+        -webkit - box - orient: vertical;
+        overflow: hidden;
+    }
 
         /* BULK EDIT STYLES */
-        .lf-episode-checkbox {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 24px;
-            height: 24px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.2s ease;
-            z-index: 10;
-            pointer-events: none; /* Let parent handle click */
-        }
+        .lf - episode - checkbox {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border - radius: 4px;
+        display: flex;
+        align - items: center;
+        justify - content: center;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.2s ease;
+        z - index: 10;
+        pointer - events: none; /* Let parent handle click */
+    }
         
-        .lf-episode-checkbox .material-icons {
-            font-size: 18px;
-            color: white;
-            opacity: 0;
-            transform: scale(0);
-            transition: all 0.2s ease;
-        }
+        .lf - episode - checkbox.material - icons {
+        font - size: 18px;
+        color: white;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s ease;
+    }
 
-        .lf-episode-card.is-selecting-mode .lf-episode-checkbox {
-            opacity: 1;
-            transform: scale(1);
-        }
+        .lf - episode - card.is - selecting - mode.lf - episode - checkbox {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-        .lf-episode-card.is-selected .lf-episode-checkbox {
-            background: var(--clr-accent);
-            border-color: var(--clr-accent);
-        }
+        .lf - episode - card.is - selected.lf - episode - checkbox {
+        background: var(--clr - accent);
+        border - color: var(--clr - accent);
+    }
 
-        .lf-episode-card.is-selected .lf-episode-checkbox .material-icons {
-            opacity: 1;
-            transform: scale(1);
-        }
+        .lf - episode - card.is - selected.lf - episode - checkbox.material - icons {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-        .lf-episode-card.is-selected {
-            box-shadow: 0 0 0 2px var(--clr-accent);
-        }
+        .lf - episode - card.is - selected {
+        box - shadow: 0 0 0 2px var(--clr - accent);
+    }
         
-        .lf-episode-card.is-watched .lf-episode-card__thumbnail {
-             opacity: 0.6;
-        }
-        
+        .lf - episode - card.is - watched.lf - episode - card__thumbnail {
+        opacity: 0.6;
+    }
+
         /* Disable hover play icon in selection mode */
-        .lf-episode-card.is-selecting-mode:hover .lf-episode-card__play-icon {
-            opacity: 0;
-        }
+        .lf - episode - card.is - selecting - mode: hover.lf - episode - card__play - icon {
+        opacity: 0;
+    }
 
         /* Success Marked State (Green Tick) */
-        .lf-episode-card.is-success-marked .lf-episode-checkbox,
-        .lf-episode-card.is-watched .lf-episode-checkbox {
-            opacity: 1;
-            transform: scale(1);
-            background: #4caf50;
-            border-color: #4caf50;
-        }
-        .lf-episode-card.is-success-marked .lf-episode-checkbox .material-icons,
-        .lf-episode-card.is-watched .lf-episode-checkbox .material-icons {
-            opacity: 1;
-            transform: scale(1);
-        }
+        .lf - episode - card.is - success - marked.lf - episode - checkbox,
+        .lf - episode - card.is - watched.lf - episode - checkbox {
+        opacity: 1;
+        transform: scale(1);
+        background: #4caf50;
+        border - color: #4caf50;
+    }
+        .lf - episode - card.is - success - marked.lf - episode - checkbox.material - icons,
+        .lf - episode - card.is - watched.lf - episode - checkbox.material - icons {
+        opacity: 1;
+        transform: scale(1);
+    }
 
         /* Adjust hover behavior for checked items */
-         .lf-episode-card.is-watched:hover .lf-episode-card__play-icon {
-             /* Allow play icon to show on hover even if watched, to replay */
-            opacity: 1;
-        }
+         .lf - episode - card.is - watched: hover.lf - episode - card__play - icon {
+        /* Allow play icon to show on hover even if watched, to replay */
+        opacity: 1;
+    }
 
 
         /* ============================================
            CAST SECTION
            ============================================ */
-        .lf-cast-grid {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            padding: 10px 0;
-        }
+        .lf - cast - grid {
+        display: flex;
+        gap: 16px;
+        overflow - x: auto;
+        padding: 10px 0;
+    }
 
-        .lf-cast-card {
-            flex-shrink: 0;
-            text-align: center;
-            width: 100px;
-            cursor: pointer;
-        }
+        .lf - cast - card {
+        flex - shrink: 0;
+        text - align: center;
+        width: 100px;
+        cursor: pointer;
+    }
 
-        .lf-cast-card__image {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 8px;
-            border: 2px solid var(--clr-bg-surface);
-            transition: border-color 0.2s ease, opacity 0.2s ease;
-        }
+        .lf - cast - card__image {
+        width: 80px;
+        height: 80px;
+        border - radius: 50 %;
+        object - fit: cover;
+        margin - bottom: 8px;
+        border: 2px solid var(--clr - bg - surface);
+        transition: border - color 0.2s ease, opacity 0.2s ease;
+    }
 
-        .lf-cast-card:hover .lf-cast-card__image {
-            border-color: rgba(255, 255, 255, 0.4);
-            opacity: 0.85;
-        }
+        .lf - cast - card: hover.lf - cast - card__image {
+        border - color: rgba(255, 255, 255, 0.4);
+        opacity: 0.85;
+    }
 
-        .lf-cast-card__name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: color 0.2s ease;
-            color: var(--clr-text-main);
-        }
+        .lf - cast - card__name {
+        font - size: 0.8rem;
+        font - weight: 600;
+        margin - bottom: 2px;
+        white - space: nowrap;
+        overflow: hidden;
+        text - overflow: ellipsis;
+        transition: color 0.2s ease;
+        color: var(--clr - text - main);
+    }
 
-        .lf-cast-card:hover .lf-cast-card__name {
-            color: var(--clr-text-main);
-        }
+        .lf - cast - card: hover.lf - cast - card__name {
+        color: var(--clr - text - main);
+    }
 
-        .lf-cast-card__role {
-            font-size: 0.75rem;
-            color: var(--clr-text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .lf - cast - card__role {
+        font - size: 0.75rem;
+        color: var(--clr - text - muted);
+        white - space: nowrap;
+        overflow: hidden;
+        text - overflow: ellipsis;
+    }
 
         /* ============================================
            MORE LIKE THIS
            ============================================ */
-        .lf-similar-grid {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            padding: 10px 0;
+        .lf - similar - grid {
+        display: flex;
+        gap: 16px;
+        overflow - x: auto;
+        padding: 10px 0;
+    }
+
+        .lf - similar - card {
+        flex - shrink: 0;
+        width: 150px;
+        text - decoration: none;
+        color: inherit;
+        transition: transform 0.2s ease;
+        cursor: pointer;
+    }
+
+        .lf - similar - card:hover {
+        transform: translateY(-4px);
+    }
+
+        .lf - similar - card__poster {
+        width: 100 %;
+        aspect - ratio: 2 / 3;
+        object - fit: cover;
+        border - radius: var(--radius - md);
+        margin - bottom: 8px;
+        transition: box - shadow 0.2s ease;
+    }
+
+        .lf - similar - card: hover.lf - similar - card__poster {
+        box - shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+        .lf - similar - card__title {
+        font - size: 0.85rem;
+        font - weight: 500;
+        white - space: nowrap;
+        overflow: hidden;
+        text - overflow: ellipsis;
+        transition: color 0.2s ease;
+        color: var(--clr - text - main);
+    }
+
+        .lf - similar - card: hover.lf - similar - card__title {
+        color: var(--clr - accent);
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media(max - width: 900px) {
+            .lf - series - hero__details {
+            flex - direction: column;
         }
 
-        .lf-similar-card {
-            flex-shrink: 0;
-            width: 150px;
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.2s ease;
-            cursor: pointer;
+            .lf - series - hero__cast - info {
+            flex: 1;
+        }
+    }
+
+    @media(max - width: 768px) {
+            .lf - series - hero {
+            padding: 20px var(--content - padding);
+            height: auto;
+            min - height: 60vh;
         }
 
-        .lf-similar-card:hover {
-            transform: translateY(-4px);
+            .lf - series - hero__content {
+            flex - direction: column;
+            align - items: center;
+            text - align: center;
         }
 
-        .lf-similar-card__poster {
-            width: 100%;
-            aspect-ratio: 2/3;
-            object-fit: cover;
-            border-radius: var(--radius-md);
-            margin-bottom: 8px;
-            transition: box-shadow 0.2s ease;
+            .lf - series - hero__poster {
+            width: 140px;
         }
 
-        .lf-similar-card:hover .lf-similar-card__poster {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            .lf - series - hero__title {
+            font - size: 1.6rem;
         }
 
-        .lf-similar-card__title {
-            font-size: 0.85rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: color 0.2s ease;
-            color: var(--clr-text-main);
+            .lf - series - hero__meta {
+            justify - content: center;
+            flex - wrap: wrap;
         }
 
-        .lf-similar-card:hover .lf-similar-card__title {
-            color: var(--clr-accent);
+            .lf - episode - grid {
+            grid - template - columns: 1fr;
         }
 
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
-        @media (max-width: 900px) {
-            .lf-series-hero__details {
-                flex-direction: column;
-            }
-
-            .lf-series-hero__cast-info {
-                flex: 1;
-            }
+            .lf - episodes - header {
+            flex - direction: column;
+            gap: 12px;
+            align - items: flex - start;
         }
-
-        @media (max-width: 768px) {
-            .lf-series-hero {
-                padding: 20px var(--content-padding);
-                height: auto;
-                min-height: 60vh;
-            }
-
-            .lf-series-hero__content {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-
-            .lf-series-hero__poster {
-                width: 140px;
-            }
-
-            .lf-series-hero__title {
-                font-size: 1.6rem;
-            }
-
-            .lf-series-hero__meta {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .lf-episode-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .lf-episodes-header {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-        }
+    }
     `;
 
     // =========================================================================
@@ -4423,15 +4879,15 @@ monitorPageLoop();/**
         // Logo Logic: Use pre-calculated or construct from ImageTags
         let logoUrl = series.logoUrl;
         if (!logoUrl && series.ImageTags && series.ImageTags.Logo) {
-            logoUrl = `/Items/${series.id || series.Id}/Images/Logo?maxHeight=200&maxWidth=500&quality=90`;
+            logoUrl = `/ Items / ${series.id || series.Id} /Images/Logo ? maxHeight = 200 & maxWidth=500 & quality=90`;
         }
 
         const titleHtml = logoUrl
-            ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo-title" style="max-width: 200px; max-height: 180px; width: auto; object-fit: contain; margin-bottom: 16px; display: block;">`
-            : `<h1 class="lf-series-hero__title">${title}</h1>`;
+            ? `< img src = "${logoUrl}" alt = "${title}" class="lf-series-hero__logo-title" style = "max-width: 200px; max-height: 180px; width: auto; object-fit: contain; margin-bottom: 16px; display: block;" > `
+            : `< h1 class="lf-series-hero__title" > ${title}</h1 > `;
 
         return `
-            <section class="lf-series-hero" id="lfSeriesHero">
+        < section class="lf-series-hero" id = "lfSeriesHero" >
                 <div class="lf-series-hero__backdrop" id="lfHeroBackdrop"
                     style="background-image: url('${backdropUrl}');"></div>
                 
@@ -4439,64 +4895,64 @@ monitorPageLoop();/**
                     <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
 
-                <!-- (Original Clean View Logo removed slightly to avoid double-up, or we can keep it for transitions) -->
-                <!-- We'll keep the logic simple: Main Title Slot is now either Text or Logo -->
+                <!--(Original Clean View Logo removed slightly to avoid double - up, or we can keep it for transitions) -->
+                < !--We'll keep the logic simple: Main Title Slot is now either Text or Logo -->
 
-                <div class="lf-series-hero__content">
-                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
+        < div class="lf-series-hero__content" >
+            <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}">
 
-                    <div class="lf-series-hero__info">
-                        ${titleHtml}
+                <div class="lf-series-hero__info">
+                    ${titleHtml}
 
-                        <div class="lf-series-hero__meta">
-                            ${year ? `<span>${year}</span><span>•</span>` : ''}
-                            <span>${rating}</span>
-                            ${communityRating ? `
+                    <div class="lf-series-hero__meta">
+                        ${year ? `<span>${year}</span><span>•</span>` : ''}
+                        <span>${rating}</span>
+                        ${communityRating ? `
                                 <span>•</span>
                                 <div class="lf-series-hero__rating">
                                     <span class="material-icons">star</span>
                                     <span>${communityRating}</span>
                                 </div>
                             ` : ''}
-                            ${episodeCount ? `<span>•</span><span>${episodeCount} Seasons</span>` : ''}
-                        </div>
+                        ${episodeCount ? `<span>•</span><span>${episodeCount} Seasons</span>` : ''}
+                    </div>
 
-                        <div class="lf-series-hero__actions">
-                            <button class="lf-btn lf-btn--primary" id="lfWatchNowBtn">
-                                <span class="material-icons">play_arrow</span>
-                                Watch Now
+                    <div class="lf-series-hero__actions">
+                        <button class="lf-btn lf-btn--primary" id="lfWatchNowBtn">
+                            <span class="material-icons">play_arrow</span>
+                            Watch Now
+                        </button>
+                        <button class="lf-btn lf-btn--glass" id="lfTrailerBtn">
+                            <span class="material-icons">theaters</span>
+                            Watch Trailer
+                        </button>
+                        <div class="lf-btn-group">
+                            <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart" id="lfHeartBtn">
+                                <span class="material-icons">favorite_border</span>
                             </button>
-                            <button class="lf-btn lf-btn--glass" id="lfTrailerBtn">
-                                <span class="material-icons">theaters</span>
-                                Watch Trailer
+                            <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
+                                <span class="material-icons">volume_off</span>
                             </button>
-                            <div class="lf-btn-group">
-                                <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart" id="lfHeartBtn">
-                                    <span class="material-icons">favorite_border</span>
-                                </button>
-                                <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
-                                    <span class="material-icons">volume_off</span>
-                                </button>
-                            </div>
                         </div>
+                    </div>
 
-                        <div class="lf-series-hero__details">
-                            <div class="lf-series-hero__description">
-                                <p class="lf-series-hero__description-text" id="lfDescriptionText">${description}</p>
-                                <button class="lf-series-hero__load-more" id="lfLoadMoreBtn">
-                                    <span>Load more</span>
-                                    <span class="material-icons">expand_more</span>
-                                </button>
-                            </div>
-                            <div class="lf-series-hero__cast-info">
-                                ${cast ? `<div><strong>Starring:</strong> ${cast}</div>` : ''}
-                                ${genres ? `<div><strong>Genres:</strong> ${genres}</div>` : ''}
-                                ${studios ? `<div><strong>Studio:</strong> ${studios}</div>` : ''}
-                            </div>
+                    <div class="lf-series-hero__details">
+                        <div class="lf-series-hero__description">
+                            <p class="lf-series-hero__description-text" id="lfDescriptionText">${description}</p>
+                            <button class="lf-series-hero__load-more" id="lfLoadMoreBtn">
+                                <span>Load more</span>
+                                <span class="material-icons">expand_more</span>
+                            </button>
+                        </div>
+                        <div class="lf-series-hero__cast-info">
+                            ${cast ? `<div><strong>Starring:</strong> ${cast}</div>` : ''}
+                            ${genres ? `<div><strong>Genres:</strong> ${genres}</div>` : ''}
+                            ${studios ? `<div><strong>Studio:</strong> ${studios}</div>` : ''}
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
+            </section >
         `;
     }
 
@@ -4537,15 +4993,15 @@ monitorPageLoop();/**
 
         // Helper to create options
         const createOptions = (type, list, current) => list.map(l => `
-            <div class="lf-filter-dropdown__option ${l.code === current ? 'is-selected' : ''}" 
-                 data-type="${type}" data-lang="${l.code}">
-                <span>${l.name}</span>
+        < div class="lf-filter-dropdown__option ${l.code === current ? 'is-selected' : ''}"
+    data - type="${type}" data - lang="${l.code}" >
+        <span>${l.name}</span>
                 ${l.code === current ? '<span class="material-icons">check</span>' : ''}
-            </div>
+            </div >
         `).join('');
 
         const html = `
-            <div class="lf-filter-dropdown lf-lang-selector" id="lfLangSelector">
+        < div class="lf-filter-dropdown lf-lang-selector" id = "lfLangSelector" >
                 <button class="lf-filter-btn" title="Audio & Subtitles">
                     <span class="material-icons">subtitles</span>
                     <span id="lfLangText">Audio & Subs</span>
@@ -4568,7 +5024,7 @@ monitorPageLoop();/**
                         </button>
                     </div>
                 </div>
-            </div>
+            </div >
         `;
         return html;
     }
@@ -4623,68 +5079,68 @@ monitorPageLoop();/**
 
         // MOCK DATA for Prototype
         const audioOptions = `
-            <div class="lf-filter-dropdown__option is-selected"><span class="material-icons">check</span> English</div>
-        `;
+        < div class="lf-filter-dropdown__option is-selected" > <span class="material-icons">check</span> English</div >
+            `;
         const subOptions = `
-             <div class="lf-filter-dropdown__option is-selected"><span class="material-icons">check</span> English</div>
-        `;
+            < div class="lf-filter-dropdown__option is-selected" > <span class="material-icons">check</span> English</div >
+                `;
 
         return `
-            <hr class="lf-section-divider">
-            <section class="lf-content-section" id="lfDirectPlayer">
-                 <div class="lf-section-header">
-                    <h2 class="lf-section-title">${item.Name}</h2>
-                    
-                    <div class="lf-filter-controls">
-                        <!-- AUDIO / SUBS -->
-                        <div class="lf-filter-dropdown" id="lfLangDropdown">
-                            <button class="lf-filter-btn" id="lfLangBtn" title="Audio & Subtitles">
-                                <span class="material-icons">subtitles</span>
-                                <span>Audio & Subs</span>
-                                <span class="material-icons">expand_more</span>
-                            </button>
-                            <div class="lf-filter-dropdown__menu lf-lang-menu">
-                                <div class="lf-lang-section">
-                                    <div class="lf-dropdown-section-title">Audio</div>
-                                    ${audioOptions}
-                                </div>
-                                <div class="lf-lang-separator"></div>
-                                <div class="lf-lang-section">
-                                    <div class="lf-dropdown-section-title">Subtitles</div>
-                                    ${subOptions}
-                                </div>
-                                <div class="lf-lang-footer">
-                                    <button class="lf-edit-subs-btn" id="lfEditSubsBtn">
-                                        <span class="material-icons">edit</span> Edit Subtitles
+                < hr class="lf-section-divider" >
+                    <section class="lf-content-section" id="lfDirectPlayer">
+                        <div class="lf-section-header">
+                            <h2 class="lf-section-title">${item.Name}</h2>
+
+                            <div class="lf-filter-controls">
+                                <!-- AUDIO / SUBS -->
+                                <div class="lf-filter-dropdown" id="lfLangDropdown">
+                                    <button class="lf-filter-btn" id="lfLangBtn" title="Audio & Subtitles">
+                                        <span class="material-icons">subtitles</span>
+                                        <span>Audio & Subs</span>
+                                        <span class="material-icons">expand_more</span>
                                     </button>
+                                    <div class="lf-filter-dropdown__menu lf-lang-menu">
+                                        <div class="lf-lang-section">
+                                            <div class="lf-dropdown-section-title">Audio</div>
+                                            ${audioOptions}
+                                        </div>
+                                        <div class="lf-lang-separator"></div>
+                                        <div class="lf-lang-section">
+                                            <div class="lf-dropdown-section-title">Subtitles</div>
+                                            ${subOptions}
+                                        </div>
+                                        <div class="lf-lang-footer">
+                                            <button class="lf-edit-subs-btn" id="lfEditSubsBtn">
+                                                <span class="material-icons">edit</span> Edit Subtitles
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <!-- MARK WATCHED (Moved from Hero) -->
+                                <button class="lf-filter-btn" id="lfWatchedBtn" title="Mark Played">
+                                    <span class="material-icons">${item.UserData?.Played ? 'check_circle' : 'check_circle_outline'}</span>
+                                    <span>${item.UserData?.Played ? 'Played' : 'Mark Played'}</span>
+                                </button>
                             </div>
                         </div>
 
-                        <!-- MARK WATCHED (Moved from Hero) -->
-                        <button class="lf-filter-btn" id="lfWatchedBtn" title="Mark Played">
-                            <span class="material-icons">${item.UserData?.Played ? 'check_circle' : 'check_circle_outline'}</span>
-                            <span>${item.UserData?.Played ? 'Played' : 'Mark Played'}</span>
-                        </button>
-                    </div>
-                 </div>
+                        <!-- PLAYER WRAPPER (90vh) -->
+                        <div class="lf-player-wrapper" style="width: 100%; height: 90vh; background: #000; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
 
-                 <!-- PLAYER WRAPPER (90vh) -->
-                 <div class="lf-player-wrapper" style="width: 100%; height: 90vh; background: #000; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                    
-                    <!-- PLACEHOLDER FOR VIDEO PLAYER -->
-                    <div class="lf-player-placeholder" style="text-align: center; color: #555;">
-                        <span class="material-icons" style="font-size: 64px; opacity: 0.5;">play_circle_outline</span>
-                        <p style="margin-top: 10px; font-weight: 500;">Click Play to Start</p>
-                    </div>
+                            <!-- PLACEHOLDER FOR VIDEO PLAYER -->
+                            <div class="lf-player-placeholder" style="text-align: center; color: #555;">
+                                <span class="material-icons" style="font-size: 64px; opacity: 0.5;">play_circle_outline</span>
+                                <p style="margin-top: 10px; font-weight: 500;">Click Play to Start</p>
+                            </div>
 
-                    <!-- 
-                        IN PRODUCTION: This div would be replaced or injected with the actual Jellyfin video player logic
-                        or an iframe if using external sources. 
+                            <!--
+                            IN PRODUCTION: This div would be replaced or injected with the actual Jellyfin video player logic
+                            or an iframe if using external sources. 
                     -->
-                 </div>
-            </section>
-        `;
+                        </div>
+                    </section>
+    `;
     }
 
     // REMOVED: createEpisodeGrid, createSeasonSelector logic
@@ -4714,23 +5170,23 @@ monitorPageLoop();/**
             const role = person.Role || '';
 
             return `
-                <div class="lf-cast-card" data-person-id="${person.Id}">
-                    <img class="lf-cast-card__image" src="${imageUrl}" alt="${name}">
-                    <div class="lf-cast-card__name">${name}</div>
-                    <div class="lf-cast-card__role">${role}</div>
-                </div>
-            `;
+        < div class="lf-cast-card" data - person - id="${person.Id}" >
+            <img class="lf-cast-card__image" src="${imageUrl}" alt="${name}">
+                <div class="lf-cast-card__name">${name}</div>
+                <div class="lf-cast-card__role">${role}</div>
+            </div>
+    `;
         }).join('');
 
         return `
-            <hr class="lf-section-divider">
+        < hr class="lf-section-divider" >
             <section class="lf-content-section">
                 <div class="lf-section-header">
                     <h2 class="lf-section-title">Cast & Crew</h2>
                 </div>
                 <div class="lf-cast-grid">${cards}</div>
             </section>
-        `;
+    `;
     }
 
     /**
@@ -4745,22 +5201,22 @@ monitorPageLoop();/**
             const title = item.Name || 'Unknown';
 
             return `
-                <div class="lf-similar-card" data-item-id="${item.Id}">
-                    <img class="lf-similar-card__poster" src="${posterUrl}" alt="${title}">
-                    <div class="lf-similar-card__title">${title}</div>
-                </div>
-            `;
+        < div class="lf-similar-card" data - item - id="${item.Id}" >
+            <img class="lf-similar-card__poster" src="${posterUrl}" alt="${title}">
+                <div class="lf-similar-card__title">${title}</div>
+            </div>
+    `;
         }).join('');
 
         return `
-            <hr class="lf-section-divider">
+        < hr class="lf-section-divider" >
             <section class="lf-content-section">
                 <div class="lf-section-header">
                     <h2 class="lf-section-title">More Like This</h2>
                 </div>
                 <div class="lf-similar-grid">${cards}</div>
             </section>
-        `;
+    `;
     }
 
     // =========================================================================
@@ -4769,7 +5225,7 @@ monitorPageLoop();/**
     function formatDuration(ticks) {
         const minutes = Math.floor(ticks / 600000000);
         const seconds = Math.floor((ticks % 600000000) / 10000000);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        return `${minutes}:${seconds.toString().padStart(2, '0')} `;
     }
 
     /**
@@ -4896,7 +5352,7 @@ monitorPageLoop();/**
             eps.forEach(ep => {
                 const opt = document.createElement('option');
                 opt.value = ep.id;
-                opt.textContent = `${ep.indexNumber}. ${ep.name}`;
+                opt.textContent = `${ep.indexNumber}. ${ep.name} `;
                 if (ep.id === targetEpisodeId) opt.selected = true;
                 epSelect.appendChild(opt);
             });
@@ -4913,7 +5369,7 @@ monitorPageLoop();/**
             if (document.getElementById(this.modalId)) return;
 
             const html = `
-                <div id="${this.modalId}" class="lf-modal-overlay hide">
+        < div id = "${this.modalId}" class="lf-modal-overlay hide" >
                     <div class="dialogContainer">
                         <div class="focuscontainer dialog dialog-fixedSize dialog-small formDialog subtitleEditorDialog opened" 
                              style="animation: 180ms ease-out 0s 1 normal both running scaleup; max-width: 800px; margin: 5vh auto; background: var(--color-background-secondary, #1c1c1c); border-radius: var(--radius-lg, 12px);">
@@ -5064,8 +5520,8 @@ monitorPageLoop();/**
                         .smoothScrollY::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
                         .smoothScrollY::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
                     </style>
-                </div>
-            `;
+                </div >
+        `;
             document.body.insertAdjacentHTML('beforeend', html);
         },
 
@@ -5077,25 +5533,25 @@ monitorPageLoop();/**
 
             try {
                 const auth = await getAuth();
-                const response = await fetch(`/Users/${auth.UserId}/Items/${episodeId}`, {
+                const response = await fetch(`/ Users / ${auth.UserId} /Items/${episodeId} `, {
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
                 const data = await response.json();
 
                 // Update Info Box
                 if (infoBox) {
-                    const seasonName = data.SeasonName || (data.ParentIndexNumber ? `Season ${data.ParentIndexNumber}` : '');
-                    const epNum = data.IndexNumber ? `E${data.IndexNumber}` : '';
+                    const seasonName = data.SeasonName || (data.ParentIndexNumber ? `Season ${data.ParentIndexNumber} ` : '');
+                    const epNum = data.IndexNumber ? `E${data.IndexNumber} ` : '';
                     const fullCode = (data.ParentIndexNumber && data.IndexNumber)
-                        ? `S${String(data.ParentIndexNumber).padStart(2, '0')}E${String(data.IndexNumber).padStart(2, '0')}`
+                        ? `S${String(data.ParentIndexNumber).padStart(2, '0')}E${String(data.IndexNumber).padStart(2, '0')} `
                         : epNum;
 
                     infoBox.innerHTML = `
-                        <div style="font-weight: 600; color: var(--clr-text-main); font-size: 1rem;">${data.Name}</div>
-                        <div style="font-size: 0.85rem; opacity: 0.7; margin-top: 2px;">
-                            ${data.SeriesName || ''} • ${seasonName} • ${fullCode}
-                        </div>
-                    `;
+        < div style = "font-weight: 600; color: var(--clr-text-main); font-size: 1rem;" > ${data.Name}</div >
+            <div style="font-size: 0.85rem; opacity: 0.7; margin-top: 2px;">
+                ${data.SeriesName || ''} • ${seasonName} • ${fullCode}
+            </div>
+    `;
                 }
 
                 // Get streams
@@ -5107,7 +5563,7 @@ monitorPageLoop();/**
                 }
 
                 listContainer.innerHTML = streams.map((s, index) => `
-                    <div class="listItem">
+        < div class="listItem" >
                         <span class="material-icons" style="opacity: 0.7;">closed_caption</span>
                         <div class="listItemBody">
                             <div style="font-weight: 500;">${s.DisplayTitle || s.Title || s.Language || 'Unknown'}</div>
@@ -5116,9 +5572,10 @@ monitorPageLoop();/**
                         ${s.IsExternal ? `
                         <button class="btnDelete" data-index="${s.Index}" title="Delete">
                             <span class="material-icons" style="font-size: 18px;">delete</span>
-                        </button>` : ''}
-                    </div>
-                `).join('');
+                        </button>` : ''
+                    }
+                    </div >
+        `).join('');
 
                 // Bind delete buttons
                 listContainer.querySelectorAll('.btnDelete').forEach(btn => {
@@ -5132,7 +5589,7 @@ monitorPageLoop();/**
 
             } catch (e) {
                 log('Error loading subtitles:', e);
-                listContainer.innerHTML = `<div style="color: #ff5252;">Error loading subtitles: ${e.message}</div>`;
+                listContainer.innerHTML = `< div style = "color: #ff5252;" > Error loading subtitles: ${e.message}</div > `;
                 if (infoBox) infoBox.textContent = 'Error loading episode info.';
             }
         },
@@ -5146,13 +5603,13 @@ monitorPageLoop();/**
             try {
                 const auth = await getAuth();
                 // Endpoint: DELETE /Videos/{Id}/Subtitles/{Index}
-                const response = await fetch(`/Videos/${episodeId}/Subtitles/${subtitleIndex}`, {
+                const response = await fetch(`/ Videos / ${episodeId} /Subtitles/${subtitleIndex} `, {
                     method: 'DELETE',
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Delete failed: ${response.statusText}`);
+                    throw new Error(`Delete failed: ${response.statusText} `);
                 }
 
                 // Success
@@ -5180,7 +5637,7 @@ monitorPageLoop();/**
 
             try {
                 const auth = await getAuth();
-                const url = `/Items/${episodeId}/RemoteSearch/Subtitles/${language}`;
+                const url = `/ Items / ${episodeId} /RemoteSearch/Subtitles / ${language} `;
                 const response = await fetch(url, {
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
@@ -5192,7 +5649,7 @@ monitorPageLoop();/**
                 }
 
                 resultsContainer.innerHTML = data.map(sub => `
-                    <div class="listItem">
+        < div class="listItem" >
                         <div class="listItemBody">
                             <div style="font-weight: 500;">${sub.Name}</div>
                             <div class="secondary">
@@ -5205,8 +5662,8 @@ monitorPageLoop();/**
                             <span class="material-icons">cloud_download</span>
                             <span>Download</span>
                         </button>
-                    </div>
-                `).join('');
+                    </div >
+        `).join('');
 
                 // Bind download buttons
                 resultsContainer.querySelectorAll('.btnDownload').forEach(btn => {
@@ -5215,20 +5672,20 @@ monitorPageLoop();/**
 
             } catch (e) {
                 log('Error searching:', e);
-                resultsContainer.innerHTML = `<div style="color: #ff5252;">Search failed: ${e.message}</div>`;
+                resultsContainer.innerHTML = `< div style = "color: #ff5252;" > Search failed: ${e.message}</div > `;
             }
         },
 
         async download(episodeId, subtitleId) {
             const resultsContainer = document.querySelector('#lfSubtitleSearchResults');
             // Optimistic UI
-            const btn = resultsContainer.querySelector(`button[data-id="${subtitleId}"]`);
+            const btn = resultsContainer.querySelector(`button[data - id= "${subtitleId}"]`);
             if (btn) btn.innerHTML = '<span class="material-icons spinning">sync</span>';
 
             try {
                 const auth = await getAuth();
                 // Standard Jellyfin download endpoint
-                await fetch(`/Items/${episodeId}/RemoteSearch/Subtitles/${subtitleId}`, {
+                await fetch(`/ Items / ${episodeId} /RemoteSearch/Subtitles / ${subtitleId} `, {
                     method: 'POST',
                     headers: { 'X-Emby-Token': auth.AccessToken }
                 });
@@ -5353,7 +5810,7 @@ monitorPageLoop();/**
                     if (type === 'audio') localStorage.setItem('legitflix-audio-pref', lang);
                     if (type === 'subtitle') localStorage.setItem('legitflix-sub-pref', lang);
 
-                    console.log(`[DEBUG] Language selected: ${type} -> ${lang}`);
+                    console.log(`[DEBUG] Language selected: ${type} -> ${lang} `);
 
                     // Actually switch stream?
                     // We might need to reload or notify playback logic vs simple pref save
@@ -5514,12 +5971,12 @@ monitorPageLoop();/**
 
         // Build complete HTML
         const html = `
-            <div class="lf-series-container" id="${CONFIG.containerId}">
-                ${createHeroSection(series)}
+        < div class="lf-series-container" id = "${CONFIG.containerId}" >
+            ${createHeroSection(series)}
                 ${createEpisodesSection(seasons, episodes, initialSeasonIndex)}
                 ${createCastSection(people)}
                 ${createSimilarSection(similar)}
-            </div>
+            </div >
         `;
 
         // Inject into target
@@ -5591,7 +6048,7 @@ monitorPageLoop();/**
         try {
             // Added MediaSources to fields to get stream info (usually on episodes, but checking series)
             const fields = 'Overview,Genres,Studios,OfficialRating,CommunityRating,ImageTags,BackdropImageTags,People,RemoteTrailers,ChildCount,MediaSources';
-            const url = `/Users/${auth.UserId}/Items/${seriesId}?Fields=${fields}`;
+            const url = `/ Users / ${auth.UserId} /Items/${seriesId}?Fields = ${fields} `;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
             });
@@ -5601,16 +6058,16 @@ monitorPageLoop();/**
             return {
                 id: item.Id,
                 name: item.Name,
-                year: item.ProductionYear ? `${item.ProductionYear}${item.EndDate ? ' - ' + new Date(item.EndDate).getFullYear() : ''}` : '',
+                year: item.ProductionYear ? `${item.ProductionYear}${item.EndDate ? ' - ' + new Date(item.EndDate).getFullYear() : ''} ` : '',
                 officialRating: item.OfficialRating || 'TV-14',
                 communityRating: item.CommunityRating || 0,
                 episodeCount: item.ChildCount || 0,
                 overview: item.Overview || '',
                 genres: item.Genres || [],
                 studios: item.Studios || [],
-                backdropUrl: item.BackdropImageTags?.length ? `/Items/${item.Id}/Images/Backdrop/0?maxWidth=1920&quality=90` : '',
-                posterUrl: item.ImageTags?.Primary ? `/Items/${item.Id}/Images/Primary?fillHeight=350&fillWidth=240&quality=96` : '',
-                logoUrl: item.ImageTags?.Logo ? `/Items/${item.Id}/Images/Logo?maxWidth=300&quality=90` : '',
+                backdropUrl: item.BackdropImageTags?.length ? `/ Items / ${item.Id} /Images/Backdrop / 0 ? maxWidth = 1920 & quality=90` : '',
+                posterUrl: item.ImageTags?.Primary ? `/ Items / ${item.Id} /Images/Primary ? fillHeight = 350 & fillWidth=240 & quality=96` : '',
+                logoUrl: item.ImageTags?.Logo ? `/ Items / ${item.Id} /Images/Logo ? maxWidth = 300 & quality=90` : '',
                 people: item.People || [],
                 remoteTrailers: item.RemoteTrailers || [],
                 isFavorite: item.UserData?.IsFavorite || false,
@@ -5630,7 +6087,7 @@ monitorPageLoop();/**
         if (!auth) return [];
 
         try {
-            const url = `/Shows/${seriesId}/Seasons?UserId=${auth.UserId}&Fields=ItemCounts`;
+            const url = `/ Shows / ${seriesId}/Seasons?UserId=${auth.UserId}&Fields=ItemCounts`;
             const response = await fetch(url, {
                 headers: { 'X-Emby-Token': auth.AccessToken }
             });
@@ -6078,7 +6535,9 @@ monitorPageLoop();/**
     };
 
     // Start after a short delay to let Jellyfin initialize
-    injectLoginStyles();
+    if (window.location.href.includes('login.html')) {
+        injectLoginRevamp();
+    }
     setTimeout(checkAndStart, 1000);
 
     log('Movie Module loaded. Call LFMovieDetail.demo() to test.');
