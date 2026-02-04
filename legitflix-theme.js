@@ -3047,7 +3047,7 @@ function injectCustomFooter() {
     footer.innerHTML = `
             <div class="footer-content">
                 <div class="footer-logo">
-                    <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix" style="height: 28px; width: auto; vertical-align: middle;">
+                    <img src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix" style="height: 16px; width: auto; vertical-align: middle;">
                 </div>
                 <div class="footer-divider"></div>
                 <div class="footer-author">Created by <strong>Dani</strong></div>
@@ -3423,171 +3423,182 @@ monitorPageLoop();/**
     const log = (...args) => CONFIG.debug && console.log('[LF-Movie]', ...args);
 
     // =========================================================================
-    // LOGIN / PROFILE PAGE REVAMP
+    // LOGIN & PROFILE SEQUENCE REVAMP CS
     // =========================================================================
-
-    const LOGIN_TITLES = [
-        "Who's going on an adventure?",
-        "Ready for a story?",
-        "Pick your player.",
-        "Who's watching today?",
-        "Who's hanging out?",
-        "Time to relax.",
-        "Welcome back!",
-        "Who's in control?",
-        "Let's watch something.",
-        "Your turn.",
-        "Who's diving in?",
-        "Choose your destiny."
-    ];
-
-    const LOGIN_CSS = `
-        /* Hide Default "Who's watching" text to replace it */
-        #loginPage .sectionTitle {
-            font-size: 0 !important;
-            color: transparent !important;
+    const LOGIN_REVAMP_CSS = `
+        /* --- LEGITFLIX LOGIN THEME --- */
+        
+        /* 1. Global Login Page Background */
+        #loginPage, .visualLoginForm {
+            background-color: #141414 !important;
+            background-image: radial-gradient(circle at center, #1f1f1f 0%, #0a0a0a 100%) !important;
         }
 
-        /* Replaced Title Style */
-        #loginPage .sectionTitle::after {
-            content: attr(data-custom-title);
-            font-size: 2.5rem;
-            color: white;
-            font-weight: 700;
-            display: block;
+        /* Hide Header on Login for clean look */
+        #loginPage .skinHeader, .skinHeader.focuscontainer-x.headroom {
+            display: none !important;
+        }
+
+        /* 2. Main Card Container (Glassmorphism) */
+        .visualLoginForm {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 20, 0.65) !important;
+            backdrop-filter: blur(24px) !important;
+            -webkit-backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6) !important;
+            padding: 40px !important;
+            width: 100% !important;
+            max-width: 480px !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 3. Typography */
+        #loginPage h1, .visualLoginForm h1 {
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+            font-size: 1.8rem !important;
+            margin-bottom: 2rem !important;
             text-align: center;
-            margin-bottom: 40px;
+            letter-spacing: -0.5px;
         }
 
-        /* Profile Grid Layout */
-        #loginPage .itemsContainer {
+        /* 4. Inputs */
+        .inputContainer {
+            width: 100% !important;
+            margin-top: 10px !important;
+        }
+
+        #loginPage .emby-input {
+            background: rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 10px !important;
+            color: #fff !important;
+            font-family: 'Inter', sans-serif !important;
+            padding: 14px 16px !important;
+            font-size: 1rem !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+        }
+
+        #loginPage .emby-input:focus {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: #ff6a00 !important;
+            box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.15) !important;
+        }
+
+        #loginPage .inputLabel {
+            font-family: 'Inter', sans-serif !important;
+            color: #bcbcbc !important;
+            font-size: 0.85rem !important;
+            margin-bottom: 8px !important;
+            font-weight: 500 !important;
+        }
+
+        #loginPage .inputLabelFocused {
+            color: #ff6a00 !important;
+        }
+
+        /* 5. Buttons */
+        #loginPage button.raised {
+            background: linear-gradient(135deg, #ff6a00 0%, #ff8c00 100%) !important;
+            color: white !important;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            padding: 14px 20px !important;
+            border-radius: 10px !important;
+            border: none !important;
+            box-shadow: 0 8px 20px rgba(255, 106, 0, 0.25) !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #loginPage button.raised:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 106, 0, 0.35) !important;
+            filter: brightness(1.1);
+        }
+
+        /* Secondary Links (Forgot Password etc) */
+        #loginPage button.button-flat {
+            color: #acaeb3 !important;
+            font-family: 'Inter', sans-serif !important;
+            text-transform: none !important;
+            margin-top: 10px !important;
+        }
+        #loginPage button.button-flat:hover {
+            color: #ff6a00 !important;
+            text-decoration: none !important;
+        }
+
+        /* 6. Profile Selection (Who's Watching?) */
+        .itemSelectionPanel {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
             justify-content: center !important;
-            gap: 40px !important;
         }
 
-        /* Profile Card Styling */
         #loginPage .card {
-            transform: scale(1);
+            background: transparent !important;
+        }
+        
+        #loginPage .cardBox {
+            margin: 10px !important;
             transition: transform 0.2s ease;
         }
 
-        #loginPage .card:hover {
+        #loginPage .cardBox:hover {
             transform: scale(1.1);
-        }
-
-        #loginPage .cardBox {
-            margin: 0 !important;
         }
 
         #loginPage .cardContent {
             background: transparent !important;
-            padding: 0 !important;
-            width: 150px !important;
         }
 
         #loginPage .cardImageContainer {
-            width: 150px !important;
-            height: 150px !important;
-            border-radius: 12px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 4px solid #1f1f1f;
+            width: 100% !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+            border-radius: 50% !important; /* Circle Avatars */
+            border: 3px solid transparent !important;
+            transition: border-color 0.2s ease !important;
         }
 
-        #loginPage .cardImageContainer::after {
-            display: none !important; 
+        #loginPage .cardBox:hover .cardImageContainer {
+            border-color: #ff6a00 !important;
         }
 
-        /* Card Text */
         #loginPage .cardText {
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-top: 15px;
-            color: white !important;
+            font-family: 'Inter', sans-serif !important;
+            color: #e0e0e0 !important;
+            margin-top: 10px !important;
+            font-weight: 500 !important;
+            font-size: 1rem !important;
         }
 
-        /* "Add User" Button - REMOVED per request */
-
-        /* Manage Profiles Button - General Style for secondary actions */
-        #loginPage .raised.emby-button:not(.cardImageContainer):not(.btnManual):not(.btnQuick):not(.btnForgotPassword):not(.btnSelectServer) {
-            background: transparent !important;
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            box-shadow: none !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            padding: 0.8rem 2rem;
-            margin-top: 40px;
-        }
-
-        /* NATIVE LOGIN ACTIONS (Manual, Quick Connect, Forgot Password) */
-        #loginPage .readOnlyContent {
-            margin-top: 40px !important;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #loginPage .btnManual,
-        #loginPage .btnQuick,
-        #loginPage .btnForgotPassword,
-        #loginPage .btnSelectServer {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            color: rgba(255,255,255,0.6) !important;
-            font-size: 0.9rem !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 10px 20px !important;
-            transition: color 0.2s ease, background 0.2s ease;
-            width: auto !important;
-            display: inline-block !important;
-        }
-
-        #loginPage .btnManual:hover,
-        #loginPage .btnQuick:hover,
-        #loginPage .btnForgotPassword:hover,
-        #loginPage .btnSelectServer:hover {
-            color: white !important;
-            background: rgba(255,255,255,0.05) !important;
-            border-radius: 4px;
+        /* 7. Manual Login / Switch User */
+        .manualLogin {
+            margin-top: 20px;
         }
     `;
 
-    function injectLoginProfileStyles() {
-        // Check if we are on the login/profile selection page
-        const isLogin = window.location.hash.includes('selectServer') || // Mobile sometimes
-            window.location.hash.includes('login') ||
-            document.querySelector('#loginPage');
-
-        if (!isLogin) {
-            document.body.classList.remove('is-login-page');
-            const existing = document.getElementById('lf-login-styles');
-            if (existing) existing.remove();
-            return;
-        }
-
-        document.body.classList.add('is-login-page');
-
-        // 1. Inject CSS
-        if (!document.getElementById('lf-login-styles')) {
-            const style = document.createElement('style');
-            style.id = 'lf-login-styles';
-            style.textContent = LOGIN_CSS;
-            document.head.appendChild(style);
-        }
-
-        // 2. Dynamic Title
-        const titleEl = document.querySelector('#loginPage .sectionTitle');
-        if (titleEl && !titleEl.hasAttribute('data-custom-title')) {
-            const randomTitle = LOGIN_TITLES[Math.floor(Math.random() * LOGIN_TITLES.length)];
-            titleEl.setAttribute('data-custom-title', randomTitle);
-        }
-
-        // 3. Fix "Add User" Button - REMOVED per request
-        // (Card loop removed to prevent circle modification)
+    function injectLoginStyles() {
+        if (document.getElementById('lf-login-revamp')) return;
+        const style = document.createElement('style');
+        style.id = 'lf-login-revamp';
+        style.textContent = LOGIN_REVAMP_CSS;
+        document.head.appendChild(style);
+        log('Login UI Revamp injected.');
     }
 
     // =========================================================================
@@ -6141,17 +6152,11 @@ monitorPageLoop();/**
      */
     function startMonitoring() {
         log('Starting monitor...');
-
-        const tick = () => {
-            checkUrl();
-            injectLoginProfileStyles();
-        };
-
         // Initial check
-        tick();
+        checkUrl();
 
         // Polling fallback
-        setInterval(tick, 500);
+        setInterval(checkUrl, 500);
     }
 
 
@@ -6238,11 +6243,8 @@ monitorPageLoop();/**
 
     // Check if we're in Jellyfin (ApiClient exists or will exist)
     const checkAndStart = () => {
-        // Run if ApiClient exists OR if we are on a login/startup page (to inject styles)
-        const isLogin = window.location.hash.includes('login') || window.location.hash.includes('selectServer');
-
-        if (window.ApiClient || isLogin) {
-            log('Detected Jellyfin environment (or Login Page). Starting monitoring...');
+        if (window.ApiClient) {
+            log('Detected Jellyfin environment. Starting monitoring...');
             startMonitoring();
         } else if (window.location.href.includes('file://')) {
             log('Detected local file mode. Call LFMovieDetail.demo() to test.');
@@ -6253,6 +6255,7 @@ monitorPageLoop();/**
     };
 
     // Start after a short delay to let Jellyfin initialize
+    injectLoginStyles();
     setTimeout(checkAndStart, 1000);
 
     log('Movie Module loaded. Call LFMovieDetail.demo() to test.');
