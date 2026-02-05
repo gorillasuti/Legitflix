@@ -10322,10 +10322,46 @@ monitorPageLoop();/**
             pointer-events: auto;
         }
 
-        .lf-series-hero__trailer iframe {
+        .lf-series-hero__trailer video {
             width: 100%;
             height: 100%;
-            border: none;
+            object-fit: cover;
+        }
+
+        .lf-series-hero__backdrop::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top,
+            var(--clr-bg-main) 0%,
+            rgba(20, 20, 20, 0.85) 25%,
+            rgba(20, 20, 20, 0.4) 60%,
+            transparent 100%);
+            z-index: 1;
+        }
+
+        .lf-series-hero__logo {
+            position: absolute;
+            bottom: 40px;
+            left: var(--content-padding);
+            width: 200px;
+            max-width: 30%;
+            height: auto;
+            object-fit: contain;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .lf-series-hero.is-clean-view .lf-series-hero__logo {
+            opacity: 1;
+        }
+
+        .lf-series-hero.is-clean-view .lf-series-hero__content {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
         }
 
         .lf-series-hero__content {
