@@ -5,6 +5,94 @@
    - Fix: Header alignment and loading logic.
 */
 
+// =========================================================================
+// 0. IMMEDIATE LOADING SKELETON (Prevents FOUC)
+// =========================================================================
+(function () {
+    console.log('[LF] Injecting Skeleton Loader...');
+    const LOADER_CSS = `
+        #lf-loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #141414;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+            pointer-events: all;
+        }
+        .lf-loader-logo {
+            width: 120px;
+            height: auto;
+            animation: lf-pulse 2s infinite ease-in-out;
+            margin-bottom: 20px;
+        }
+        /* Material Spinner */
+        .lf-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #E50914;
+            border-radius: 50%;
+            animation: lf-spin 1s linear infinite;
+        }
+         @keyframes lf-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        @keyframes lf-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+
+    // Inject Styles
+    const style = document.createElement('style');
+    style.id = 'lf-loader-style';
+    style.textContent = LOADER_CSS;
+    document.head.appendChild(style);
+
+    // Inject DOM
+    const div = document.createElement('div');
+    div.id = 'lf-loader-overlay';
+    div.innerHTML = `
+        <img class="lf-loader-logo" src="https://i.imgur.com/9tbXBxu.png" alt="LegitFlix">
+        <div class="lf-spinner"></div>
+    `;
+    // Prepend to body to ensure it is first
+    const body = document.body;
+    if (body) {
+        body.insertBefore(div, body.firstChild);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.insertBefore(div, document.body.firstChild);
+        });
+    }
+
+    // Global Removal Function
+    window.LF_RemoveLoader = function () {
+        const loader = document.getElementById('lf-loader-overlay');
+        if (loader && loader.style.opacity !== '0') {
+            console.log('[LF] Removing Skeleton Loader...');
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none'; // Clickthrough immediately
+            setTimeout(() => loader.remove(), 500);
+        }
+    };
+
+    // Safety Timeout (8s max) - increased for slow networks
+    setTimeout(() => {
+        if (window.LF_RemoveLoader) window.LF_RemoveLoader();
+    }, 8000);
+})();
+
 console.log('%c LegitFlix: Theme v4.0 Loaded ', 'background: #00AA00; color: white; padding: 2px 5px; border-radius: 3px;');
 
 // --- FORCE SLEEK SCROLLBAR (JS Injection) ---
@@ -3795,6 +3883,9 @@ monitorPageLoop();/**
         // Append to BODY
         document.body.appendChild(wrapper);
 
+        // Remove Skeleton Loader (if active)
+        if (window.LF_RemoveLoader) window.LF_RemoveLoader();
+
         // Setup Logic
         window.LF_Login = {
             currentUser: null,
@@ -6280,6 +6371,8 @@ monitorPageLoop();/**
                 const detailPage = document.querySelector('.itemDetailPage');
                 if (detailPage) detailPage.style.display = '';
             }
+            // Ensure loader is gone if we are just navigating normal pages
+            if (window.LF_RemoveLoader) window.LF_RemoveLoader();
         }
     }
 
