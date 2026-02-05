@@ -1,6 +1,6 @@
 /**
  * LegitFlix Movie Detail Page Revamp
- * Implements a "Direct Player" layout with Series-style Trailer/Hero features.
+ * Implements the "Direct Player" layout from movie_detail_revamp.html
  */
 
 (function () {
@@ -18,24 +18,41 @@
     const log = (...args) => CONFIG.debug && console.log('[LF-Movie]', ...args);
 
     // =========================================================================
-    // CSS STYLES (Merged Movie + Series Features)
+    // CSS STYLES (From movie_detail_revamp.html)
     // =========================================================================
     const MOVIE_DETAIL_CSS = `
-        /* ============================================
-           LEGITFLIX SHARED STYLES (INHERITED)
-           ============================================ */
-        /* See legitflix-theme.js LF_SHARED_CSS */
+        .lf-movie-container {
+            --clr-accent: #ff6a00;
+            --clr-accent-hover: #FF8C00;
+            --clr-bg-main: #141414;
+            --clr-bg-surface: #1f1f1f;
+            --clr-bg-glass: rgba(255, 255, 255, 0.1);
+            --clr-bg-glass-hover: rgba(255, 255, 255, 0.2);
+            --clr-text-main: #ffffff;
+            --clr-text-muted: #bcbcbc;
+            --clr-divider: rgba(255, 255, 255, 0.1);
+            --clr-heart: #e91e63;
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --content-padding: 3%;
+        }
 
+        .lf-movie-container * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         .lf-movie-container {
             width: 100%;
             overflow-x: hidden;
-            position: relative;
             background-color: var(--clr-bg-main);
             color: var(--clr-text-main);
             font-family: var(--font-primary);
         }
-
-        .lf-movie-container * { box-sizing: border-box; }
 
         /* HERO SECTION */
         .lf-series-hero {
@@ -68,7 +85,8 @@
                     transparent 100%);
             z-index: 1;
         }
-
+        
+        /* TRAILER OVERLAY (Added from Series Logic) */
         .lf-series-hero__trailer {
             position: absolute;
             inset: 0;
@@ -89,12 +107,6 @@
             border: none;
         }
 
-        .lf-series-hero.is-clean-view .lf-series-hero__content {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
-        }
-
         .lf-series-hero__content {
             position: relative;
             z-index: 2;
@@ -102,6 +114,7 @@
             gap: 40px;
             width: 100%;
             align-items: flex-end;
+            transition: opacity 0.5s ease;
         }
 
         .lf-series-hero__poster {
@@ -119,44 +132,26 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-bottom: 20px;
+            padding-bottom: 20px;
+        }
+        
+        .lf-series-hero__title { /* Fallback if no logo */
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
-        .lf-series-hero__logo {
-            position: absolute;
-            bottom: 40px;
-            left: var(--content-padding);
-            width: 200px;
-            max-width: 30%;
-            height: auto;
+        .lf-series-hero__logo-title {
+            max-width: 450px;
+            max-height: 180px;
+            width: auto;
             object-fit: contain;
-            z-index: 5;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
+            display: block;
+            margin-bottom: 10px;
         }
-
-        .lf-series-hero.is-clean-view .lf-series-hero__logo {
-            opacity: 1;
-        }
-
-        .lf-series-hero.is-clean-view .lf-series-hero__content {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
-        }
-
-        .lf-series-hero__content {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            gap: 40px;
-            width: 100%;
-            align-items: flex-end;
-            transition: all 0.5s ease;
-        }
-
-
 
         .lf-series-hero__meta {
             display: flex;
@@ -172,23 +167,86 @@
             color: var(--clr-divider);
         }
 
-        /* NOTE: .lf-btn, .lf-meta-badge, and .lf-section-divider styles are inherited from LF_SHARED_CSS */
-
         .lf-series-hero__rating {
             display: flex;
             align-items: center;
             gap: 4px;
             color: #ffc107;
         }
+        
+        .lf-meta-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: #fff;
+            font-weight: 600;
+        }
 
-        /* ACTIONS & BUTTONS */
         .lf-series-hero__actions {
             display: flex;
             gap: 12px;
             margin-top: 16px;
         }
 
-        /* Mute Button */
+        /* BUTTONS */
+        .lf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .lf-btn--primary {
+            background: var(--clr-accent);
+            color: white;
+        }
+
+        .lf-btn--primary:hover {
+            background: var(--clr-accent-hover);
+        }
+
+        .lf-btn--glass {
+            background: var(--clr-bg-glass);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .lf-btn--glass:hover {
+            background: var(--clr-bg-glass-hover);
+        }
+
+        .lf-btn--icon-only {
+            padding: 10px;
+        }
+
+        .lf-btn--heart {
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .lf-btn--heart:hover {
+            background: var(--clr-bg-glass-hover);
+        }
+
+        .lf-btn--heart.is-liked {
+            background: rgba(233, 30, 99, 0.2);
+            border-color: var(--clr-heart);
+        }
+
+        .lf-btn--heart.is-liked .material-icons {
+            color: var(--clr-heart);
+        }
+        
+        /* Mute Button (From Series) */
         .lf-mute-btn {
             display: inline-flex;
             align-items: center;
@@ -205,7 +263,7 @@
         .lf-mute-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: white; }
         .lf-mute-btn.is-muted { opacity: 0.7; }
 
-        /* LAYOUT & SIDEBAR */
+        /* DESCRIPTION & DETAILS SIDEBAR */
         .lf-series-hero__details {
             display: flex;
             gap: 3rem;
@@ -228,6 +286,7 @@
             transition: all 0.3s ease;
             margin: 0;
         }
+
         .lf-series-hero__description-text.expanded {
             -webkit-line-clamp: unset;
             display: block;
@@ -247,10 +306,21 @@
             cursor: pointer;
             transition: color 0.2s ease;
         }
-        .lf-series-hero__load-more:hover { color: var(--clr-accent-hover); }
-        .lf-series-hero__load-more .material-icons { transition: transform 0.2s ease; font-size: 18px; }
-        .lf-series-hero__load-more.expanded .material-icons { transform: rotate(180deg); }
 
+        .lf-series-hero__load-more:hover {
+            color: var(--clr-accent-hover);
+        }
+        
+        .lf-series-hero__load-more .material-icons {
+             transition: transform 0.2s;
+             font-size: 18px;
+        }
+
+        .lf-series-hero__load-more.expanded .material-icons {
+            transform: rotate(180deg);
+        }
+
+        /* METADATA SIDEBAR */
         .lf-series-hero__cast-info {
             flex: 1;
             font-size: 0.85rem;
@@ -258,8 +328,10 @@
             line-height: 1.8;
             padding-top: 5px;
         }
-        .lf-series-hero__cast-info strong { color: var(--clr-text-main); }
 
+        .lf-series-hero__cast-info strong {
+            color: var(--clr-text-main);
+        }
 
         /* CONTENT SECTIONS */
         .lf-content-section {
@@ -267,33 +339,39 @@
             padding: 30px var(--content-padding);
         }
 
-        /* DIVIDER STYLE */
         .lf-section-divider {
             border: none;
             border-top: 1px solid var(--clr-divider);
             margin: 0 var(--content-padding);
-            display: block;
-            width: auto;
         }
 
+        /* SECTION HEADER */
         .lf-section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 24px;
         }
+        
+        .lf-section-header--large-gap {
+            margin-bottom: 32px;
+        }
 
         .lf-section-title {
             font-family: var(--font-display);
-            font-size: 1.3rem; 
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--clr-text-main);
             margin: 0;
         }
 
-        .lf-filter-controls { display: flex; gap: 10px; align-items: center; }
+        .lf-filter-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
-        /* DROPDOWNS */
+        /* FILTER BUTTONS & DROPDOWNS */
         .lf-filter-btn {
             position: relative;
             display: flex;
@@ -308,20 +386,22 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .lf-filter-btn:hover { background: var(--clr-bg-glass); color: var(--clr-text-main); }
-        .lf-filter-btn .material-icons { font-size: 18px; }
+
+        .lf-filter-btn:hover {
+            background: var(--clr-bg-glass);
+            color: var(--clr-text-main);
+        }
         
-        /* WATCHED BUTTON SPECIFIC */
         .lf-filter-btn.is-selected {
             background: rgba(255, 255, 255, 0.1);
             color: var(--clr-accent);
             border-color: rgba(255, 106, 0, 0.3);
         }
-        .lf-filter-btn.is-selected .material-icons {
-            color: var(--clr-accent);
-        }
 
-        .lf-filter-dropdown { position: relative; display: inline-block; }
+        .lf-filter-dropdown {
+            position: relative;
+            display: inline-block;
+        }
 
         .lf-filter-dropdown__menu {
             position: absolute;
@@ -339,8 +419,9 @@
             transition: all 0.2s ease;
             pointer-events: none;
         }
-        .lf-filter-dropdown:hover .lf-filter-dropdown__menu, 
-        .lf-filter-dropdown.is-open .lf-filter-dropdown__menu {
+        
+        .lf-filter-dropdown.is-open .lf-filter-dropdown__menu,
+        .lf-filter-dropdown:hover .lf-filter-dropdown__menu {
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
@@ -383,6 +464,7 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             margin-top: 5px;
         }
+        
         .lf-edit-subs-btn {
             width: 100%;
             display: flex;
@@ -400,9 +482,8 @@
             text-decoration: none;
         }
         .lf-edit-subs-btn:hover { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); }
-        .lf-edit-subs-btn .material-icons { font-size: 18px; }
-
-        /* PLAYER WRAPPER (90vh) */
+        
+        /* PLAYER WRAPPER */
         .lf-player-wrapper {
             width: 100%;
             height: 90vh;
@@ -413,6 +494,7 @@
             position: relative;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .lf-player-overlay {
             position: absolute;
             inset: 0;
@@ -423,6 +505,12 @@
             cursor: pointer;
             z-index: 10;
         }
+        
+        .lf-player-overlay:hover .lf-big-play-btn {
+             transform: scale(1.1);
+             box-shadow: 0 0 50px rgba(255, 107, 0, 0.6);
+        }
+
         .lf-big-play-btn {
             width: 90px;
             height: 90px;
@@ -434,12 +522,16 @@
             box-shadow: 0 0 30px rgba(255, 107, 0, 0.4);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .lf-player-overlay:hover .lf-big-play-btn {
-            transform: scale(1.1);
-            box-shadow: 0 0 50px rgba(255, 107, 0, 0.6);
+
+        .lf-big-play-btn .material-icons {
+             font-size: 48px; color: white;
         }
-        .lf-big-play-btn .material-icons { font-size: 48px; color: white; }
-        .lf-player-iframe { width: 100%; height: 100%; border: none; }
+
+        .lf-player-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
 
         /* GRIDS */
         .lf-cast-grid,
@@ -450,12 +542,17 @@
             overflow-x: auto;
             padding-bottom: 20px;
         }
-        .lf-cast-grid::-webkit-scrollbar,
-        .lf-similar-grid::-webkit-scrollbar { height: 8px; }
-        .lf-cast-grid::-webkit-scrollbar-thumb,
-        .lf-similar-grid::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        
+        .lf-cast-grid::-webkit-scrollbar, .lf-similar-grid::-webkit-scrollbar { height: 8px; }
+        .lf-cast-grid::-webkit-scrollbar-thumb, .lf-similar-grid::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
 
-        .lf-cast-card { width: 120px; flex-shrink: 0; text-align: center; cursor: pointer; }
+        .lf-cast-card {
+            width: 120px;
+            flex-shrink: 0;
+            text-align: center;
+            cursor: pointer;
+        }
+
         .lf-cast-image {
             width: 100px;
             height: 100px;
@@ -464,20 +561,27 @@
             border: 2px solid rgba(255, 255, 255, 0.1);
             margin-bottom: 8px;
             transition: border-color 0.2s;
-            aspect-ratio: 1/1;
         }
         .lf-cast-card:hover .lf-cast-image { border-color: rgba(255, 255, 255, 0.4); }
+
         .lf-cast-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
         .lf-cast-role { font-size: 0.8rem; color: #aaa; }
 
-        .lf-similar-card { width: 180px; flex-shrink: 0; cursor: pointer; transition: transform 0.2s; }
+        .lf-similar-card {
+            width: 180px;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
         .lf-similar-card:hover { transform: translateY(-4px); }
+
         .lf-similar-poster {
             width: 100%;
             aspect-ratio: 2/3;
             border-radius: 8px;
             margin-bottom: 8px;
         }
+
         .lf-similar-title { font-size: 0.9rem; text-align: center; color: #fff; }
 
         /* RESPONSIVE */
@@ -508,6 +612,32 @@
         log('CSS injected');
     }
 
+    function removeStyles() {
+        const style = document.getElementById(CONFIG.cssId);
+        if (style) style.remove();
+    }
+
+    // =========================================================================
+    // HELPER FUNCTIONS (Duplicated from Series to be standalone)
+    // =========================================================================
+    function getYoutubeId(url) {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    function formatPeople(people) {
+        if (!people) return [];
+        return people.map(p => ({
+            Id: p.Id,
+            Name: p.Name,
+            Role: p.Role,
+            Type: p.Type,
+            PrimaryImageTag: p.PrimaryImageTag
+        }));
+    }
+
     // =========================================================================
     // UI GENERATORS
     // =========================================================================
@@ -534,7 +664,7 @@
             endsAtStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
 
-        // Sub/Dub
+        // Sub/Dub detection
         let audioLangs = new Set();
         let subLangs = new Set();
         if (item.MediaStreams) {
@@ -581,18 +711,16 @@
         }
 
         return `
-            <section class="lf-series-hero" id="lfSeriesHero">
-                <div class="lf-series-hero__backdrop" id="lfHeroBackdrop" style="background-image: url('${backdropUrl}');"></div>
+            <section class="lf-series-hero" id="lfHeroSection">
+                <div class="lf-series-hero__backdrop" style="background-image: url('${backdropUrl}');"></div>
                 
                 <!-- TRAILER CONTAINER -->
                 <div class="lf-series-hero__trailer" id="lfHeroTrailer">
-                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
 
-                ${logoUrl ? `<img src="${logoUrl}" alt="${title}" class="lf-series-hero__logo">` : ''}
-
                 <div class="lf-series-hero__content">
-                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}" onerror="this.src='https://raw.githubusercontent.com/google/material-design-icons/master/png/image/movie/materialicons/48dp/2x/baseline_movie_white_48dp.png'">
+                    <img class="lf-series-hero__poster" src="${posterUrl}" alt="${title}" onerror="this.src='/web/assets/img/default-movie.png'">
                     
                     <div class="lf-series-hero__info">
                         ${titleHtml}
@@ -605,7 +733,7 @@
                                 <span>${communityRating}</span>
                             </div>
                             ${durationStr ? `<span class="separator">•</span><span>${durationStr}</span>` : ''}
-                            ${endsAtStr ? `<span class="lf-meta-badge">Ends at ${endsAtStr}</span>` : ''}
+                            ${endsAtStr ? `<span class="separator">•</span><span class="lf-meta-badge">Ends at ${endsAtStr}</span>` : ''}
                             ${subDubText ? `<span class="separator">•</span><span class="lf-meta-badge">${subDubText}</span>` : ''}
                         </div>
 
@@ -615,10 +743,9 @@
                                 ${playButtonText}
                             </button>
                             
-                            <!-- SWAPPED: Trailer Middle, Heart Last -->
                             <button class="lf-btn lf-btn--glass" id="lfTrailerBtn">
-                                <span class="material-icons">theaters</span>
-                                Watch Trailer
+                                <span class="material-icons">videocam</span>
+                                Trailer
                             </button>
 
                             <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart ${favClass}" id="lfHeartBtn" title="Toggle Favorites">
@@ -634,7 +761,7 @@
                             <div class="lf-series-hero__description">
                                 <p class="lf-series-hero__description-text" id="lfDescriptionText">${description}</p>
                                 <button class="lf-series-hero__load-more" id="lfLoadMoreBtn" style="display:none">
-                                    <span>Read more</span>
+                                    <span>Read More</span>
                                     <span class="material-icons">expand_more</span>
                                 </button>
                             </div>
@@ -651,30 +778,25 @@
     }
 
     function createPlayerSection(item) {
-        // Watched State for Header
-        const isPlayed = item.UserData && item.UserData.Played;
-        const playedIcon = isPlayed ? 'check_circle' : 'check_circle_outline';
-        const playedClass = isPlayed ? 'is-selected' : '';
+        const isWatched = item.UserData && item.UserData.Played;
+        const watchClass = isWatched ? 'is-selected' : '';
+        const watchIcon = isWatched ? 'check_circle' : 'check_circle_outline';
 
-        // Simple mock of Audio/Subs for now, or we could parse media streams
-        // Using static list logic as placeholder for prototype, same as Series module
-        const audioOptions = `
-            <div class="lf-filter-dropdown__option is-selected"><span class="material-icons">check</span> English</div>
-        `;
-        const subOptions = `
-             <div class="lf-filter-dropdown__option is-selected"><span class="material-icons">check</span> English</div>
-        `;
+        // Mock options (Real implementation would iterate MediaStreams)
+        const audioOptions = `<div class="lf-filter-dropdown__option is-selected"><span>English</span><span class="material-icons">check</span></div>`;
+        const subOptions = `<div class="lf-filter-dropdown__option is-selected"><span>English</span><span class="material-icons">check</span></div>`;
 
         return `
             <hr class="lf-section-divider">
-            <section class="lf-content-section" id="lfDirectPlayer">
-                 <div class="lf-section-header">
+            <section class="lf-content-section">
+                <!-- HEADER WITH CONTROLS -->
+                <div class="lf-section-header">
                     <h2 class="lf-section-title">${item.Name}</h2>
-                    
+
                     <div class="lf-filter-controls">
-                        <!-- AUDIO / SUBS -->
+                        <!-- Audio/Sub Selector -->
                         <div class="lf-filter-dropdown" id="lfLangDropdown">
-                            <button class="lf-filter-btn" id="lfLangBtn" title="Audio & Subtitles">
+                            <button class="lf-filter-btn" title="Audio & Subtitles" id="lfLangBtn">
                                 <span class="material-icons">subtitles</span>
                                 <span>Audio & Subs</span>
                                 <span class="material-icons">expand_more</span>
@@ -698,41 +820,46 @@
                             </div>
                         </div>
 
-                        <!-- WATCHED TOGGLE -->
-                        <button class="lf-filter-btn ${playedClass}" id="lfWatchedBtn" title="Mark as Watched">
-                            <span class="material-icons">${playedIcon}</span>
+                        <!-- Mark Watched Button -->
+                        <button class="lf-filter-btn ${watchClass}" id="lfWatchedBtn" title="Mark as Watched">
+                            <span class="material-icons">${watchIcon}</span>
                             <span>Mark Watched</span>
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="lf-player-wrapper">
-                    <div class="lf-player-overlay" onclick="window.legitFlixPlay('${item.Id}')">
-                         <div class="lf-big-play-btn">
-                             <span class="material-icons">play_arrow</span>
-                         </div>
+                    <div class="lf-player-overlay" id="lfPlayerOverlay">
+                        <div class="lf-big-play-btn">
+                            <span class="material-icons">play_arrow</span>
+                        </div>
                     </div>
-                    <div style="width:100%; height:100%; background: url('/Items/${item.Id}/Images/Backdrop/0') center/cover; opacity: 0.3;"></div>
+                    <!-- Using Backdrop as placeholder for now, click will launch Player or Iframe can load content -->
+                    <div id="lfPlayerPlaceholder" style="width:100%; height:100%; background: url('/Items/${item.Id}/Images/Backdrop/0') center/cover;"></div>
                 </div>
             </section>
         `;
     }
 
     function createCastSection(people) {
+        if (!people || people.length === 0) return '';
+
+        // Only Actors
         const actors = people.filter(p => p.Type === 'Actor');
         if (actors.length === 0) return '';
+
         const cards = actors.map(person => `
             <div class="lf-cast-card" onclick="window.legitFlixShowItem('${person.Id}')">
                 <img class="lf-cast-image" src="${person.PrimaryImageTag ? `/Items/${person.Id}/Images/Primary?maxHeight=200&maxWidth=200` : '/web/assets/img/default-avatar.png'}" alt="${person.Name}">
                 <div class="lf-cast-name">${person.Name}</div>
-                <div class="lf-cast-role">${person.Role || 'Actor'}</div>
+                <div class="lf-cast-role">${person.Role || ''}</div>
             </div>
         `).join('');
 
         return `
             <hr class="lf-section-divider">
             <section class="lf-content-section">
-                <div class="lf-section-header">
+                <div class="lf-section-header lf-section-header--large-gap">
                     <h2 class="lf-section-title">Cast & Crew</h2>
                 </div>
                 <div class="lf-cast-grid">${cards}</div>
@@ -750,10 +877,10 @@
         `).join('');
 
         return `
-             <hr class="lf-section-divider">
+            <hr class="lf-section-divider">
             <section class="lf-content-section">
-                <div class="lf-section-header">
-                     <h2 class="lf-section-title">More Like This</h2>
+                <div class="lf-section-header lf-section-header--large-gap">
+                    <h2 class="lf-section-title">More Like This</h2>
                 </div>
                 <div class="lf-similar-grid">${cards}</div>
             </section>
@@ -761,300 +888,231 @@
     }
 
     // =========================================================================
-    // EVENTS & LOGIC
+    // EVENTS
     // =========================================================================
-
-    function wireUpEvents(container, item) {
-        // --- Play Button ---
+    function wireUpMovieEvents(container, item, trailerYtId) {
+        // --- Play Main ---
         const playBtn = container.querySelector('#lfPlayBtn');
-        playBtn?.addEventListener('click', () => window.legitFlixPlay(item.Id));
+        const overlay = container.querySelector('#lfPlayerOverlay');
+        const doPlay = () => {
+            if (window.legitFlixPlay) window.legitFlixPlay(item.Id);
+            else console.warn('legitFlixPlay not found');
+        };
 
-        // --- Heart Button ---
+        playBtn?.addEventListener('click', doPlay);
+        overlay?.addEventListener('click', doPlay);
+
+        // --- Favorites ---
         const heartBtn = container.querySelector('#lfHeartBtn');
         heartBtn?.addEventListener('click', () => {
-            // Optimistic UI
             const isLiked = heartBtn.classList.toggle('is-liked');
             const icon = heartBtn.querySelector('.material-icons');
             if (icon) icon.textContent = isLiked ? 'favorite' : 'favorite_border';
-            window.legitFlixToggleFav(item.Id, heartBtn); // Async call in background
+            if (window.legitFlixToggleFav) window.legitFlixToggleFav(item.Id, heartBtn);
         });
 
-        // --- Watched Button ---
+        // --- Watched ---
         const watchedBtn = container.querySelector('#lfWatchedBtn');
         watchedBtn?.addEventListener('click', () => {
-            // Optimistic UI
             const isSelected = watchedBtn.classList.toggle('is-selected');
             const icon = watchedBtn.querySelector('.material-icons');
             if (icon) icon.textContent = isSelected ? 'check_circle' : 'check_circle_outline';
-            window.legitFlixTogglePlayed(item.Id, watchedBtn);
+            if (window.legitFlixTogglePlayed) window.legitFlixTogglePlayed(item.Id, watchedBtn);
         });
 
-        // --- Dropdown Logic ---
-        const langBtn = container.querySelector('#lfLangBtn');
-        const langDropdown = container.querySelector('#lfLangDropdown');
-        langBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            langDropdown.classList.toggle('is-open');
-        });
-        document.addEventListener('click', (e) => {
-            if (!langDropdown?.contains(e.target)) langDropdown?.classList.remove('is-open');
-        });
-
-        // --- Edit Subtitles ---
-        const editSubsBtn = container.querySelector('#lfEditSubsBtn');
-        editSubsBtn?.addEventListener('click', () => {
-            console.log('[LF] Edit Subtitles clicked for', item.Id);
-            // In future: Open SubtitleManager.show(item.Id)
-            alert('Edit Subtitles feature coming soon!');
-        });
-
-        // --- Read More Logic ---
-        const descText = container.querySelector('#lfDescriptionText');
-        const loadMoreBtn = container.querySelector('#lfLoadMoreBtn');
-        if (descText && loadMoreBtn) {
-            // Check overflow with tolerance
-            if (descText.scrollHeight > descText.clientHeight + 2) {
-                loadMoreBtn.style.display = 'inline-flex';
-            }
-            loadMoreBtn.addEventListener('click', function () {
-                const isExpanded = descText.classList.toggle('expanded');
-                this.classList.toggle('expanded', isExpanded);
-                this.querySelector('span:first-child').textContent = isExpanded ? 'Show Less' : 'Read More';
-            });
-        }
-
-        // --- TRAILER LOGIC ---
+        // --- Trailer ---
         const trailerBtn = container.querySelector('#lfTrailerBtn');
-        const trailerContainer = container.querySelector('#lfHeroTrailer');
-        const trailerIframe = container.querySelector('#lfTrailerIframe');
-        const heroSection = container.querySelector('#lfSeriesHero');
-        const backdrop = container.querySelector('#lfHeroBackdrop');
-        const muteBtn = container.querySelector('#lfMuteBtn');
-
-        const trailerYtId = (item.RemoteTrailers && item.RemoteTrailers.length > 0)
-            ? getYoutubeId(item.RemoteTrailers[0].Url)
-            : null;
-
-        if (trailerBtn && trailerYtId) {
-            let hideUITimeout;
-            let blockedTimeout;
-            let messageHandler;
-
-            const startHideTimer = () => {
-                clearTimeout(hideUITimeout);
-                hideUITimeout = setTimeout(() => {
-                    if (trailerContainer.classList.contains('is-playing')) {
-                        heroSection?.classList.add('is-clean-view');
-                    }
-                }, 5000);
-            };
-
-            const resetHideTimer = () => {
-                heroSection?.classList.remove('is-clean-view');
-                if (trailerContainer.classList.contains('is-playing')) startHideTimer();
-            };
-
-            heroSection?.addEventListener('mousemove', resetHideTimer);
-            heroSection?.addEventListener('click', resetHideTimer);
+        if (trailerYtId && trailerBtn) {
+            const trailerContainer = container.querySelector('#lfHeroTrailer');
+            const iframe = container.querySelector('#lfTrailerIframe');
+            const backdrop = container.querySelector('.lf-series-hero__backdrop'); // Visual bg
+            const muteBtn = container.querySelector('#lfMuteBtn');
 
             trailerBtn.addEventListener('click', () => {
                 const isPlaying = trailerContainer.classList.contains('is-playing');
                 if (isPlaying) {
-                    // STOP
-                    trailerIframe.src = '';
+                    // Stop
                     trailerContainer.classList.remove('is-playing');
-                    heroSection.classList.remove('is-clean-view');
-                    clearTimeout(hideUITimeout);
-                    clearTimeout(blockedTimeout);
-                    if (messageHandler) window.removeEventListener('message', messageHandler);
-                    document.getElementById('lfTrailerHelpBtn')?.remove();
+                    iframe.src = '';
+                    trailerBtn.innerHTML = '<span class="material-icons">videocam</span> Trailer';
                     if (backdrop) backdrop.style.opacity = '1';
-
-                    trailerBtn.innerHTML = '<span class="material-icons">theaters</span> Watch Trailer';
-                    muteBtn.style.display = 'none';
-                    muteBtn.classList.remove('is-muted');
+                    if (muteBtn) muteBtn.style.display = 'none';
                 } else {
-                    // PLAY
-                    log('Playing trailer:', trailerYtId);
+                    // Play
                     const origin = window.location.origin;
-                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}&widget_referrer=${origin}`;
-
-                    trailerIframe.src = embedUrl;
+                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}`;
+                    iframe.src = embedUrl;
                     trailerContainer.classList.add('is-playing');
-                    heroSection.classList.add('is-clean-view');
+                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop';
                     if (backdrop) backdrop.style.opacity = '0';
-
-                    startHideTimer();
-
-                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop Trailer';
-
-                    muteBtn.style.display = 'flex';
-                    muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                    muteBtn.classList.add('is-muted');
-
-                    // Blocking Detection
-                    let receivedMessage = false;
-                    messageHandler = (e) => {
-                        if (typeof e.data === 'string' && (e.data.includes('"event"') || e.data.includes('"id"'))) {
-                            receivedMessage = true;
-                            clearTimeout(blockedTimeout);
-                        }
-                    };
-                    window.addEventListener('message', messageHandler);
-
-                    blockedTimeout = setTimeout(() => {
-                        if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
-                            showTrailerHelpBtn(trailerContainer);
-                        }
-                    }, 4000);
+                    if (muteBtn) {
+                        muteBtn.style.display = 'flex';
+                        muteBtn.classList.add('is-muted');
+                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                    }
                 }
             });
 
-            // Mute Logic
-            muteBtn.addEventListener('click', () => {
-                const isMuted = muteBtn.classList.contains('is-muted');
-                const func = isMuted ? 'unMute' : 'mute'; // YouTube API commands
-                trailerIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), '*');
-
-                if (isMuted) {
-                    muteBtn.classList.remove('is-muted');
-                    muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
-                } else {
-                    muteBtn.classList.add('is-muted');
-                    muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                }
-            });
+            // Mute logic
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    const isMuted = muteBtn.classList.contains('is-muted');
+                    const targetOrigin = '*';
+                    if (iframe.contentWindow) {
+                        const func = isMuted ? 'unMute' : 'mute';
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), targetOrigin);
+                        muteBtn.classList.toggle('is-muted');
+                        muteBtn.innerHTML = isMuted ? '<span class="material-icons">volume_up</span>' : '<span class="material-icons">volume_off</span>';
+                    }
+                });
+            }
 
         } else if (trailerBtn) {
-            trailerBtn.style.opacity = '0.5';
-            trailerBtn.style.pointerEvents = 'none';
-            trailerBtn.innerHTML = 'No Trailer';
+            trailerBtn.style.display = 'none';
+        }
+
+        // --- Read More ---
+        const descText = container.querySelector('#lfDescriptionText');
+        const moreBtn = container.querySelector('#lfLoadMoreBtn');
+        if (descText && descText.scrollHeight > descText.clientHeight + 10) {
+            moreBtn.style.display = 'inline-flex';
+            moreBtn.addEventListener('click', () => {
+                const expanded = descText.classList.toggle('expanded');
+                moreBtn.classList.toggle('expanded');
+                moreBtn.querySelector('span').textContent = expanded ? 'Less' : 'Read More';
+            });
+        }
+
+        // --- Dropdown ---
+        const langDropdown = container.querySelector('#lfLangDropdown');
+        const langBtn = container.querySelector('#lfLangBtn');
+        if (langBtn && langDropdown) {
+            langBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                langDropdown.classList.toggle('is-open');
+            });
+            document.addEventListener('click', (e) => {
+                if (!langDropdown.contains(e.target)) langDropdown.classList.remove('is-open');
+            });
         }
     }
 
-    function showTrailerHelpBtn(container) {
-        if (document.getElementById('lfTrailerHelpBtn')) return;
-        const btn = document.createElement('button');
-        btn.id = 'lfTrailerHelpBtn';
-        btn.innerHTML = '<span class="material-icons">help_outline</span> <span>Trouble playing?</span>';
-        btn.className = 'lf-btn lf-btn--glass';
-        Object.assign(btn.style, {
-            position: 'absolute', bottom: '20px', right: '20px', zIndex: '100',
-            padding: '8px 16px', fontSize: '0.85rem', opacity: '0', transition: 'opacity 0.3s ease'
-        });
-        container.appendChild(btn);
-        requestAnimationFrame(() => btn.style.opacity = '1');
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            alert('Your browser may be blocking the trailer. Try disabling ad blockers for this site.');
-            // Or inject proper modal like Series page if wanted, using alert for simple JS proto now.
-        });
-    }
 
-    function getYoutubeId(url) {
-        if (!url) return null;
-        if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
-        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
-        return null;
+    // =========================================================================
+    // MAIN RENDER LOGIC
+    // =========================================================================
+    function renderMovieDetailPage(data, targetContainer) {
+        injectStyles();
+        const { item, similar } = data;
+
+        const html = `
+             <div class="lf-movie-container" id="${CONFIG.containerId}">
+                  ${createHeroSection(item)}
+                  ${createPlayerSection(item)}
+                  ${createCastSection(item.People)}
+                  ${createSimilarSection(similar ? similar.Items : [])}
+             </div>
+         `;
+
+        targetContainer.innerHTML = html;
+
+        // Wire events
+        const container = document.getElementById(CONFIG.containerId);
+        let trailerId = null;
+        if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
+            trailerId = getYoutubeId(item.RemoteTrailers[0].Url);
+        }
+        wireUpMovieEvents(container, item, trailerId);
+
+        log('Movie Detail Page Rendered');
     }
 
     // =========================================================================
-    // MAIN LOGIC
+    // API
     // =========================================================================
-
-    async function injectMoviePage(itemId) {
-        if (document.getElementById(CONFIG.containerId)) return;
-
+    async function fetchMovieData(itemId) {
+        if (!window.ApiClient) return null;
         const userId = window.ApiClient.getCurrentUserId();
         const item = await window.ApiClient.getItem(userId, itemId);
+        return item;
+    }
 
-        if (!item || item.Type !== 'Movie') return;
+    async function fetchSimilar(itemId) {
+        if (!window.ApiClient) return null;
+        const userId = window.ApiClient.getCurrentUserId();
+        return await window.ApiClient.getSimilarItems(itemId, { Limit: 10, UserId: userId });
+    }
 
-        log('Injecting Movie Page for:', item.Name);
-        injectStyles();
+    // =========================================================================
+    // MONITORING
+    // =========================================================================
+    let isInjecting = false;
+    let currentMovieId = null;
 
+    async function monitorMovieDetailPage() {
         const detailPage = document.querySelector('.itemDetailPage');
-        if (detailPage) {
-            detailPage.classList.add('hide');
-            detailPage.style.display = 'none';
-        }
-
-        const container = document.createElement('div');
-        container.id = CONFIG.containerId;
-        container.className = 'lf-movie-container';
-        container.dataset.itemId = itemId; // Fix: Set itemId to prevent re-injection loop
-
-        let html = createHeroSection(item);
-        html += createPlayerSection(item);
-
-        if (item.People && item.People.length > 0) {
-            html += createCastSection(item.People);
-        }
-
-        try {
-            const similarRes = await window.ApiClient.getSimilarItems(itemId, { Limit: 12, UserId: userId });
-            if (similarRes && similarRes.Items) {
-                html += createSimilarSection(similarRes.Items);
+        if (!detailPage) {
+            if (currentMovieId) {
+                currentMovieId = null;
+                removeStyles();
             }
-        } catch (e) { log('Error fetching similar:', e); }
-
-        // CONTAINER FINDER STRATEGY
-        let parentContainer = document.querySelector('.pageContainer');
-        if (!parentContainer) parentContainer = document.querySelector('.mainAnimatedPages');
-        if (!parentContainer) parentContainer = document.querySelector('.skinBody');
-        if (!parentContainer) parentContainer = document.querySelector('.view');
-        if (!parentContainer) parentContainer = document.body;
-
-        container.innerHTML = html;
-        if (parentContainer) {
-            parentContainer.appendChild(container);
-        } else {
-            console.error('[LF] Critical: No valid parent container found for injection.');
+            return;
         }
 
-        // WIRE UP
-        wireUpEvents(container, item);
-        isInjecting = false; // Reset lock
-    }
-
-    let isInjecting = false; // Lock flag
-
-    function checkUrl() {
+        // Check ID from URL
         const hash = window.location.hash;
-        if (hash.includes('details?id=')) {
-            const id = new URLSearchParams(hash.split('?')[1]).get('id');
-            if (id) {
-                const currentContainer = document.getElementById(CONFIG.containerId);
-                // If ID changed or not injected
-                if (!currentContainer || currentContainer.dataset.itemId !== id) {
-                    if (isInjecting) return; // Prevent double injection
+        const params = new URLSearchParams(hash.split('?')[1]);
+        const id = params.get('id');
 
-                    if (currentContainer) currentContainer.remove();
+        if (!id || id === currentMovieId || isInjecting) return;
 
-                    isInjecting = true;
-                    injectMoviePage(id).catch(err => {
-                        console.error('[LF] Injection failed', err);
-                        isInjecting = false;
-                    });
-                }
+        // Verify it is a MOVIE
+        // We do this via API because DOM might be stale or slow
+        isInjecting = true;
+        try {
+            // Quick fetch to check type
+            const item = await fetchMovieData(id);
+            if (!item || item.Type !== 'Movie') {
+                isInjecting = false;
+                return; // Abort if not Movie
             }
-        } else {
-            const container = document.getElementById(CONFIG.containerId);
-            if (container) {
-                container.remove();
-                const detailPage = document.querySelector('.itemDetailPage');
-                if (detailPage) detailPage.style.display = '';
-            }
+
+            log('Detected Movie:', id);
+            currentMovieId = id;
+
+            // Fetch similar too
+            const similar = await fetchSimilar(id);
+
+            // Hide default
+            // Strategy: We inject INTO the view, replacing standard content
+            // or hide standard content and append ours.
+            // Best strategy for single page apps:
+
+            // 1. Hide original children
+            const children = Array.from(detailPage.children);
+            children.forEach(c => c.style.display = 'none');
+
+            // 2. Render ours
+            renderMovieDetailPage({ item, similar }, detailPage);
+
+            // 3. Watch for navigation away (MutationObserver handled by Theme usually, but we check via polling in Theme)
+
+        } catch (e) {
+            console.error('[LF-Movie] Fetch failed', e);
+        } finally {
+            isInjecting = false;
         }
     }
 
+    // =========================================================================
+    // EXPORT
+    // =========================================================================
     window.LFMovieDetail = {
-        init: () => {
-            log('Module Loaded');
-            setInterval(checkUrl, 500);
-        }
+        renderMovieDetailPage,
+        monitorMovieDetailPage,
+        fetchMovieData
     };
 
-    window.LFMovieDetail.init();
+    log('Movie Module Loaded');
 
 })();
