@@ -10322,46 +10322,10 @@ monitorPageLoop();/**
             pointer-events: auto;
         }
 
-        .lf-series-hero__trailer video {
+        .lf-series-hero__trailer iframe {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-        }
-
-        .lf-series-hero__backdrop::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top,
-            var(--clr-bg-main) 0%,
-            rgba(20, 20, 20, 0.85) 25%,
-            rgba(20, 20, 20, 0.4) 60%,
-            transparent 100%);
-            z-index: 1;
-        }
-
-        .lf-series-hero__logo {
-            position: absolute;
-            bottom: 40px;
-            left: var(--content-padding);
-            width: 200px;
-            max-width: 30%;
-            height: auto;
-            object-fit: contain;
-            z-index: 5;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-
-        .lf-series-hero.is-clean-view .lf-series-hero__logo {
-            opacity: 1;
-        }
-
-        .lf-series-hero.is-clean-view .lf-series-hero__content {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
+            border: none;
         }
 
         .lf-series-hero__content {
@@ -10434,6 +10398,62 @@ monitorPageLoop();/**
         .lf-meta-badge {
             background: rgba(255,255,255,0.15);
             padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #fff;
+        }
+
+            /* --- NEW TRAILER ANIMATIONS & LAYOUT --- */
+            
+            /* Clean View State (Fade Down) */
+            .lf-series-hero__content {
+                transition: opacity 0.5s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+            
+            .lf-series-hero.is-clean-view .lf-series-hero__content {
+                opacity: 0;
+                transform: translateY(50px);
+                pointer-events: none;
+            }
+
+            /* Logo Fade In (Bottom Left) */
+            .lf-logo-fade-in {
+                position: absolute;
+                bottom: 40px;
+                left: 60px;
+                width: 180px;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: opacity 0.8s ease 0.2s, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s;
+                z-index: 20;
+                pointer-events: none;
+            }
+            .lf-series-hero.is-clean-view .lf-logo-fade-in {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            /* Trailer Help Button Sync */
+            #lfTrailerHelpBtn {
+                position: absolute;
+                bottom: 40px !important;
+                left: 260px !important; /* Next to logo (60px + 180px + 20px gap) */
+                right: auto !important;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: opacity 0.5s ease, transform 0.5s ease;
+                z-index: 21;
+            }
+            .lf-series-hero.is-clean-view #lfTrailerHelpBtn {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            
+            /* Ensure Mute Button is visible and styled properly in clean view */
+             #lfMuteBtn {
+                 transition: opacity 0.3s ease;
+             }
+
             border-radius: 4px;
             font-size: 0.8em;
             color: #fff;
@@ -11033,6 +11053,9 @@ monitorPageLoop();/**
                     </div>
                 </div>
             </section>
+
+            <!-- Hidden Logo for Fade In Animation -->
+            <img class="lf-logo-fade-in" src="${titleLogoUrl}" alt="${title}" onerror="this.style.display='none'">
         `;
     }
 
