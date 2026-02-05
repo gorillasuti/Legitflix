@@ -156,7 +156,7 @@
         .lf-series-hero__meta {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 6px;
             color: var(--clr-text-muted);
             font-size: 0.95rem;
             flex-wrap: wrap;
@@ -716,7 +716,7 @@
                 
                 <!-- TRAILER CONTAINER -->
                 <div class="lf-series-hero__trailer" id="lfHeroTrailer">
-                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe id="lfTrailerIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 </div>
 
                 <div class="lf-series-hero__content">
@@ -744,17 +744,19 @@
                             </button>
                             
                             <button class="lf-btn lf-btn--glass" id="lfTrailerBtn">
-                                <span class="material-icons">videocam</span>
-                                Trailer
+                                <span class="material-icons">theaters</span>
+                                Watch Trailer
                             </button>
 
-                            <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart ${favClass}" id="lfHeartBtn" title="Toggle Favorites">
-                                <span class="material-icons">${favIcon}</span>
-                            </button>
+                            <div class="lf-btn-group">
+                                <button class="lf-btn lf-btn--glass lf-btn--icon-only lf-btn--heart ${favClass}" id="lfHeartBtn" title="Toggle Favorites">
+                                    <span class="material-icons">${favIcon}</span>
+                                </button>
 
-                            <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
-                                <span class="material-icons">volume_off</span>
-                            </button>
+                                <button class="lf-mute-btn" id="lfMuteBtn" title="Toggle Mute" style="display: none;">
+                                    <span class="material-icons">volume_off</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="lf-series-hero__details">
@@ -895,8 +897,24 @@
         const playBtn = container.querySelector('#lfPlayBtn');
         const overlay = container.querySelector('#lfPlayerOverlay');
         const doPlay = () => {
-            if (window.legitFlixPlay) window.legitFlixPlay(item.Id);
-            else console.warn('legitFlixPlay not found');
+            const playWith = (pm) => {
+                if (pm && typeof pm.play === 'function') {
+                    pm.play({ items: [item] });
+                } else {
+                    console.error('[LF] PlaybackManager instance invalid', pm);
+                }
+            };
+
+            if (window.PlaybackManager) {
+                playWith(window.PlaybackManager);
+            } else if (window.playbackManager) {
+                playWith(window.playbackManager);
+            } else if (window.require) {
+                window.require(['playbackManager'], (pm) => playWith(pm));
+            } else {
+                console.warn('[LF] PlaybackManager not globally available. Trying legacy fallback.');
+                if (window.legitFlixPlay) window.legitFlixPlay(item.Id);
+            }
         };
 
         playBtn?.addEventListener('click', doPlay);
@@ -904,11 +922,24 @@
 
         // --- Favorites ---
         const heartBtn = container.querySelector('#lfHeartBtn');
-        heartBtn?.addEventListener('click', () => {
+        heartBtn?.addEventListener('click', async () => {
             const isLiked = heartBtn.classList.toggle('is-liked');
             const icon = heartBtn.querySelector('.material-icons');
             if (icon) icon.textContent = isLiked ? 'favorite' : 'favorite_border';
-            if (window.legitFlixToggleFav) window.legitFlixToggleFav(item.Id, heartBtn);
+
+            // Direct API Call (Avoids side-effects from external helpers)
+            if (window.ApiClient) {
+                const userId = window.ApiClient.getCurrentUserId();
+                try {
+                    await window.ApiClient.updateFavoriteStatus(userId, item.Id, isLiked);
+                    console.log('[LF-Movie] Favorite updated:', isLiked);
+                } catch (e) {
+                    console.error('[LF-Movie] Favorite update failed', e);
+                    // Revert UI
+                    heartBtn.classList.toggle('is-liked');
+                    if (icon) icon.textContent = !isLiked ? 'favorite' : 'favorite_border';
+                }
+            }
         });
 
         // --- Watched ---
@@ -928,41 +959,108 @@
             const backdrop = container.querySelector('.lf-series-hero__backdrop'); // Visual bg
             const muteBtn = container.querySelector('#lfMuteBtn');
 
+            // --- Trailer Logic (Ported from Series Revamp) ---
+            let blockedTimeout;
+            let messageHandler;
+
+            const showTrailerHelpBtn = () => {
+                if (container.querySelector('#lfTrailerHelpBtn')) return;
+                const btn = document.createElement('button');
+                btn.id = 'lfTrailerHelpBtn';
+                btn.innerHTML = '<span class="material-icons">help_outline</span> <span>Trouble playing?</span>';
+                btn.className = 'lf-btn lf-btn--glass';
+                Object.assign(btn.style, {
+                    position: 'absolute',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: '100',
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                });
+                trailerContainer.appendChild(btn);
+                requestAnimationFrame(() => btn.style.opacity = '1');
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    alert('YouTube playback may be blocked by your browser extensions or region. Try disabling ad blockers for this site.');
+                });
+            };
+
             trailerBtn.addEventListener('click', () => {
                 const isPlaying = trailerContainer.classList.contains('is-playing');
+
                 if (isPlaying) {
-                    // Stop
+                    // STOP
                     trailerContainer.classList.remove('is-playing');
                     iframe.src = '';
-                    trailerBtn.innerHTML = '<span class="material-icons">videocam</span> Trailer';
+                    trailerBtn.innerHTML = '<span class="material-icons">theaters</span> Watch Trailer';
+
                     if (backdrop) backdrop.style.opacity = '1';
                     if (muteBtn) muteBtn.style.display = 'none';
+
+                    // Cleanup
+                    const helpBtn = container.querySelector('#lfTrailerHelpBtn');
+                    if (helpBtn) helpBtn.remove();
+                    if (messageHandler) window.removeEventListener('message', messageHandler);
+                    clearTimeout(blockedTimeout);
+
                 } else {
-                    // Play
-                    const origin = window.location.origin;
-                    const embedUrl = `https://www.youtube.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}`;
+                    // PLAY
+                    const origin = encodeURIComponent(window.location.origin);
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}`;
+
                     iframe.src = embedUrl;
                     trailerContainer.classList.add('is-playing');
-                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop';
+                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop Trailer';
+
                     if (backdrop) backdrop.style.opacity = '0';
+
+                    // Force Mute State Check
                     if (muteBtn) {
                         muteBtn.style.display = 'flex';
                         muteBtn.classList.add('is-muted');
                         muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
                     }
+
+                    // Block Detection
+                    let receivedMessage = false;
+                    messageHandler = (event) => {
+                        if (typeof event.data === 'string' && (event.data.includes('"event"') || event.data.includes('"id"'))) {
+                            receivedMessage = true;
+                            clearTimeout(blockedTimeout);
+                        }
+                    };
+                    window.addEventListener('message', messageHandler);
+
+                    blockedTimeout = setTimeout(() => {
+                        if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
+                            console.log('[LF] Possible trailer block detected');
+                            showTrailerHelpBtn();
+                        }
+                    }, 4000);
                 }
             });
 
-            // Mute logic
+            // Mute Button Logic
             if (muteBtn) {
                 muteBtn.addEventListener('click', () => {
                     const isMuted = muteBtn.classList.contains('is-muted');
                     const targetOrigin = '*';
                     if (iframe.contentWindow) {
                         const func = isMuted ? 'unMute' : 'mute';
-                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), targetOrigin);
-                        muteBtn.classList.toggle('is-muted');
-                        muteBtn.innerHTML = isMuted ? '<span class="material-icons">volume_up</span>' : '<span class="material-icons">volume_off</span>';
+                        // Keep state sync
+                        if (isMuted) {
+                            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), targetOrigin);
+                            muteBtn.classList.remove('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+                            // Also set volume up just in case
+                            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }), targetOrigin);
+                        } else {
+                            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), targetOrigin);
+                            muteBtn.classList.add('is-muted');
+                            muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                        }
                     }
                 });
             }
