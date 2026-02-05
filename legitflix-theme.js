@@ -11179,10 +11179,32 @@ monitorPageLoop();/**
             const iframe = container.querySelector('#lfTrailerIframe');
             const backdrop = container.querySelector('.lf-series-hero__backdrop'); // Visual bg
             const muteBtn = container.querySelector('#lfMuteBtn');
+            const heroSection = container.querySelector('.lf-series-hero');
 
             // --- Trailer Logic (Ported from Series Revamp) ---
             let blockedTimeout;
             let messageHandler;
+            let hideUITimeout;
+
+            const startHideTimer = () => {
+                clearTimeout(hideUITimeout);
+                hideUITimeout = setTimeout(() => {
+                    if (trailerContainer.classList.contains('is-playing')) {
+                        heroSection?.classList.add('is-clean-view');
+                    }
+                }, 5000);
+            };
+
+            const resetHideTimer = () => {
+                heroSection?.classList.remove('is-clean-view');
+                if (trailerContainer.classList.contains('is-playing')) {
+                    startHideTimer();
+                }
+            };
+
+            // Wake up UI on interaction
+            heroSection?.addEventListener('mousemove', resetHideTimer);
+            heroSection?.addEventListener('click', resetHideTimer);
 
             const showTrailerHelpBtn = () => {
                 if (container.querySelector('#lfTrailerHelpBtn')) return;
@@ -11207,6 +11229,75 @@ monitorPageLoop();/**
                     alert('YouTube playback may be blocked by your browser extensions or region. Try disabling ad blockers for this site.');
                 });
             };
+
+            trailerBtn.addEventListener('click', () => {
+                const isPlaying = trailerContainer.classList.contains('is-playing');
+
+                if (isPlaying) {
+                    // STOP
+                    trailerContainer.classList.remove('is-playing');
+                    heroSection?.classList.remove('is-clean-view');
+                    clearTimeout(hideUITimeout);
+
+                    iframe.src = '';
+                    trailerBtn.innerHTML = '<span class="material-icons">theaters</span> Watch Trailer';
+
+                    if (backdrop) backdrop.style.opacity = '1';
+
+                    // Hide Mute
+                    if (muteBtn) {
+                        muteBtn.style.display = 'none';
+                        muteBtn.classList.remove('is-muted');
+                    }
+
+                    // Cleanup
+                    const helpBtn = container.querySelector('#lfTrailerHelpBtn');
+                    if (helpBtn) helpBtn.remove();
+                    if (messageHandler) window.removeEventListener('message', messageHandler);
+                    clearTimeout(blockedTimeout);
+
+                } else {
+                    // PLAY
+                    const origin = encodeURIComponent(window.location.origin);
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}`;
+
+                    iframe.src = embedUrl;
+                    trailerContainer.classList.add('is-playing');
+                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop Trailer';
+
+                    if (backdrop) backdrop.style.opacity = '0';
+
+                    // Show Mute - Force Flex
+                    if (muteBtn) {
+                        muteBtn.style.display = 'flex';
+                        muteBtn.style.zIndex = '100';
+                        muteBtn.classList.add('is-muted');
+                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
+                    }
+
+                    // Start Clean Mode Timer
+                    startHideTimer();
+
+                    // Block Detection
+                    let receivedMessage = false;
+                    messageHandler = (event) => {
+                        if (typeof event.data === 'string' && (event.data.includes('"event"') || event.data.includes('"id"'))) {
+                            receivedMessage = true;
+                            clearTimeout(blockedTimeout);
+                        }
+                    };
+                    window.addEventListener('message', messageHandler);
+
+                    blockedTimeout = setTimeout(() => {
+                        if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
+                            console.log('[LF] Possible trailer block detected');
+                            showTrailerHelpBtn();
+                        }
+                    }, 4000);
+                }
+            });
+
+
 
             trailerBtn.addEventListener('click', () => {
                 const isPlaying = trailerContainer.classList.contains('is-playing');
