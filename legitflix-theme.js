@@ -6417,21 +6417,39 @@ monitorPageLoop();/**
 
         try {
             log('Injecting movie page for ID:', itemId);
-            injectOverridesStyles();
-
-            // Hide original Jellyfin detail page content
-            const detailPage = document.querySelector('.itemDetailPage');
-            if (detailPage) detailPage.style.display = 'none';
-
-            // Fetch movie data 
-            const [movieData, similar] = await Promise.all([
+            // Fetch movie data first to check Type
+            const [dataWrapper, similar] = await Promise.all([
                 fetchMovieData(itemId),
                 fetchSimilar(itemId)
             ]);
 
-            if (!movieData) {
+            if (!dataWrapper) {
                 throw new Error('Could not fetch movie data.');
             }
+
+            // Unpack if wrapped (fetchMovieData returns { item: ... })
+            const movieItem = dataWrapper.item || dataWrapper;
+
+            // CHECK TYPE: Allow only Movies
+            if (movieItem.Type !== 'Movie') {
+                console.log('[LF] Item is ' + movieItem.Type + ' (not Movie). Aborting injection.');
+                isInjecting = false;
+                // Ensure default UI is visible
+                const detailPage = document.querySelector('.itemDetailPage');
+                if (detailPage) detailPage.style.display = '';
+                // Remove our overrides style if it exists
+                const overrides = document.getElementById('lf-movie-overrides');
+                if (overrides) overrides.remove();
+                return;
+            }
+
+            // It IS a movie -> Hide default UI
+            injectOverridesStyles();
+            const detailPage = document.querySelector('.itemDetailPage');
+            if (detailPage) detailPage.style.display = 'none';
+
+            // Use the unpacked item for rendering
+            const movieData = movieItem;
 
             // CONTAINER FINDER STRATEGY (Robust)
             let targetContainer = document.querySelector('.pageContainer');
