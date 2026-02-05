@@ -11334,6 +11334,22 @@ monitorPageLoop();/**
         fetchMovieData
     };
 
-    log('Movie Module Loaded');
+    function startMonitoring() {
+        console.log('[LF-Movie] Starting monitoring loop...');
+        monitorMovieDetailPage();
+        setInterval(monitorMovieDetailPage, 500);
+    }
+
+    const checkAndStart = () => {
+        if (window.ApiClient) {
+            startMonitoring();
+        } else {
+            setTimeout(checkAndStart, 500);
+        }
+    };
+
+    checkAndStart();
+
+    log('Movie Module Loaded & Started');
 
 })();
