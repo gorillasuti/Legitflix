@@ -1078,60 +1078,7 @@
 
 
 
-            trailerBtn.addEventListener('click', () => {
-                const isPlaying = trailerContainer.classList.contains('is-playing');
 
-                if (isPlaying) {
-                    // STOP
-                    trailerContainer.classList.remove('is-playing');
-                    iframe.src = '';
-                    trailerBtn.innerHTML = '<span class="material-icons">theaters</span> Watch Trailer';
-
-                    if (backdrop) backdrop.style.opacity = '1';
-                    if (muteBtn) muteBtn.style.display = 'none';
-
-                    // Cleanup
-                    const helpBtn = container.querySelector('#lfTrailerHelpBtn');
-                    if (helpBtn) helpBtn.remove();
-                    if (messageHandler) window.removeEventListener('message', messageHandler);
-                    clearTimeout(blockedTimeout);
-
-                } else {
-                    // PLAY
-                    const origin = encodeURIComponent(window.location.origin);
-                    const embedUrl = `https://www.youtube-nocookie.com/embed/${trailerYtId}?autoplay=1&mute=1&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playlist=${trailerYtId}&enablejsapi=1&origin=${origin}`;
-
-                    iframe.src = embedUrl;
-                    trailerContainer.classList.add('is-playing');
-                    trailerBtn.innerHTML = '<span class="material-icons">stop_circle</span> Stop Trailer';
-
-                    if (backdrop) backdrop.style.opacity = '0';
-
-                    // Force Mute State Check
-                    if (muteBtn) {
-                        muteBtn.style.display = 'flex';
-                        muteBtn.classList.add('is-muted');
-                        muteBtn.innerHTML = '<span class="material-icons">volume_off</span>';
-                    }
-
-                    // Block Detection
-                    let receivedMessage = false;
-                    messageHandler = (event) => {
-                        if (typeof event.data === 'string' && (event.data.includes('"event"') || event.data.includes('"id"'))) {
-                            receivedMessage = true;
-                            clearTimeout(blockedTimeout);
-                        }
-                    };
-                    window.addEventListener('message', messageHandler);
-
-                    blockedTimeout = setTimeout(() => {
-                        if (!receivedMessage && trailerContainer.classList.contains('is-playing')) {
-                            console.log('[LF] Possible trailer block detected');
-                            showTrailerHelpBtn();
-                        }
-                    }, 4000);
-                }
-            });
 
             // Mute Button Logic
             if (muteBtn) {
