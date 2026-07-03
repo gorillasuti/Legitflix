@@ -1,0 +1,220 @@
+/* Library.css */
+
+.library-page {
+    min-height: 100vh;
+    background-color: #0b0b0b;
+    /* Match app background or keep darker */
+    padding-top: 80px;
+    /* Space for Navbar */
+    padding-bottom: 80px;
+}
+
+/* -- Header -- */
+.library-header-container {
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0 4%;
+    display: flex;
+    justify-content: center;
+}
+
+.library-header-content {
+    width: 100%;
+    max-width: 1600px;
+    /* Constrain Width */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px 0 20px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.library-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #fff;
+    margin: 0;
+}
+
+/* -- Controls (Sort/Filter) -- */
+.library-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    align-content: center;
+    justify-content: space-between;
+}
+
+.library-grid-container {
+    padding: 0 4%;
+}
+
+.library-grid {
+    width: 100%;
+    max-width: 1600px;
+    /* Constrain Width */
+    margin: 0 auto;
+    display: grid;
+    /* Exactly 6 columns on desktop */
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    /* Ideally match the horizontal gap of MediaRow */
+}
+
+@media (max-width: 1200px) {
+
+
+
+
+    .library-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+
+
+
+}
+
+@media (max-width: 992px) {
+
+
+
+
+    .library-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+
+
+
+}
+
+.library-grid-item {
+    width: 100%;
+}
+
+.library-grid .media-card-wrapper {
+    width: 100% !important;
+    margin-right: 0 !important;
+}
+
+/* -- Loader & Empty State -- */
+.library-loader {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-state {
+    width: 100%;
+    max-width: 1600px;
+    text-align: center;
+    padding: 60px;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+
+
+
+
+    .library-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .library-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .library-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+
+
+
+}
+
+@media (max-width: 480px) {
+
+
+
+
+    .library-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 2px;
+    }
+
+
+
+
+}
+
+.library-grid-item {
+    position: relative;
+    cursor: pointer;
+}
+
+/* Reworked selection bar capsule - solid dark background, no blur */
+.legit-selection-panel {
+    background-color: #1e1e1e !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+    max-width: 90vw !important;
+    width: auto !important;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .legit-selection-panel {
+        bottom: 16px !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        border-radius: 8px !important;
+        width: calc(100% - 32px) !important;
+        max-width: 480px !important;
+        justify-content: space-between !important;
+    }
+    .legit-selection-panel span.text-lg {
+        font-size: 0.85rem !important;
+        margin-left: 2px !important;
+        white-space: nowrap !important;
+    }
+    .legit-selection-panel .h-6.w-px {
+        margin-left: 2px !important;
+        margin-right: 2px !important;
+    }
+    .legit-selection-panel .flex.gap-2 {
+        gap: 4px !important;
+    }
+    .legit-selection-panel button {
+        padding: 4px 6px !important;
+        height: 32px !important;
+        font-size: 0.75rem !important;
+    }
+    .legit-selection-panel button span.material-icons {
+        font-size: 1.1rem !important;
+    }
+}

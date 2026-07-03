@@ -1,0 +1,220 @@
+.lf-info-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: lfInfoFadeIn 0.2s ease-out;
+}
+
+.lf-info-modal-content {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    padding: 24px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: lfInfoScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lf-info-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.lf-info-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.lf-info-modal-close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.lf-info-modal-close:hover {
+    color: #fff;
+}
+
+.lf-info-modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.lf-info-modal-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.lf-info-modal-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lf-info-modal-scroll::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lf-info-modal-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.lf-info-modal-loader {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.lf-info-modal-error {
+    text-align: center;
+    color: #f44336;
+    padding: 20px 0;
+}
+
+.lf-info-modal-item-title {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--clr-accent, #ff7e00);
+    line-height: 1.4;
+}
+
+.lf-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    background: #1a1a1a;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 20px;
+}
+
+.lf-info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lf-info-label {
+    font-size: 12px;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lf-info-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.lf-info-path-box {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+.lf-info-path-label {
+    font-size: 12px;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.lf-info-path-value {
+    font-size: 13px;
+    font-family: monospace;
+    word-break: break-all;
+    line-height: 1.4;
+    color: #ccc;
+}
+
+.lf-info-section {
+    margin-bottom: 20px;
+}
+
+.lf-info-section-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--clr-accent, #ff7e00);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lf-info-stream-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lf-info-stream-item {
+    display: flex;
+    align-items: flex-start;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    padding: 10px 14px;
+}
+
+.lf-info-stream-item .stream-icon {
+    font-size: 20px;
+    color: #aaa;
+    margin-right: 12px;
+    margin-top: 2px;
+}
+
+.stream-details {
+    flex: 1;
+}
+
+.stream-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.stream-meta {
+    font-size: 12px;
+    color: #777;
+}
+
+@keyframes lfInfoFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes lfInfoScaleUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

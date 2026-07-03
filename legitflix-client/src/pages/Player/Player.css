@@ -1,0 +1,1597 @@
+/* ============================================
+   LEGITFLIX CUSTOM PLAYER LAYOUT
+   ============================================ */
+
+/* Page Wrapper */
+.lf-player-page {
+    background-color: #0e0e0e;
+    /* Standard Dark Background */
+    min-height: 100vh;
+    padding-top: 60px;
+    /* Space for Navbar */
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-primary, 'Inter', sans-serif);
+    color: #fff;
+    overflow-x: hidden;
+}
+
+/* Hide cursor when controls are not visible or media player is idle */
+.lf-player-video-container[data-user-idle] {
+    cursor: none !important;
+}
+
+.lf-player-video-container[data-user-idle] * {
+    cursor: none !important;
+}
+
+.lf-player-video-container.hide-cursor {
+    cursor: none !important;
+}
+
+/* Gestures Overlay */
+
+
+/* Controls should be on top of gestures */
+
+
+/* Fullscreen via native Fullscreen API (Vidstack triggers this on MediaPlayer) */
+.lf-player-video-container.is-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999;
+    background: #000;
+}
+
+/* Ensure the container fills properly when the player inside it is fullscreen (Explicit Class) */
+.lf-player-video-container.is-fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+}
+
+/* Explicit reset for non-fullscreen state to prevent overflow bugs */
+/* Explicit reset for non-fullscreen state to prevent overflow bugs */
+.lf-player-video-container:not(.is-fullscreen) {
+    position: relative !important;
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 85vh;
+    margin: 0 auto;
+    top: auto;
+    left: auto;
+    z-index: 10;
+    overflow: hidden;
+    background: #000;
+}
+
+/* Loading overlay shown while player initializes */
+
+
+
+
+
+
+/* Custom Interactive HUD Overlays */
+.lf-player-hud-overlay.cr-hud-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.75) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+    pointer-events: none;
+    transition: opacity 0.35s ease-in-out, visibility 0.35s;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.lf-player-hud-overlay.cr-hud-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lf-player-hud-overlay.cr-hud-overlay * {
+    pointer-events: auto;
+}
+
+/* Top HUD Bar */
+.cr-hud-top {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cr-back-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cr-back-btn:hover {
+    background: var(--clr-accent, #ff6a00);
+    border-color: var(--clr-accent, #ff6a00);
+}
+
+.cr-accent-text {
+    color: var(--clr-accent, #ff6a00) !important;
+    font-weight: 700;
+}
+
+/* Bottom HUD Row */
+.cr-hud-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Timeline Layout (Stretches full width) */
+.cr-timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.cr-time {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    min-width: 48px;
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.cr-slider-wrap {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 16px;
+}
+
+.cr-seeker-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: height 0.15s ease;
+    z-index: 5;
+    position: relative;
+}
+
+.cr-slider-wrap:hover .cr-seeker-range {
+    height: 6px;
+}
+
+/* Seekbar Circle Thumb */
+.cr-seeker-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--clr-accent, #ff6a00);
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.cr-slider-wrap:hover .cr-seeker-range::-webkit-slider-thumb {
+    transform: scale(1.3);
+    background: #fff;
+    border: 2px solid var(--clr-accent, #ff6a00);
+}
+
+.cr-seeker-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--clr-accent, #ff6a00);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.cr-slider-wrap:hover .cr-seeker-range::-moz-range-thumb {
+    transform: scale(1.3);
+    background: #fff;
+    border: 2px solid var(--clr-accent, #ff6a00);
+}
+
+/* Controls bottom row layout */
+.cr-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cr-left-group,
+.cr-right-group {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.cr-icon-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.cr-icon-btn:hover {
+    color: var(--clr-accent, #ff6a00);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cr-icon-btn span {
+    font-size: 28px;
+}
+
+/* Volume Slider */
+.cr-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cr-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 70px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+}
+
+.cr-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
+
+.cr-volume-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    border: none;
+}
+
+/* Drill-Down Settings Menu (Crunchyroll Style) */
+.cr-settings-wrap {
+    position: relative;
+}
+
+.cr-settings-panel {
+    position: absolute;
+    bottom: calc(100% + 14px);
+    right: 0;
+    width: 290px;
+    background: var(--clr-bg-surface, #1f1f1f);
+    /* Theme aware */
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    text-align: left;
+    font-family: inherit;
+    overflow: hidden;
+}
+
+/* Main list view */
+.cr-settings-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cr-settings-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #e2e4e9;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+}
+
+.cr-settings-list li:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.cr-settings-val {
+    margin-left: auto;
+    margin-right: 8px;
+    font-size: 0.85rem;
+    color: #8b8f9e;
+}
+
+.list-arrow {
+    font-size: 1.1rem;
+    color: #8b8f9e;
+}
+
+/* Submenu layout */
+.cr-settings-submenu {
+    display: flex;
+    flex-direction: column;
+}
+
+.cr-settings-submenu .submenu-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+}
+
+.cr-settings-submenu .submenu-header:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.submenu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.submenu-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    cursor: pointer;
+    color: #e2e4e9;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.submenu-list li:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+/* Radio button replacement */
+.cr-radio-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: inline-block;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.submenu-list li.selected {
+    color: #fff;
+}
+
+.submenu-list li.selected .cr-radio-circle {
+    border-color: var(--clr-accent, #ff6a00);
+}
+
+.submenu-list li.selected .cr-radio-circle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--clr-accent, #ff6a00);
+}
+
+/* Skip Intro Pill */
+.cr-skip-intro-btn {
+    position: absolute;
+    bottom: 110px;
+    right: 24px;
+    z-index: 28;
+    background: rgba(0, 0, 0, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cr-skip-intro-btn:hover {
+    background: var(--clr-accent, #ff6a00);
+    border-color: var(--clr-accent, #ff6a00);
+}
+
+.cr-skip-intro-btn span.material-icons {
+    font-size: 1.1rem;
+}
+
+/* Next Episode Popup Toast */
+.cr-next-ep-toast {
+    position: absolute;
+    bottom: 80px;
+    right: 24px;
+    z-index: 28;
+    background: rgba(18, 20, 26, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    gap: 12px;
+    width: 280px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cr-next-ep-toast .toast-img {
+    width: 100px;
+    height: 56px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+}
+
+.cr-next-ep-toast .toast-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cr-next-ep-toast .toast-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-grow: 1;
+    text-align: left;
+}
+
+.cr-next-ep-toast .toast-label {
+    font-size: 0.75rem;
+    color: var(--clr-accent, #ff6a00);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cr-next-ep-toast .toast-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 2px 0 6px 0;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cr-next-ep-toast .toast-play-now {
+    background: var(--clr-accent, #ff6a00);
+    border: none;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cr-next-ep-toast .toast-play-now:hover {
+    background: #fff;
+    color: var(--clr-accent, #ff6a00);
+}
+
+/* Orange Spinner styles */
+.cr-spinner-orange {
+    border-top-color: var(--clr-accent, #ff6a00) !important;
+}
+
+/* Loading buffering layer inside player */
+.lf-player-loading-spinner-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hide native controls cursor when idle */
+.lf-player-video-container.hide-cursor {
+    cursor: none !important;
+}
+
+.lf-player-video-element {
+    z-index: 5;
+    position: relative;
+}
+
+/* Chapter Ticks Overlay (Seekbar Dividers) */
+.cr-seekbar-chapters-ticks {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 5px;
+    /* Center aligned vertically with range bar */
+    height: 6px;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.cr-seekbar-chapter-tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: #3d3f46;
+    pointer-events: none;
+    z-index: 15;
+}
+
+/* Trickplay Hover Scrubbing Preview Box */
+.cr-hover-preview {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 6;
+}
+
+.cr-hover-thumbnail {
+    border: 2px solid #fff;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+    background-color: #000;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+.cr-hover-time-text {
+    margin-top: 6px;
+    background: rgba(18, 20, 26, 0.9);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+
+
+/* Skip Outro specific adjustment */
+.cr-skip-outro-btn {
+    bottom: 110px !important;
+    /* Stacked cleanly above skip intro if both are visible */
+}
+
+/* Subtitle (::cue) styling */
+.lf-player-video::cue {
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.4em;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    opacity: 1;
+    visibility: visible;
+    z-index: 100 !important;
+}
+
+video::-webkit-media-text-track-display {
+    z-index: 100 !important;
+}
+
+/* Vidstack captions layer: position above controls */
+
+
+/* When controls are hidden, subtitles sit 1.25rem from the bottom edge */
+
+
+
+/* ============================================
+   CONTROLS & OVERLAYS
+   ============================================ */
+
+
+
+
+
+/* Ensure backdrop image covers properly */
+
+
+/* Center Play Button Overlay */
+
+
+.lf-player-center-icon.visible {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+.lf-player-center-icon .material-icons {
+    font-size: 48px;
+    color: #fff;
+}
+
+/* Center Play Button (Clickable) */
+
+
+
+
+.center-play-btn .material-icons {
+    font-size: 48px;
+}
+
+/* Loader */
+
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--clr-accent, #ff6a00);
+    border-radius: 50%;
+    animation: lf-spin 1s linear infinite;
+}
+
+@keyframes lf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error */
+
+
+
+
+
+
+
+
+
+/* Controls Container */
+
+
+.lf-player-controls.visible,
+.lf-player-video-container:not([data-user-idle]) .lf-player-controls {
+    opacity: 1;
+}
+
+/* Top Controls */
+
+
+.player-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.series-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--clr-accent);
+}
+
+
+
+.divider {
+    color: #aaa;
+}
+
+/* Bottom Controls */
+
+
+/* ============================================
+   TIMELINE SLIDER (media-slider)
+   ============================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* --- Volume Slider: scope max-width so it doesn't affect the timeline --- */
+
+
+
+/* ============================================
+   CONTROLS LAYOUT (Left/Right Groups)
+   ============================================ */
+
+/* Controls Row */
+
+
+
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+.icon-btn.back-btn {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.icon-btn.back-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+
+/* Volume Container */
+
+
+
+
+
+
+.time-display {
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+
+/* ============================================
+   CONTENT SECTION (Below Video)
+   ============================================ */
+
+.lf-player-content-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+}
+
+/* --- Left Column: Metadata --- */
+.lf-player-column-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.lf-player-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.lf-player-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lf-series-link {
+    color: var(--clr-accent, #ff6a00);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+.lf-series-link:hover {
+    color: #fff;
+}
+
+.lf-episode-name {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.lf-player-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lf-action-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s, color 0.2s;
+}
+
+.lf-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lf-action-btn.is-active {
+    color: var(--clr-accent, #ff6a00);
+}
+
+.lf-action-btn .material-icons {
+    font-size: 24px;
+}
+
+/* Tags Row */
+.lf-player-tags-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    color: #a0a0a0;
+    font-size: 0.85rem;
+}
+
+.lf-tag-rating {
+    display: flex;
+    align-items: center;
+}
+
+/* Description */
+
+
+
+
+.lf-description-text.is-expanded {
+    -webkit-line-clamp: unset;
+}
+
+
+
+
+
+
+/* --- Right Column: Episodes --- */
+.lf-player-column-right {
+    display: flex;
+    flex-direction: column;
+}
+
+.lf-player-episodes-panel {
+    background: #1f1f1f;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 600px;
+    /* Constrain height */
+}
+
+.lf-episodes-panel-header {
+    background: #2b2b2b;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lf-panel-title {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.season-select-wrapper {
+    position: relative;
+    width: 60%;
+}
+
+.lf-season-dropdown {
+    width: 100%;
+    background: #141414;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 8px 30px 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.lf-season-dropdown:hover {
+    border-color: #555;
+}
+
+.dropdown-icon {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 20px;
+    color: #aaa;
+}
+
+
+/* Episodes Grid (or List) */
+.lf-episodes-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* Custom Scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #444 #1f1f1f;
+}
+
+.lf-episodes-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lf-episodes-grid::-webkit-scrollbar-track {
+    background: #1f1f1f;
+}
+
+.lf-episodes-grid::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 3px;
+}
+
+
+.lf-episode-card-small {
+    display: flex;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lf-episode-card-small:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.lf-episode-card-small.current {
+    background: var(--clr-bg-glass);
+}
+
+.lf-episode-card-small.current .ep-card-img {
+    border: 2px solid var(--clr-accent) !important;
+}
+
+.lf-episode-card-small.is-watched .ep-prefix {
+    color: #00e676 !important;
+}
+
+.ep-card-img {
+    width: 120px;
+    aspect-ratio: 16/9;
+    background: #111;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+}
+
+.ep-card-watched-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #00e676;
+    color: #000;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.ep-card-watched-badge .material-icons {
+    font-size: 11px !important;
+    font-weight: bold !important;
+}
+
+.ep-card-playing-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--clr-accent);
+    z-index: 1;
+}
+
+.ep-card-playing-overlay .material-icons {
+    font-size: 20px !important;
+}
+
+.hud-volume-percentage {
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    min-width: 32px;
+    margin-left: 6px;
+    text-align: left;
+    user-select: none;
+}
+
+.ep-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+
+.ep-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.ep-card-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.3;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ep-prefix {
+    color: #aaa;
+    margin-right: 4px;
+    font-size: 0.85rem;
+}
+
+
+
+
+
+/* ============================================
+   SETTINGS MODAL & OVERLAYS
+   ============================================ */
+
+
+
+
+
+
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+}
+
+
+
+
+
+
+
+.tab-btn.active {
+    color: var(--clr-accent, #ff6a00);
+    border-bottom: 2px solid var(--clr-accent, #ff6a00);
+}
+
+
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-list button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    color: #eee;
+    padding: 10px;
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-list button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-list button.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--clr-accent, #ff6a00);
+    color: var(--clr-accent, #ff6a00);
+}
+
+/* Skip Intro Button */
+
+
+
+
+
+/* VIDSTACK OVERRIDES */
+
+
+/* Slider globals removed - all slider styles are scoped above */
+
+/* Ensure Vidstack media provider fills container */
+
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+
+
+
+
+    .lf-player-content-container {
+        grid-template-columns: 1fr;
+        /* Stack */
+    }
+
+    .lf-player-video-container {
+        height: 56.25vw;
+        /* 16:9 Aspect Ratio on mobile/tablets instead of 85vh */
+        max-height: 85vh;
+    }
+
+    /* --- VIDSTACK FIXES --- */
+
+    /* 1. Force Video to Bottom */
+    /* Vidstack puts video in a shadow DOM or specific wrapper. We need to target it broadly. */
+
+
+    /* 2. Force Subtitle Canvas to Top */
+
+
+    /* 3. Ensure Controls are Highest */
+
+
+
+
+
+}
+
+/* --- BACKDROP STYLES --- */
+
+
+
+
+
+
+@keyframes lf-backdrop-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* ============================================
+   VIDSTACK SETTINGS MENU
+   ============================================ */
+
+
+
+/* Menu Button (Trigger) */
+
+
+/* Menu Items Container (Dropdown) */
+
+
+
+
+/* Submenu Handling */
+/* Vidstack nests menus. We need to ensure submenus overlay nicely. */
+
+
+/* Menu Item & Radio Item */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Radio Check Icon */
+
+
+
+
+/* Scrollbar for list */
+
+
+
+
+
+
+/* Netflix-style Auto-Start Next Episode Button */
+.cr-next-episode-btn {
+    position: absolute;
+    bottom: 110px;
+    right: 170px;
+    z-index: 28;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0;
+    height: 42px;
+    width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.cr-next-episode-btn:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    border-color: #ffffff;
+}
+
+.cr-next-episode-btn .layer-base {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.cr-next-episode-btn .layer-filled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100%;
+    background: #ffffff;
+    color: #000000;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.cr-next-episode-btn .layer-filled-content {
+    width: 200px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #000000;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* --- MOBILE OVERRIDES (Bottom Sheet) --- */
+@media (max-width: 768px) {
+
+
+
+
+
+    /* Show controls on mobile */
+
+
+    /* Stack top controls more vertically if needed, or keep row */
+
+
+    /* Adjust bottom bar padding */
+
+
+    /* Menu Bottom Sheet */
+
+
+    /* Animate slide up from bottom */
+
+
+
+
+
+
+
+
+    /* Ensure submenus fill the sheet */
+
+
+
+
+
+}
+
+/* Jellyfin Action Sheet Styling in Player */
+.cr-jellyfin-action-menu {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.actionSheetMenuItem {
+    background: transparent;
+    border: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #e2e4e9;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.actionSheetMenuItem:hover {
+    background: color-mix(in srgb, var(--clr-accent, #ff6a00) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.actionSheetMenuItem:last-child {
+    border-bottom: none;
+}
+
+.actionsheetListItemBody {
+    display: flex;
+    flex-direction: column;
+}
+
+.actionSheetItemText {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.actionSheetItemAsideText {
+    font-size: 0.85rem;
+    color: #8b8f9e;
+}
+
+/* Playback Stats for Nerds Overlay */
+.playerStats {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 320px;
+    max-height: 80%;
+    background: rgba(10, 10, 10);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    color: #e2e4e9;
+    font-family: monospace;
+    font-size: 0.75rem;
+    overflow-y: auto;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.playerStats-content {
+    position: relative;
+    padding: 16px;
+}
+
+.playerStats-closeButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.playerStats-closeButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.playerStats-closeButton span {
+    font-size: 1.1rem;
+}
+
+.playerStats-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.playerStats-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 1.4;
+}
+
+.playerStats-stat-header {
+    margin-top: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid color-mix(in srgb, var(--clr-accent, #ff6a00) 30%, transparent);
+    color: var(--clr-accent, #ff6a00);
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.playerStats-stat-header:first-child {
+    margin-top: 0;
+}
+
+.playerStats-stat-label {
+    color: #8b8f9e;
+}
+
+.playerStats-stat-value {
+    font-weight: 500;
+    color: #fff;
+    text-align: right;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

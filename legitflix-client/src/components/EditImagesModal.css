@@ -1,0 +1,601 @@
+.lf-img-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: lfFadeIn 0.2s ease-out;
+}
+
+.lf-img-modal-content {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    width: 95%;
+    max-width: 900px;
+    max-height: 90vh;
+    padding: 24px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: lfScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lf-img-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.lf-img-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex: 1;
+}
+
+.lf-img-header-back-btn {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    margin-right: 12px;
+}
+
+.lf-img-header-back-btn:hover {
+    color: #fff;
+}
+
+.lf-img-modal-close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.lf-img-modal-close:hover {
+    color: #fff;
+}
+
+.lf-img-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-bottom: 20px;
+}
+
+.lf-img-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lf-img-modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lf-img-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.lf-img-modal-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 0;
+}
+
+/* Spinner */
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--clr-accent, #ff7e00);
+    border-radius: 50%;
+    animation: lf-spin 0.8s linear infinite;
+}
+
+.spinner.small {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+@keyframes lf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* -- Section & List Editor Layouts -- */
+.lf-img-editor-lists-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.lf-img-editor-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.lf-img-editor-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.lf-img-editor-section-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    text-transform: uppercase;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.lf-img-editor-section-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lf-img-sec-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lf-img-sec-btn:hover {
+    background: var(--clr-accent, #ff7e00);
+}
+
+.lf-img-upload-dropdown-wrapper {
+    position: relative;
+}
+
+.lf-img-upload-dropdown-menu {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    min-width: 170px;
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.lf-img-upload-dropdown-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #777;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 4px;
+}
+
+.lf-img-upload-dropdown-item {
+    background: transparent;
+    border: none;
+    color: #ccc;
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    width: 100%;
+}
+
+.lf-img-upload-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.lf-img-section-empty {
+    padding: 24px;
+    background: #111;
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    text-align: center;
+    color: #555;
+    font-size: 14px;
+}
+
+/* Cards Grid - ALL CARDS UNIFORM, MATCHING STOCK JELLYFIN recently added images editor UI */
+.lf-img-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.lf-img-editor-card {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+}
+
+.lf-img-editor-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lf-img-editor-card-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    /* All cards in lists have a 16:9 preview box in stock Jellyfin */
+    background: #101010;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.lf-img-editor-card-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Transparent pattern background */
+.lf-img-editor-card-preview.transparent-bg {
+    background-color: #1a1a1a;
+    background-image:
+        linear-gradient(45deg, #111 25%, transparent 25%),
+        linear-gradient(-45deg, #111 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #111 75%),
+        linear-gradient(-45deg, transparent 75%, #111 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+}
+
+.lf-img-editor-card-footer {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lf-img-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+}
+
+.lf-img-card-dims {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    font-weight: 600;
+}
+
+.lf-img-card-actions-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.lf-img-card-actions-row button {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.lf-img-card-actions-row button:hover {
+    color: #fff;
+}
+
+.lf-img-card-actions-row button[title="Delete"]:hover {
+    color: #e50914;
+}
+
+.lf-img-card-actions-row button:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+/* -- Remote Image Search Tab -- */
+.lf-remote-search-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.lf-remote-search-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    background: #1a1a1a;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    flex-wrap: wrap;
+}
+
+.lf-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.lf-filter-field label {
+    font-size: 12px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.lf-filter-field select {
+    background: #252525;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.lf-filter-field select:focus {
+    border-color: var(--clr-accent, #ff7e00);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent, #ff7e00) 15%, transparent);
+}
+
+.lf-filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #ccc;
+    user-select: none;
+}
+
+.lf-filter-checkbox input {
+    accent-color: var(--clr-accent, #ff7e00);
+    width: 16px;
+    height: 16px;
+}
+
+.lf-remote-btn-search {
+    background: var(--clr-accent, #ff7e00);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    height: 38px;
+    transition: background 0.2s;
+}
+
+.lf-remote-btn-search:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.lf-remote-btn-search:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.lf-remote-results-container {
+    min-height: 200px;
+}
+
+.lf-remote-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    padding: 60px 0;
+    gap: 10px;
+}
+
+.lf-remote-empty .material-icons {
+    font-size: 48px;
+}
+
+/* Remote Grid - UNIFORM PORTRAIT CARDS, MATCHING STOCK JELLYFIN REMOTE IMAGES UI */
+.lf-remote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.lf-remote-img-card {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.2s;
+}
+
+.lf-remote-img-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lf-remote-img-preview {
+    width: 100%;
+    aspect-ratio: 2/3;
+    /* Uniform portrait layout for all remote search results */
+    background: #101010;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Checkerboard pattern background for transparent PNG logos & art */
+.lf-remote-img-preview.transparent-bg {
+    background-color: #1a1a1a;
+    background-image:
+        linear-gradient(45deg, #111 25%, transparent 25%),
+        linear-gradient(-45deg, #111 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #111 75%),
+        linear-gradient(-45deg, transparent 75%, #111 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+
+.lf-remote-img-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s;
+}
+
+.lf-remote-img-preview:hover img {
+    transform: scale(1.03);
+}
+
+.lf-remote-img-meta {
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #aaa;
+    min-height: 52px;
+}
+
+.lf-remote-provider {
+    font-weight: 600;
+    color: #fff;
+}
+
+.lf-remote-resolution {
+    color: #888;
+    font-weight: 600;
+}
+
+.lf-remote-btn-download {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #fff;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lf-remote-btn-download:hover:not(:disabled) {
+    background: var(--clr-accent, #ff7e00);
+    border-color: var(--clr-accent, #ff7e00);
+}
+
+.lf-remote-btn-download:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.lf-img-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin-top: 10px;
+}
+
+.lf-img-btn-close {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #fff;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.lf-img-btn-close:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes lfFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes lfScaleUp {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

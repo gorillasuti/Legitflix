@@ -1,0 +1,98 @@
+/* MediaCard.css */
+
+.media-card-wrapper {
+    position: relative;
+    flex: 0 0 auto;
+    width: 160px;
+    margin-right: 16px;
+    transition: transform 0.2s;
+    z-index: 1;
+}
+
+.media-card-wrapper:hover {
+    z-index: 100;
+}
+
+/* The inner card */
+.media-card {
+    position: relative;
+    border-radius: 2px;
+    overflow: visible;
+    cursor: pointer;
+    transition: transform 0.2s;
+    width: 100%;
+    
+    /* Fallback for older WebViews/PWA wrappers that do not support aspect-ratio */
+    height: 0;
+    padding-bottom: 150%;
+}
+
+@supports (aspect-ratio: 2/3) {
+    .media-card {
+        aspect-ratio: 2/3;
+        height: auto;
+        padding-bottom: 0;
+    }
+}
+
+.media-card-wrapper:hover .media-card {
+    transform: scale(1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.media-card-image-container {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 2px;
+}
+
+.media-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.2s;
+}
+
+.media-card-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e5e5e5;
+    margin-bottom: 2px;
+    transition: color 0.2s;
+
+    /* Line Clamping - Max 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.media-card-wrapper:hover .media-card-title {
+    color: var(--clr-accent, #ff7e00);
+}
+
+/* -- Card Info Below Image -- */
+.media-card-info {
+    padding: 8px 2px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.media-card-subtitle {
+    font-size: 0.75rem;
+    color: #888;
+    line-height: 1.3;
+}
+
+.media-card-wrapper.is-selected .media-card {
+    box-shadow: 0 0 0 2px var(--clr-accent, #ff7e00) !important;
+}

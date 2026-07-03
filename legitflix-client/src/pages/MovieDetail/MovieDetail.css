@@ -1,0 +1,1123 @@
+/* ============================================
+   MOVIE DETAIL PAGE OVERRIDES (Based on SeriesDetail)
+   Colors & fonts inherited from theme.css
+   ============================================ */
+.lf-movie-container {
+    /* Page-specific radius overrides (smaller than global theme) */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --content-padding: 3%;
+
+    /* Page-specific tokens not in theme.css */
+    --clr-divider: rgba(255, 255, 255, 0.1);
+    --clr-heart: #e91e63;
+    --clr-success: #4caf50;
+    --clr-rating-star: #ffc107;
+
+    width: 100%;
+    background-color: var(--clr-bg-main);
+    color: var(--clr-text-main);
+    min-height: 100vh;
+}
+
+.lf-movie-container * {
+    box-sizing: border-box;
+}
+
+/* ============================================
+   MOVIE HERO SECTION (70vh, 100% width)
+   ============================================ */
+.lf-movie-hero {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    min-height: 500px;
+    display: flex;
+    align-items: flex-end;
+    padding: 40px var(--content-padding);
+    overflow: hidden;
+}
+
+.lf-movie-hero__backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center top;
+    z-index: 0;
+    transition: opacity 0.5s ease;
+}
+
+.lf-movie-hero__trailer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.lf-movie-hero__trailer.is-playing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lf-movie-hero__trailer iframe,
+.lf-movie-hero__trailer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+}
+
+/* Trailer Help Button - always visible when trailer plays */
+.lf-trailer-help-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.5;
+    animation: fadeIn 0.5s ease;
+}
+
+.lf-trailer-help-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Trailer Back Drop Fade */
+.lf-movie-hero__backdrop.is-hidden {
+    opacity: 0;
+}
+
+.lf-movie-hero__trailer.is-playing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lf-movie-hero__trailer iframe,
+.lf-movie-hero__trailer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lf-movie-hero__backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* Use mask-image or simple gradient to fade to bg-main */
+    background: linear-gradient(to top,
+            var(--clr-bg-main) 10%,
+            transparent 100%);
+    z-index: 1;
+}
+
+.lf-movie-hero__logo {
+    position: absolute;
+    bottom: 40px;
+    left: var(--content-padding);
+    width: 200px;
+    max-width: 30%;
+    height: auto;
+    object-fit: contain;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.lf-movie-hero.is-clean-view .lf-movie-hero__logo {
+    opacity: 1;
+}
+
+.lf-movie-hero.is-clean-view .lf-movie-hero__content {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.lf-movie-hero__logo {
+    position: absolute;
+    bottom: 50px;
+    left: var(--content-padding);
+    width: 250px;
+    max-width: 40%;
+    height: auto;
+    object-fit: contain;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.lf-movie-hero.is-clean-view .lf-movie-hero__logo {
+    opacity: 1;
+}
+
+.lf-movie-hero__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 40px;
+    width: 100%;
+    transition: all 0.5s ease;
+}
+
+.lf-movie-hero__poster {
+    flex-shrink: 0;
+    width: 220px;
+    height: 330px;
+    /* Fallback for engines without aspect-ratio support */
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    /* Align to bottom of padded area */
+}
+
+.lf-movie-hero__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Expand downwards */
+    padding-top: 40vh;
+    /* Push content down initially */
+    gap: 12px;
+}
+
+.lf-movie-hero__title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--clr-text-main);
+}
+
+.lf-hero-title-logo {
+    width: auto;
+    max-width: 150px;
+    max-height: 200px;
+    object-fit: contain;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+@media (max-width: 768px) {
+
+
+
+
+    .lf-hero-title-logo {
+        max-width: 80%;
+        max-height: 120px;
+        margin: 0 auto 1rem;
+    }
+
+
+
+
+}
+
+.lf-movie-hero__meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--clr-text-muted);
+    font-size: 0.9rem;
+}
+
+.lf-movie-hero__rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--clr-rating-star);
+}
+
+.lf-movie-hero__details {
+    display: flex;
+    gap: 3rem;
+    align-items: flex-start;
+}
+
+.lf-movie-hero__description {
+    flex: 0 0 60%;
+    color: var(--clr-text-muted);
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.lf-movie-hero__description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.lf-movie-hero__description-text.is-expanded {
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    display: block;
+}
+
+.lf-movie-hero__load-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--clr-accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.lf-movie-hero__load-more .material-icons {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.lf-movie-hero__load-more.is-expanded .material-icons {
+    transform: rotate(180deg);
+}
+
+.lf-movie-hero__cast-info {
+    flex: 0 0 280px;
+    font-size: 0.85rem;
+    color: var(--clr-text-muted);
+    line-height: 1.8;
+}
+
+.lf-movie-hero__cast-info strong {
+    color: var(--clr-text-main);
+}
+
+.lf-movie-hero__actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 10;
+}
+
+
+.lf-btn--sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+.lf-btn--primary {
+    background: var(--clr-accent);
+    color: white;
+}
+
+.lf-btn--glass {
+    background: var(--clr-bg-glass);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.lf-btn--glass:hover {
+    background: var(--clr-bg-glass-hover);
+}
+
+.lf-btn--ring-hover {
+    position: relative;
+    overflow: hidden;
+}
+
+.lf-btn--ring-hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: inherit;
+    transition: all 0.3s ease;
+}
+
+.lf-btn--ring-hover-secondary {
+    position: relative;
+    overflow: hidden;
+}
+
+.lf-btn--ring-hover-secondary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: inherit;
+    transition: all 0.3s ease;
+}
+
+.lf-btn--ring-hover-secondary:hover::after {
+    transform: scale(1.05);
+}
+
+.lf-btn--icon-only {
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lf-btn--icon-only.is-active {
+    color: var(--clr-accent);
+}
+
+.lf-btn--icon-only.is-active .material-icons {
+    color: var(--clr-accent);
+}
+
+/* ============================================
+   CONTENT SECTIONS
+   ============================================ */
+.lf-content-section {
+    width: 100%;
+    padding: 30px var(--content-padding);
+}
+
+.lf-section-divider {
+    border: none;
+    border-top: 1px solid var(--clr-divider);
+    margin: 0 var(--content-padding);
+}
+
+
+
+.lf-section-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--clr-text-main);
+}
+
+
+
+@media (max-width: 768px) {
+
+
+
+
+
+
+    .lf-filter-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+
+
+
+}
+
+/* ============================================
+   HEADER CONTROLS (Audio/Subs, Watched)
+   Copied from SeriesDetail for consistency
+   ============================================ */
+.lf-filter-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.lf-filter-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lf-filter-btn:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-btn.is-active {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lf-filter-btn .material-icons {
+    font-size: 18px;
+}
+
+.lf-filter-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-filter-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 150px;
+    background: var(--clr-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.lf-filter-dropdown.is-open .lf-filter-dropdown__menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lf-filter-dropdown__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.lf-filter-dropdown__option:first-child {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.lf-filter-dropdown__option:last-child {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.lf-filter-dropdown__option:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-dropdown__option.is-selected {
+    color: var(--clr-text-main);
+    background: var(--clr-bg-glass) !important;
+}
+
+.lf-filter-dropdown__option .material-icons {
+    font-size: 16px;
+}
+
+/* Language Selector Split */
+.lf-lang-menu {
+    min-width: 220px;
+    padding: 10px 0;
+}
+
+.lf-lang-section {
+    padding-bottom: 5px;
+}
+
+.lf-dropdown-section-title {
+    padding: 5px 15px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--clr-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.lf-lang-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 5px 0;
+}
+
+.lf-lang-footer {
+    padding: 8px 10px 0 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 5px;
+}
+
+.lf-edit-subs-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--clr-text-main);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.lf-edit-subs-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lf-edit-subs-btn .material-icons {
+    font-size: 18px;
+}
+
+/* ============================================
+   MOVIE PLAYER GRID (Embedded Player)
+   ============================================ */
+.lf-movie-player-container {
+    width: calc(100% - var(--content-padding) * 2);
+    max-width: none;
+    max-height: 80vh;
+    margin: 2.25rem auto;
+    margin-left: var(--content-padding);
+    margin-right: var(--content-padding);
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    position: relative;
+    box-sizing: border-box;
+}
+
+.lf-movie-player-container>div {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Movie player has no top HUD row, so push controls to bottom */
+.lf-movie-player-container .lf-player-hud-overlay.cr-hud-overlay {
+    justify-content: flex-end;
+}
+
+/* Movie actions dropdown */
+.lf-movie-actions-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-movie-actions-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    /* Open above the button */
+    right: 0;
+    width: 250px;
+    background: var(--clr-bg-surface, #1f1f1f);
+    /* Theme aware */
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    /* Square with small rounding */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    animation: lf-fade-in-slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lf-fade-in-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lf-movie-actions-popover .actionSheetContent {
+    width: 100%;
+}
+
+.lf-movie-actions-popover .actionSheetScroller {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.lf-movie-actions-popover .actionSheetMenuItem {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lf-movie-actions-popover .actionSheetMenuItem:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.lf-movie-actions-popover .actionSheetMenuItem .actionsheetMenuItemIcon {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.2s;
+}
+
+.lf-movie-actions-popover .actionSheetMenuItem:hover .actionsheetMenuItemIcon {
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.lf-movie-actions-popover .actionsheetDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 6px 0;
+}
+
+
+
+
+/* ============================================
+   CAST SECTION
+   ============================================ */
+.lf-cast-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+}
+
+.lf-cast-grid::-webkit-scrollbar {
+    display: none !important;
+}
+
+.lf-cast-card {
+    flex-shrink: 0;
+    text-align: center;
+    width: 130px;
+    cursor: pointer;
+}
+
+.lf-cast-card__image {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 8px;
+    border: 2px solid var(--clr-bg-surface);
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.lf-cast-card:hover .lf-cast-card__image {
+    border-color: rgba(255, 255, 255, 0.4);
+    opacity: 0.85;
+}
+
+.lf-cast-card__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+    color: var(--clr-text-main);
+    text-align: left;
+}
+
+.lf-cast-card:hover .lf-cast-card__name {
+    color: var(--clr-text-main);
+}
+
+.lf-cast-card__role {
+    font-size: 0.8rem;
+    color: var(--clr-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* ============================================
+   MORE LIKE THIS
+   ============================================ */
+.lf-similar-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+}
+
+.lf-similar-grid::-webkit-scrollbar {
+    display: none !important;
+}
+
+.lf-similar-card {
+    flex-shrink: 0;
+    width: 220px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.lf-similar-card__poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.lf-similar-card:hover .lf-similar-card__poster {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.lf-similar-card__title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+    color: var(--clr-text-main);
+}
+
+.lf-similar-card:hover .lf-similar-card__title {
+    color: var(--clr-accent);
+}
+
+/* ============================================
+   BLOCKED CONTENT MODAL (Modern Glass)
+   ============================================ */
+.lf-blocked-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: modalOverlayIn 0.25s ease;
+}
+
+@keyframes modalOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.lf-blocked-modal {
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.lf-blocked-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.lf-blocked-modal__close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--clr-text-main);
+}
+
+.lf-blocked-modal__close .material-icons {
+    font-size: 18px;
+}
+
+.lf-blocked-icon {
+    font-size: 48px;
+    color: var(--clr-text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin-left: auto;
+    margin-right: auto;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 50%;
+}
+
+.lf-blocked-modal h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+    color: var(--clr-text-main);
+    font-weight: 600;
+}
+
+.lf-blocked-modal p {
+    color: var(--clr-text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.lf-blocked-modal .lf-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 900px) {
+
+
+
+
+    .lf-movie-hero__details {
+        flex-direction: column;
+    }
+
+    .lf-movie-hero__cast-info {
+        flex: 1;
+    }
+
+
+
+
+}
+
+@media (max-width: 768px) {
+
+
+
+
+    .lf-movie-hero {
+        padding: 20px var(--content-padding);
+        height: auto;
+        min-height: 60vh;
+    }
+
+    .lf-movie-hero__content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .lf-movie-hero__poster {
+        width: 140px;
+    }
+
+    .lf-movie-hero__title {
+        font-size: 1.6rem;
+    }
+
+    .lf-movie-hero__meta {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+
+
+
+}
+
+/* -- Mobile Responsive Adjustments -- */
+@media (max-width: 768px) {
+
+
+
+
+    .lf-movie-hero {
+        height: auto;
+        min-height: 85vh;
+        /* Allow it to grow if content is long */
+        padding-top: 80px;
+        /* Navbar height */
+        align-items: flex-end;
+        /* Align content to bottom */
+    }
+
+    .lf-movie-hero::after {
+        background: linear-gradient(to top, #141414 10%, rgba(20, 20, 20, 0.9) 25%, rgba(20, 20, 20, 0.4) 60%, transparent 100%);
+    }
+
+    .lf-movie-hero__content {
+        flex-direction: column;
+        padding: 0;
+        gap: 20px;
+    }
+
+    .lf-movie-hero__poster {
+        display: none;
+        /* Hide poster on mobile */
+    }
+
+    .lf-movie-hero__info {
+        padding-top: 20px;
+        width: 100%;
+    }
+
+    .lf-movie-hero__title {
+        font-size: 2rem;
+        line-height: 1.1;
+    }
+
+    .lf-hero-title-logo {
+        max-width: 200px;
+        max-height: 100px;
+        margin-bottom: 10px;
+    }
+
+    .lf-movie-hero__meta {
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 0.85rem;
+    }
+
+    .lf-movie-hero__details {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .lf-movie-hero__description {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .lf-movie-hero__cast-info {
+        flex: 1 1 auto;
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .lf-movie-hero__actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .lf-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 12px;
+        min-width: fit-content;
+    }
+
+    .lf-btn--icon-only {
+        flex: 0 0 auto;
+    }
+
+    /* Content Section */
+    .lf-content-section {
+        padding: 20px 16px;
+    }
+
+    .lf-content-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 16px;
+    }
+
+    /* Cast Grid if exists, or similar items */
+    .lf-cast-grid,
+    .lf-similar-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+
+
+
+}

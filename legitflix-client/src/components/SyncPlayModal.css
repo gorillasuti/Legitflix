@@ -1,0 +1,243 @@
+.lf-syncplay-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: lfFadeIn 0.2s ease-out;
+}
+
+.lf-syncplay-modal-content {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 440px;
+    padding: 24px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: lfScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lf-syncplay-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.lf-syncplay-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.lf-syncplay-modal-close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.lf-syncplay-modal-close:hover {
+    color: #fff;
+}
+
+.lf-syncplay-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lf-syncplay-input-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.lf-syncplay-pill-input {
+    flex: 1;
+    background: #202020;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.lf-syncplay-pill-input:focus {
+    border-color: var(--clr-accent, #ff7e00);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent, #ff7e00) 15%, transparent);
+}
+
+.lf-syncplay-btn-create {
+    background: var(--clr-accent, #ff7e00);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.lf-syncplay-btn-create:hover {
+    background: #e06d00;
+}
+
+.lf-syncplay-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lf-syncplay-modal-loader {
+    text-align: center;
+    padding: 20px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.lf-syncplay-empty-state {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.lf-syncplay-device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.lf-syncplay-device-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    color: #e2e4e9;
+}
+
+.lf-syncplay-device-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lf-syncplay-device-item.active {
+    border-color: var(--clr-accent, #ff7e00);
+    background: rgba(255, 126, 0, 0.05);
+    color: #ffffff;
+}
+
+.lf-syncplay-device-icon {
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.lf-syncplay-device-item.active .lf-syncplay-device-icon {
+    color: var(--clr-accent, #ff7e00);
+}
+
+.lf-syncplay-device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.lf-syncplay-device-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.lf-syncplay-device-client {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.lf-syncplay-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 16px;
+}
+
+.lf-syncplay-btn-leave {
+    background: transparent;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lf-syncplay-btn-leave:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes lfFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes lfScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
