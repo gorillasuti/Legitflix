@@ -1,0 +1,382 @@
+/* ===== HERO CAROUSEL ===== */
+
+.hero-carousel-container {
+    position: relative;
+    width: 100%;
+    height: 90vh;
+    min-height: 700px;
+    overflow: hidden;
+    margin-bottom: -150px;
+    z-index: 1;
+    background: #141414;
+}
+
+/* --- SLIDES --- */
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden;
+    opacity: 0;
+    /* transform: scale(1.02); -- REMOVED */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    /* transform: scale(1); -- REMOVED */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* --- BACKDROP --- */
+.hero-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: -10px;
+    background-size: cover;
+    background-position: 80% center;
+    transition: transform 10s ease;
+    transform: scale(1.02);
+    /* Default start scale */
+}
+
+.hero-slide.active .hero-backdrop {
+    transform: scale(1.07);
+    /* Slow zoom in when active */
+}
+
+/* --- CONTENT --- */
+.hero-content {
+    position: absolute;
+    bottom: 37.5%;
+    left: 4%;
+    width: 40%;
+    max-width: 600px;
+    z-index: 3;
+    padding-right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    color: white;
+    text-align: left;
+}
+
+/* --- LOGO & TITLE --- */
+.hero-logo {
+    height: 180px;
+    width: 100%;
+    max-width: 325px;
+    object-fit: contain;
+    object-position: bottom left;
+    display: block;
+    margin-bottom: 0 !important;
+    max-height: 100% !important;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    color: white;
+}
+
+/* --- METADATA LINE --- */
+.hero-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    color: #ccc;
+    font-weight: 400;
+}
+
+.hero-badge-age {
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ccc;
+}
+
+.hero-meta-divider {
+    color: var(--clr-accent, #ff7e00);
+    font-size: 0.8em;
+}
+
+.hero-meta-text {
+    color: #e5e5e5;
+}
+
+/* --- DESCRIPTION --- */
+.hero-desc {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: white;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin: 0;
+    max-height: 4.5em;
+}
+
+/* --- ACTIONS (BUTTONS) --- */
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 0.5rem;
+}
+
+
+
+
+
+.btn-hero-primary .material-icons {
+    font-size: 1.4rem;
+}
+
+/* Unified Button Styles for Bookmark & Info */
+
+
+/* Ensure icons are identical size/alignment */
+.btn-hero-bookmark .material-icons, .hero-button-info .material-icons-outlined {
+    font-size: 24px;
+    line-height: 1;
+    display: block;
+    /* Removes inline spacing issues */
+}
+
+
+
+/* --- INDICATORS --- */
+.hero-indicators {
+    position: absolute;
+    left: 4%;
+    bottom: 20%;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+}
+
+.hero-indicator {
+    width: 32px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+        background 0.3s ease;
+}
+
+.hero-indicator:hover {
+    background: var(--clr-accent, #ff7e00);
+}
+
+.hero-indicator.active {
+    width: 56px;
+}
+
+.hero-indicator .fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--clr-accent, #ff7e00);
+}
+
+/* Completed: Always full */
+.hero-indicator.completed .fill {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    transition: width 0.3s ease;
+}
+
+/* Active: Animate from 0 to 100% over 8s */
+.hero-indicator.active .fill {
+    animation: fillProgress 8s linear forwards;
+}
+
+@keyframes fillProgress {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+/* --- PAUSED STATE --- */
+.carousel-paused .hero-indicator.active .fill {
+    animation-play-state: paused;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+
+
+
+
+    .hero-carousel-container {
+        max-height: 80vh;
+        min-height: 500px;
+        margin-bottom: -50px;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        z-index: 2;
+        backdrop-filter: blur(8px);
+        mask-composite: source-over;
+        mask-image: linear-gradient(to top, rgb(20, 20, 20) 7.5%, transparent 35%), linear-gradient(to right, rgb(20, 20, 20) 7.5%, transparent 100%) !important;
+        inset: 0px;
+        background: linear-gradient(to top, rgb(20, 20, 20) 7.5%, transparent 100%), linear-gradient(to right, rgb(20, 20, 20) 2.5%, transparent 100%) !important;
+    }
+
+    .hero-backdrop {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        transition: transform 10s ease;
+    }
+
+    /* Strong bottom gradient for text readability */
+    .hero-carousel-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 70%;
+        /* Covers more height */
+        background: linear-gradient(to top,
+                rgba(0, 0, 0, 1) 0%,
+                rgba(0, 0, 0, 0.8) 20%,
+                rgba(0, 0, 0, 0.4) 50%,
+                transparent 100%);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .hero-content {
+        width: 90%;
+        left: 5%;
+        top: auto;
+        bottom: 80px;
+        /* Sit above bottom edge */
+        transform: none;
+        align-items: flex-start;
+        text-align: left;
+        padding-right: 0;
+        z-index: 5;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+        margin-bottom: 0px;
+        display: none;
+        /* Often hidden if logo exists, but keep logic in JSX */
+    }
+
+    .hero-logo {
+        max-width: 70%;
+        height: auto;
+        max-height: 120px;
+        object-fit: contain;
+        object-position: bottom left;
+        margin-bottom: 10px;
+    }
+
+    .hero-meta-line {
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .hero-desc {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+    }
+
+    /* Actions: Wide Button Layout */
+    .hero-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    
+
+    .btn-hero-primary .material-icons {
+        font-size: 1.6rem;
+    }
+
+    /* Secondary buttons (Bookmark/Info) */
+    
+
+    
+
+    .hero-actions .hero-button-info {
+        display: none;
+        /* Hide info button on mobile if needed to save space? Ref only shows bookmark. Let's hide info. */
+    }
+
+    /* Indicators at very bottom */
+    .hero-indicators {
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .hero-indicator {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        flex: 1;
+        /* Bars spanning width? Ref showing dashes. */
+        max-width: 40px;
+    }
+
+    .hero-indicator.active {
+        width: auto;
+        /* Reset width transition focus */
+        flex: 1;
+        max-width: 40px;
+    }
+
+
+
+
+}

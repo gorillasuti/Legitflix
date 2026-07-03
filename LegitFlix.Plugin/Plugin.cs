@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using LegitFlix.Plugin.Configuration;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Plugins;
+using MediaBrowser.Controller.Configuration;
+
+namespace LegitFlix.Plugin
+{
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IDisposable
+    {
+        public override string Name => "Legitflix";
+        // New GUID to avoid conflicts and force re-registration
+        public override Guid Id => Guid.Parse("a1b2c3d4-e5f6-7890-1234-567890abcdef");
+
+        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+            : base(applicationPaths, xmlSerializer)
+        {
+            Instance = this;
+            IsActive = true;
+        }
+
+        public static Plugin Instance { get; private set; }
+
+        public static bool IsActive { get; private set; }
+
+        public IEnumerable<PluginPageInfo> GetPages()
+        {
+            return new[]
+            {
+                new PluginPageInfo
+                {
+                    Name = "LegitFlix UI",
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html"
+                }
+            };
+        }
+
+        public void Dispose()
+        {
+            IsActive = false;
+        }
+    }
+}

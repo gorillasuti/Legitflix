@@ -1,0 +1,150 @@
+/* Parent Interaction - Trigger visibility & reset transform with easeOutBack spring easing */
+.media-card-wrapper:hover .legitflix-hover-overlay {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: scale(1) translateY(0) !important;
+    pointer-events: auto;
+}
+
+/* Backdrop Image Layer - No blur filter for high performance & mobile friendliness */
+.hover-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    opacity: 0.35;
+}
+
+/* Rich linear gradient overlay */
+.hover-overlay-tint {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(20, 20, 20, 0.4) 0%, rgba(20, 20, 20, 0.95) 100%);
+    z-index: 1;
+}
+
+/* Content Layout (5 Rows) */
+.hover-body {
+    z-index: 2;
+    position: relative;
+    padding: 12px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.hover-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+    margin-bottom: 6px;
+    display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+/* Rows */
+.hover-row {
+    font-size: 11px;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    row-gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.hover-rating {
+    font-weight: 700;
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.hover-rating .material-icons {
+    font-size: 12px;
+}
+
+.hover-seasons {
+    font-weight: 600;
+    color: #ccc;
+}
+
+.hover-unplayed {
+    color: #fff;
+    font-weight: 700;
+    background: var(--clr-accent, #ff6a00);
+    padding: 1px 6px;
+    border-radius: 2px;
+    /* 2px matching original card radius */
+    font-size: 10px;
+}
+
+.hover-desc {
+    font-size: clamp(12px, 0.8vw, 15px);
+    line-height: 1.4;
+    color: #bbb;
+    margin-top: 6px;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 400;
+}
+
+/* Footer & Actions */
+.hover-footer {
+    padding: 12px;
+    background: transparent;
+    margin-top: auto;
+    display: flex;
+    flex-direction: row;
+    z-index: 2;
+    position: relative;
+}
+
+.hover-icon-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.hover-icon-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    height: 36px;
+    width: 36px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0;
+}
+
+.hover-icon-btn:hover {
+    background: var(--clr-accent, #ff7e00);
+    border-color: var(--clr-accent, #ff7e00);
+    color: #fff;
+}
+
+.hover-icon-btn .material-icons {
+    font-size: 20px;
+}

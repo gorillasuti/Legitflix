@@ -1,0 +1,1661 @@
+/* ============================================
+   SERIES DETAIL PAGE OVERRIDES
+   Colors & fonts inherited from theme.css
+   ============================================ */
+.lf-series-container {
+    /* Page-specific radius overrides (smaller than global theme) */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --content-padding: 3%;
+
+    /* Page-specific tokens not in theme.css */
+    --clr-divider: rgba(255, 255, 255, 0.1);
+    --clr-heart: #e91e63;
+    --clr-success: #4caf50;
+    --clr-rating-star: #ffc107;
+
+    width: 100%;
+    background-color: var(--clr-bg-main);
+    color: var(--clr-text-main);
+    min-height: 100vh;
+}
+
+.lf-series-container * {
+    box-sizing: border-box;
+}
+
+/* ============================================
+   SERIES HERO SECTION (70vh, 100% width)
+   ============================================ */
+.lf-series-hero {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    min-height: 500px;
+    display: flex;
+    align-items: flex-end;
+    padding: 40px var(--content-padding);
+    overflow: hidden;
+}
+
+.lf-series-hero__backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center top;
+    z-index: 0;
+    transition: opacity 0.5s ease;
+}
+
+.lf-series-hero__trailer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.lf-series-hero__trailer.is-playing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lf-series-hero__trailer iframe,
+.lf-series-hero__trailer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+}
+
+/* Trailer Help Button - always visible when trailer plays */
+.lf-trailer-help-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.5;
+    animation: fadeIn 0.5s ease;
+}
+
+.lf-trailer-help-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Trailer Back Drop Fade */
+.lf-series-hero__backdrop.is-hidden {
+    opacity: 0;
+}
+
+.lf-series-hero__trailer.is-playing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lf-series-hero__trailer iframe,
+.lf-series-hero__trailer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lf-series-hero__backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* Use mask-image or simple gradient to fade to bg-main */
+    background: linear-gradient(to top,
+            var(--clr-bg-main) 10%,
+            transparent 100%);
+    z-index: 1;
+}
+
+.lf-series-hero__logo {
+    position: absolute;
+    bottom: 40px;
+    left: var(--content-padding);
+    width: 200px;
+    max-width: 30%;
+    height: auto;
+    object-fit: contain;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.lf-series-hero.is-clean-view .lf-series-hero__logo {
+    opacity: 1;
+}
+
+.lf-series-hero.is-clean-view .lf-series-hero__content {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.lf-series-hero__logo {
+    position: absolute;
+    bottom: 50px;
+    left: var(--content-padding);
+    width: 250px;
+    max-width: 40%;
+    height: auto;
+    object-fit: contain;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.lf-series-hero.is-clean-view .lf-series-hero__logo {
+    opacity: 1;
+}
+
+.lf-series-hero__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 40px;
+    width: 100%;
+    transition: all 0.5s ease;
+}
+
+.lf-series-hero__poster {
+    flex-shrink: 0;
+    width: 220px;
+    height: 330px;
+    /* Fallback for engines without aspect-ratio support */
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    /* Align to bottom of padded area */
+}
+
+.lf-series-hero__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Expand downwards */
+    padding-top: 40vh;
+    /* Push content down initially */
+    gap: 12px;
+}
+
+.lf-series-hero__title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--clr-text-main);
+}
+
+.lf-hero-title-logo {
+    width: auto;
+    max-width: 150px;
+    max-height: 200px;
+    object-fit: contain;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+@media (max-width: 768px) {
+
+
+
+
+    .lf-hero-title-logo {
+        max-width: 80%;
+        max-height: 120px;
+        margin: 0 auto 1rem;
+    }
+
+
+
+
+}
+
+.lf-series-hero__meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--clr-text-muted);
+    font-size: 0.9rem;
+}
+
+.lf-series-hero__rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--clr-rating-star);
+}
+
+.lf-series-hero__details {
+    display: flex;
+    gap: 3rem;
+    align-items: flex-start;
+}
+
+.lf-series-hero__description {
+    flex: 0 0 60%;
+    color: var(--clr-text-muted);
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.lf-series-hero__description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.lf-series-hero__description-text.is-expanded {
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    display: block;
+}
+
+.lf-series-hero__load-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--clr-accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.lf-series-hero__load-more .material-icons {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.lf-series-hero__load-more.is-expanded .material-icons {
+    transform: rotate(180deg);
+}
+
+.lf-series-hero__cast-info {
+    flex: 0 0 280px;
+    font-size: 0.85rem;
+    color: var(--clr-text-muted);
+    line-height: 1.8;
+}
+
+.lf-series-hero__cast-info strong {
+    color: var(--clr-text-main);
+}
+
+.lf-series-hero__actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 10;
+}
+
+.lf-btn--sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+.lf-btn--primary {
+    background: var(--clr-accent);
+    color: white;
+}
+
+.lf-btn--glass {
+    background: var(--clr-bg-glass);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.lf-btn--glass:hover {
+    background: var(--clr-bg-glass-hover);
+}
+
+.lf-btn--ring-hover {
+    position: relative;
+    overflow: hidden;
+}
+
+.lf-btn--ring-hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: inherit;
+    transition: all 0.3s ease;
+}
+
+.lf-btn--ring-hover-secondary {
+    position: relative;
+    overflow: hidden;
+}
+
+.lf-btn--ring-hover-secondary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: inherit;
+    transition: all 0.3s ease;
+}
+
+.lf-btn--ring-hover-secondary:hover::after {
+    transform: scale(1.05);
+}
+
+.lf-btn--icon-only {
+    padding: 12px;
+}
+
+.lf-btn--icon-only.is-active {
+    color: var(--clr-accent);
+}
+
+.lf-btn--icon-only.is-active .material-icons {
+    color: var(--clr-accent);
+}
+
+
+
+
+
+.lf-btn--heart .material-icons {
+    transition: color 0.2s ease;
+}
+
+
+
+.lf-btn--heart.is-liked .material-icons {
+    color: var(--clr-heart);
+}
+
+
+
+
+
+
+
+/* Mute button is now a standard icon-only button, styles removed or adapted if needed for specific overrides */
+
+/* ============================================
+   CONTENT SECTIONS
+   ============================================ */
+.lf-content-section {
+    width: 100%;
+    padding: 30px var(--content-padding);
+}
+
+.lf-section-divider {
+    border: none;
+    border-top: 1px solid var(--clr-divider);
+    margin: 0 var(--content-padding);
+}
+
+
+
+.lf-section-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--clr-text-main);
+}
+
+/* ============================================
+   SEASON SELECTOR
+   ============================================ */
+.lf-series-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+
+
+
+
+    .lf-series-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .lf-series-header .lf-season-selector,
+    .lf-series-header .lf-season-selector__button {
+        width: 100%;
+    }
+
+    .lf-series-header .lf-season-selector__button {
+        justify-content: space-between;
+    }
+
+    .lf-series-header .lf-filter-controls {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* Ensure dropdowns and direct buttons take full width of grid cell */
+    .lf-series-header .lf-filter-controls .lf-filter-dropdown,
+    .lf-series-header .lf-filter-controls>button {
+        width: 100%;
+    }
+
+    /* Ensure inner buttons fill the container */
+    .lf-series-header .lf-filter-controls .lf-filter-btn {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+
+
+
+}
+
+
+
+.lf-season-selector {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-season-selector__button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    width: fit-content;
+    background: var(--clr-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-main);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lf-season-selector__button:hover {
+    background: var(--clr-bg-glass-hover);
+    border-color: var(--clr-accent);
+}
+
+.lf-season-selector__button .material-icons {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.lf-season-selector.is-open .lf-season-selector__button .material-icons {
+    transform: rotate(180deg);
+}
+
+.lf-season-selector__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: var(--clr-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.lf-season-selector.is-open .lf-season-selector__dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lf-season-selector__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.lf-season-selector__option:first-child {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.lf-season-selector__option:last-child {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.lf-season-selector__option:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-season-selector__option.is-selected {
+    color: var(--clr-text-main);
+    background: var(--clr-bg-glass);
+}
+
+
+
+/* Filter controls */
+.lf-filter-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.lf-filter-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lf-filter-btn:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-btn .material-icons {
+    font-size: 18px;
+}
+
+.lf-filter-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-filter-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 150px;
+    background: var(--clr-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.lf-filter-dropdown.is-open .lf-filter-dropdown__menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lf-filter-dropdown__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.lf-filter-dropdown__option:first-child {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.lf-filter-dropdown__option:last-child {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.lf-filter-dropdown__option:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-dropdown__option.is-selected {
+    color: var(--clr-text-main);
+    background: var(--clr-bg-glass) !important;
+}
+
+.lf-filter-dropdown__option .material-icons {
+    font-size: 16px;
+}
+
+/* Language Selector Split */
+.lf-lang-menu {
+    min-width: 220px;
+    padding: 10px 0;
+}
+
+.lf-lang-section {
+    padding-bottom: 5px;
+}
+
+.lf-dropdown-section-title {
+    padding: 5px 15px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--clr-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.lf-lang-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 5px 0;
+}
+
+.lf-lang-footer {
+    padding: 8px 10px 0 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 5px;
+}
+
+.lf-edit-subs-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--clr-text-main);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.lf-edit-subs-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lf-edit-subs-btn .material-icons {
+    font-size: 18px;
+}
+
+/* ============================================
+   EPISODE GRID
+   ============================================ */
+.lf-episode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.lf-episode-card {
+    display: block;
+    background: var(--clr-bg-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    grid-column: auto !important;
+    /* Force auto placement in grid */
+    min-width: 0;
+    /* Prevent grid blowout */
+    width: 100%;
+}
+
+.lf-episode-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.lf-episode-card__thumbnail {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+.lf-episode-card__thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.lf-episode-card:hover .lf-episode-card__thumbnail img {
+    transform: scale(1.05);
+}
+
+.lf-episode-card__play-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.lf-episode-card:hover .lf-episode-card__play-icon {
+    opacity: 1;
+}
+
+.lf-episode-card__play-icon .material-icons {
+    font-size: 40px;
+    color: white;
+    background: var(--clr-accent);
+    border-radius: 50%;
+    padding: 10px;
+}
+
+
+
+
+
+.lf-episode-card__badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    z-index: 5;
+}
+
+
+
+.lf-episode-card__info {
+    padding: 12px;
+}
+
+.lf-episode-card__title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow: hidden;
+    color: var(--clr-text-main);
+}
+
+.lf-episode-card__subtitle {
+    color: var(--clr-text-muted);
+    font-size: 0.8rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+/* BULK EDIT STYLES */
+.lf-episode-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    z-index: 10;
+    pointer-events: none;
+    /* Let parent handle click */
+}
+
+.lf-episode-checkbox .material-icons {
+    font-size: 18px;
+    color: white;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+.lf-episode-card.is-selecting-mode .lf-episode-checkbox {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lf-episode-card.is-selected .lf-episode-checkbox {
+    background: var(--clr-accent);
+    border-color: var(--clr-accent);
+}
+
+.lf-episode-card.is-selected .lf-episode-checkbox .material-icons {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lf-episode-card.is-selected {
+    box-shadow: 0 0 0 2px var(--clr-accent);
+}
+
+.lf-episode-card.is-watched {
+    background-color: rgba(0, 230, 118, 0.06) !important;
+    border: 1px solid rgba(0, 230, 118, 0.3) !important;
+}
+
+.lf-episode-card.is-watched:hover {
+    background-color: rgba(0, 230, 118, 0.1) !important;
+    border-color: rgba(0, 230, 118, 0.45) !important;
+}
+
+.lf-episode-card.is-watched .lf-episode-card__thumbnail {
+    opacity: 0.65;
+}
+
+/* Disable hover play icon in selection mode */
+.lf-episode-card.is-selecting-mode:hover .lf-episode-card__play-icon {
+    opacity: 0;
+}
+
+/* ============================================
+   BLOCKED CONTENT MODAL (Modern Glass)
+   ============================================ */
+.lf-blocked-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: modalOverlayIn 0.25s ease;
+}
+
+@keyframes modalOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.lf-blocked-modal {
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.lf-blocked-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.lf-blocked-modal__close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--clr-text-main);
+}
+
+.lf-blocked-modal__close .material-icons {
+    font-size: 18px;
+}
+
+.lf-blocked-icon {
+    font-size: 48px;
+    color: var(--clr-text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin-left: auto;
+    margin-right: auto;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 50%;
+}
+
+.lf-blocked-modal h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+    color: var(--clr-text-main);
+    font-weight: 600;
+}
+
+.lf-blocked-modal p {
+    color: var(--clr-text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.lf-blocked-modal .lf-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+
+/* Success Marked State (Green Tick) */
+.lf-episode-card.is-success-marked .lf-episode-checkbox,
+.lf-episode-card.is-watched .lf-episode-checkbox {
+    opacity: 1;
+    transform: scale(1);
+    background: var(--clr-success);
+    border-color: var(--clr-success);
+}
+
+.lf-episode-card.is-success-marked .lf-episode-checkbox .material-icons,
+.lf-episode-card.is-watched .lf-episode-checkbox .material-icons {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Adjust hover behavior for checked items */
+.lf-episode-card.is-watched:hover .lf-episode-card__play-icon {
+    /* Allow play icon to show on hover even if watched, to replay */
+    opacity: 1;
+}
+
+.lf-episode-card.is-watched .lf-episode-card__play-icon .material-icons {
+    background: #00e676 !important;
+}
+
+.lf-episode-card.is-watched .lf-episode-card__badge {
+    border-color: rgba(0, 230, 118, 0.35);
+}
+
+
+/* ============================================
+   CAST SECTION
+   ============================================ */
+.lf-cast-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+}
+
+.lf-cast-grid::-webkit-scrollbar {
+    display: none !important;
+}
+
+.lf-cast-card {
+    flex-shrink: 0;
+    text-align: center;
+    width: 130px;
+    cursor: pointer;
+}
+
+.lf-cast-card__image {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 8px;
+    border: 2px solid var(--clr-bg-surface);
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.lf-cast-card:hover .lf-cast-card__image {
+    border-color: rgba(255, 255, 255, 0.4);
+    opacity: 0.85;
+}
+
+.lf-cast-card__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+    color: var(--clr-text-main);
+    text-align: left;
+}
+
+.lf-cast-card:hover .lf-cast-card__name {
+    color: var(--clr-text-main);
+}
+
+.lf-cast-card__role {
+    font-size: 0.8rem;
+    color: var(--clr-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* ============================================
+   MORE LIKE THIS
+   ============================================ */
+.lf-similar-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none;
+}
+
+.lf-similar-grid::-webkit-scrollbar {
+    display: none !important;
+}
+
+.lf-similar-card {
+    flex-shrink: 0;
+    width: 220px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.lf-similar-card__poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.lf-similar-card:hover .lf-similar-card__poster {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.lf-similar-card__title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+    color: var(--clr-text-main);
+}
+
+.lf-similar-card:hover .lf-similar-card__title {
+    color: var(--clr-accent);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 900px) {
+
+
+
+
+    .lf-series-hero__details {
+        flex-direction: column;
+    }
+
+    .lf-series-hero__cast-info {
+        flex: 1;
+    }
+
+
+
+
+}
+
+@media (max-width: 768px) {
+
+
+
+
+    .lf-series-hero {
+        padding: 20px var(--content-padding);
+        height: auto;
+        min-height: 60vh;
+    }
+
+    .lf-series-hero__content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .lf-series-hero__poster {
+        width: 140px;
+    }
+
+    .lf-series-hero__title {
+        font-size: 1.6rem;
+    }
+
+    .lf-series-hero__meta {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .lf-episode-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+
+
+
+
+}
+
+/* ============================================
+   FILTER & SELECTION CONTROLS
+   ============================================ */
+.lf-filter-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.lf-filter-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--clr-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lf-filter-btn:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-btn.is-active {
+    background: var(--clr-bg-glass);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--clr-text-main);
+}
+
+.lf-filter-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-filter-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 200px;
+    background: var(--clr-bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.lf-filter-dropdown.is-open .lf-filter-dropdown__menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lf-filter-dropdown__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.lf-filter-dropdown__option:hover {
+    background: var(--clr-bg-glass);
+    color: var(--clr-text-main);
+}
+
+/* Language Selector Specifics */
+.lf-lang-menu {
+    min-width: 240px;
+    padding: 10px 0;
+}
+
+.lf-lang-section {
+    padding-bottom: 5px;
+}
+
+.lf-dropdown-section-title {
+    padding: 5px 15px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--clr-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.lf-lang-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 5px 0;
+}
+
+.lf-lang-footer {
+    padding: 8px 10px 0 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 5px;
+}
+
+/* BULK EDIT CHECKBOXES */
+.lf-episode-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    z-index: 10;
+    pointer-events: none;
+    /* Let parent handle click */
+}
+
+.lf-episode-checkbox .material-icons {
+    font-size: 18px;
+    color: white;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+.lf-episode-card.is-selecting-mode .lf-episode-checkbox {
+    opacity: 1;
+    transform: scale(1);
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Selected State */
+.lf-episode-card.is-selected .lf-episode-checkbox {
+    background: var(--clr-accent);
+    border-color: var(--clr-accent);
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lf-episode-card.is-selected .lf-episode-checkbox .material-icons {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lf-episode-card.is-selected {
+    box-shadow: 0 0 0 2px var(--clr-accent);
+}
+
+.lf-episode-card.is-watched .lf-episode-card__thumbnail {
+    opacity: 0.8;
+}
+
+/* Disable hover play icon visually in selection mode */
+.lf-episode-card.is-selecting-mode:hover .lf-episode-card__play-icon {
+    display: none;
+}
+
+/* Loading spinner keyframe */
+@keyframes lf-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* -- Mobile Responsive Adjustments -- */
+@media (max-width: 768px) {
+
+
+
+
+    .lf-series-hero {
+        height: auto;
+        min-height: 85vh;
+        padding-top: 80px;
+        align-items: flex-end;
+        padding-bottom: 40px;
+    }
+
+    .lf-series-hero::after {
+        background: linear-gradient(to top, #141414 10%, rgba(20, 20, 20, 0.9) 30%, rgba(20, 20, 20, 0.4) 60%, transparent 100%);
+    }
+
+    .lf-series-hero__content {
+        flex-direction: column;
+        padding: 0;
+        gap: 16px;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .lf-series-hero__poster {
+        display: none;
+    }
+
+    .lf-series-hero__info {
+        padding-top: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Reorder using flex order: Title -> Meta -> Actions -> Details */
+    .lf-series-hero__title {
+        font-size: 1.75rem;
+        line-height: 1.1;
+        margin-bottom: 4px;
+        order: 1;
+    }
+
+    .lf-hero-title-logo {
+        max-width: 200px;
+        max-height: 100px;
+        margin: 0 0 12px 0;
+        order: 1;
+    }
+
+    .lf-series-hero__meta {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 0.85rem;
+        opacity: 0.9;
+        order: 2;
+    }
+
+    .lf-series-hero__actions {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-start;
+        width: 100%;
+        order: 3;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    .lf-series-hero__details {
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        order: 4;
+    }
+
+    .lf-series-hero__description {
+        flex: 1 1 auto;
+        width: 100%;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Hide cast info in hero on mobile to save space, or keep it if needed */
+    .lf-series-hero__cast-info {
+        display: none;
+    }
+
+    .lf-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 16px;
+        min-width: fit-content;
+        height: 48px;
+    }
+
+    .lf-btn--icon-only {
+        flex: 0 0 auto;
+        width: 48px;
+    }
+
+    /* Content Section */
+    .lf-content-section {
+        padding: 20px 16px;
+    }
+
+
+
+    .lf-season-selector {
+        width: 100%;
+    }
+
+    .lf-season-selector__button {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .lf-filter-controls {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        justify-content: flex-start;
+    }
+
+    /* Grid Adjustments */
+    .lf-episode-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+
+
+
+}
+
+/* Cogwheel dropdown */
+.lf-series-actions-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.lf-cogwheel-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.lf-series-actions-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 250px;
+    background: var(--clr-bg-surface, #1f1f1f);
+    /* Theme aware */
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    /* Square with small rounding */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    animation: lf-fade-in-slide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lf-fade-in-slide {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lf-series-actions-popover .actionSheetContent {
+    width: 100%;
+}
+
+.lf-series-actions-popover .actionSheetScroller {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lf-series-actions-popover .actionSheetMenuItem {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lf-series-actions-popover .actionSheetMenuItem:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.lf-series-actions-popover .actionSheetMenuItem .actionsheetMenuItemIcon {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.2s;
+}
+
+.lf-series-actions-popover .actionSheetMenuItem:hover .actionsheetMenuItemIcon {
+    color: var(--clr-accent, #ff6a00) !important;
+}
+
+.lf-series-actions-popover .actionsheetDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 6px 0;
+}

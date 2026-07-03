@@ -1,0 +1,26 @@
+.skeleton {
+    background: #121212 !important;
+    background: linear-gradient(90deg,
+            #121212 25%,
+            #1c1c1c 37%,
+            #121212 63%) !important;
+    background-size: 400% 100% !important;
+    animation: skeleton-loading 1.4s ease infinite !important;
+    border-radius: 4px;
+}
+
+
+
+
+
+
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}

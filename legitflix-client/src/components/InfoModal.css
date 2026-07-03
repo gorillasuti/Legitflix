@@ -1,0 +1,425 @@
+/* Legitflix InfoModal Component */
+
+.info-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9998;
+    backdrop-filter: blur(5px);
+}
+
+.legitflix-info-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.legitflix-info-modal.visible {
+    opacity: 1;
+}
+
+.info-modal-content {
+    background: #181818;
+    width: 90%;
+    max-width: 950px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    color: white;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+
+    /* Animation Initial State */
+    /* Animation Initial State */
+    opacity: 0;
+    transform: translateY(100vh) scale(0.9);
+    will-change: transform, opacity;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    /* Expo out for premium feel */
+}
+
+.legitflix-info-modal.visible .info-modal-content {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.btn-close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #181818;
+    color: white;
+    border: none;
+    z-index: 10;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: #444;
+}
+
+/* Video Container (Hero) */
+.info-video-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+    background: black;
+}
+
+.iframe-wrapper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+.info-video-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    transform: scale(1.35);
+    /* Zoom to remove letterboxing/UI */
+    pointer-events: none;
+    /* User can't click embed */
+}
+
+.info-backdrop-fallback {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+}
+
+.video-overlay-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(to top, #181818 0%, transparent 100%);
+    z-index: 2;
+}
+
+/* Video Mute Button */
+.video-mute-overlay {
+    position: absolute;
+    bottom: 35%;
+    right: 5%;
+    z-index: 5;
+}
+
+
+
+/* Hero Content (Over Video) */
+.info-hero-content {
+    position: absolute;
+    bottom: 5%;
+    left: 5%;
+    width: 45%;
+    z-index: 5;
+    transition: all 0.5s ease;
+}
+
+/* Idle State: Hide actions/title, keep Logo small */
+.info-hero-content.idle .info-actions, .info-hero-content.idle .info-title-text, .info-hero-content.idle .info-desc, .info-hero-content.idle .info-meta-row {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.info-hero-content.idle .info-logo {
+    transform: scale(0.6) translateY(40px);
+    transform-origin: bottom left;
+    margin-bottom: 0;
+}
+
+/* Ensure smooth transitions for children */
+.info-actions, .info-title-text, .info-desc, .info-meta-row, .info-logo {
+    transition: all 0.5s ease;
+}
+
+.info-logo {
+    max-width: 300px;
+    max-height: 120px;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.info-title-text {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.info-actions {
+    display: flex;
+    gap: 15px;
+}
+
+
+
+
+
+
+
+
+
+/* Details Section */
+.info-details-container {
+    padding: 20px 40px;
+    display: flex;
+    gap: 40px;
+    transition: opacity 0.5s;
+}
+
+/* Hide details when idle? user didn't specify, but usually "hide animation" means clear the view */
+/* Let's keep detail text visible since it's below the fold usually, or maybe user means just the overlay on video */
+/* User said "Trailer section where it plays... hide animation". This refers to the video hero area logic */
+
+.info-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: #bcbcbc;
+}
+
+.info-year {
+    color: #fff;
+    font-weight: bold;
+}
+
+.info-rating {
+    border: 1px solid #bcbcbc;
+    padding: 0 5px;
+    font-size: 0.9rem;
+}
+
+.info-quality {
+    border: 1px solid #bcbcbc;
+    padding: 0 5px;
+    font-size: 0.8rem;
+    border-radius: 3px;
+}
+
+.info-desc {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: white;
+    margin-bottom: 20px;
+}
+
+/* Trailers Section */
+.info-trailers-section {
+    padding: 30px 40px;
+    border-top: 1px solid #333;
+}
+
+.trailers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.trailer-card {
+    cursor: pointer;
+    position: relative;
+}
+
+.trailer-card:hover {
+    z-index: 5;
+}
+
+.trailer-thumb {
+    position: relative;
+    aspect-ratio: 16/9;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #222;
+    margin-bottom: 8px;
+    transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trailer-card:hover .trailer-thumb {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+.trailer-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trailer-card:hover .trailer-thumb img {
+    transform: scale(1.08);
+    filter: brightness(1.1);
+}
+
+.play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    background: rgba(0, 0, 0, 0.35);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.25s ease;
+    pointer-events: none;
+    z-index: 3;
+    backdrop-filter: blur(4px);
+}
+
+.play-overlay .material-icons {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.85);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.trailer-card:hover .play-overlay {
+    opacity: 1;
+}
+
+.trailer-card:hover .play-overlay .material-icons {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.trailer-title {
+    padding: 8px 2px 0;
+    font-size: 0.88rem;
+    color: #eee;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.25s ease;
+}
+
+.trailer-card:hover .trailer-title {
+    color: var(--clr-accent, #ff7e00);
+}
+
+/* About Section */
+.info-about-section {
+    padding: 30px 40px;
+    border-top: 1px solid #333;
+    background: #181818;
+}
+
+.about-row {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.about-row .label {
+    opacity: 0.6;
+    margin-right: 5px;
+}
+
+.about-row .value {
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+
+
+
+
+    .info-modal-content {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+
+    .info-details-container {
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .info-hero-content {
+        width: 90%;
+        bottom: 20px;
+    }
+
+
+
+
+}
+
+/* --- New Trailer Styles --- */
+.local-trailer-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.local-trailer-placeholder .material-icons {
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.trailer-card.search-card {
+    text-decoration: none;
+    display: block;
+}
+
+.search-thumb {
+    background: #202020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-thumb .material-icons {
+    font-size: 48px;
+    color: var(--clr-accent, #ff6a00);
+    transition: transform 0.2s;
+}
+
+.trailer-card.search-card:hover .search-thumb .material-icons {
+    transform: scale(1.1);
+}

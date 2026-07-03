@@ -1,0 +1,495 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+.auth-page {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--lf-bg-primary, #0c0d10);
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+}
+
+.auth-page-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: var(--lf-bg-primary, #0c0d10);
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   Header & Footer (Crunchyroll Style)
+   ========================================================================== */
+
+.auth-top-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    z-index: 100;
+}
+
+.auth-top-header-logo {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   Flat Center Layout (Crunchyroll Style)
+   ========================================================================== */
+
+.auth-container-flat {
+    width: 90%;
+    max-width: 440px;
+    text-align: left;
+    z-index: 10;
+    animation: authFadeEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    padding-bottom: 60px; /* Offset for footer */
+}
+
+@keyframes authFadeEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-container-flat.select-user-container {
+    max-width: 960px;
+    text-align: center;
+}
+
+.auth-container-flat h1 {
+    font-size: 2.2rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    color: #ffffff;
+}
+
+.auth-container-flat h2 {
+    font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin: 0 0 2rem 0;
+    color: #ffffff;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* ==========================================================================
+   Inputs (Bottom Border Only)
+   ========================================================================== */
+
+.crunchy-input-group {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.crunchy-input {
+    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    padding: 10px 0 !important;
+    font-size: 1.05rem !important;
+    font-family: inherit !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border-bottom-color 0.25s ease !important;
+}
+
+.crunchy-input:focus,
+.crunchy-input:focus-visible,
+.crunchy-input:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-bottom: 2px solid var(--clr-accent, #ff6a00) !important;
+}
+
+.crunchy-input:invalid,
+.crunchy-input:-moz-ui-invalid {
+    box-shadow: none !important;
+    outline: none !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.crunchy-input:focus:invalid,
+.crunchy-input:focus:-moz-ui-invalid {
+    border-bottom: 2px solid var(--clr-accent, #ff6a00) !important;
+}
+
+.crunchy-label {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.05rem;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Floating label effect using placeholder-shown */
+.crunchy-input:focus ~ .crunchy-label, .crunchy-input:not(:placeholder-shown) ~ .crunchy-label {
+    top: -16px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.crunchy-input:focus ~ .crunchy-label {
+    color: var(--clr-accent, #ff6a00);
+}
+
+.crunchy-input::placeholder {
+    color: transparent;
+}
+
+/* Password wrapper adjustments */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-wrapper .crunchy-input {
+    padding-right: 40px;
+}
+
+.password-toggle-modern {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+.password-toggle-modern:hover {
+    color: var(--clr-accent, #ff6a00);
+}
+
+/* Error message */
+.auth-error-modern {
+    color: #ff5e5e;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-top: -0.5rem;
+    animation: shakeEffect 0.4s ease-in-out;
+}
+
+@keyframes shakeEffect {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* ==========================================================================
+   Buttons & Links (Crunchyroll Style)
+   ========================================================================== */
+
+.auth-actions-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-crunchy-pill {
+    width: 100%;
+    height: 48px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    border-radius: 9999px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-crunchy-pill:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.btn-crunchy-pill:hover {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-crunchy-pill:active {
+    transform: scale(0.98);
+}
+
+/* Active / Primary state */
+.btn-crunchy-pill.primary {
+    background: var(--clr-accent, #ff6a00);
+    border-color: var(--clr-accent, #ff6a00);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-crunchy-pill.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 2.5px var(--lf-bg-primary, #0c0d10), 
+                0 0 0 5px var(--clr-accent, #ff6a00);
+}
+
+.crunchy-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.crunchy-link {
+    color: var(--clr-accent, #ff6a00);
+    text-decoration: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: filter 0.2s ease;
+}
+
+.crunchy-link:hover {
+    filter: brightness(1.25);
+}
+
+/* ==========================================================================
+   Profiles Grid (Netflix Style)
+   ========================================================================== */
+
+.netflix-profile-heading {
+    font-size: 3.5rem;
+    font-weight: 500;
+    margin-bottom: 2.5rem;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.netflix-user-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    margin-bottom: 3.5rem;
+    justify-content: center;
+}
+
+.netflix-user-card {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 130px;
+    padding: 0;
+    outline: none;
+}
+
+.netflix-avatar-container {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 15px;
+    position: relative;
+    border-radius: 4px; /* Tiny rounded corner like Netflix */
+    border: none;
+    overflow: hidden;
+    background: #111;
+    transition: outline 0.1s ease;
+}
+
+.netflix-user-card:hover .netflix-avatar-container {
+    outline: 3px solid #ffffff; /* Sharp white border outline on hover */
+}
+
+.netflix-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.netflix-user-name {
+    font-size: 1.1rem;
+    color: #808080;
+    font-weight: 400;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.netflix-user-card:hover .netflix-user-name {
+    color: #ffffff;
+}
+
+/* Netflix Style Buttons */
+.btn-netflix-style {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.6rem 2rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    margin-top: 1rem;
+    border-radius: 9999px;
+}
+
+.btn-netflix-style:hover {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.netflix-link-flat {
+    color: #808080;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    text-decoration: none;
+    margin-top: 1rem;
+    background: none;
+    border: none;
+    padding: 6px 12px;
+}
+
+.netflix-link-flat:hover {
+    color: #ffffff;
+}
+
+.netflix-footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+/* Prefilled User Login Ring */
+.login-user-profile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.login-avatar-flat {
+    width: 100px;
+    height: 100px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #111;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Quick Connect Layout */
+.qc-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem 0;
+}
+
+.qc-instructions {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.qc-code-display {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--clr-accent, #ff6a00);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1.5rem 3rem;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    font-family: inherit;
+}
+
+.qc-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+}
+
+.qc-spinner-small {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--clr-accent, #ff6a00);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.qc-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--clr-accent, #ff6a00);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

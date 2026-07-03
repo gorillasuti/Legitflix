@@ -1,0 +1,679 @@
+/* Navbar Container */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 60px;
+    /* Crunchroll style height */
+    z-index: 1000;
+    background: transparent;
+    /* Transparent by default */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.navbar.scrolled {
+    background-color: var(--clr-bg-nav, #202020);
+    /* Solid dark when scrolled */
+}
+
+/* Inner Content Container */
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    padding: 0 20px;
+    margin: 0 auto;
+}
+
+/* Left Section: Logo & Primary Links */
+.nav-start {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    height: 100%;
+}
+
+.nav-logo {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    /* Constrain height */
+}
+
+.nav-logo img {
+    height: 100%;
+    width: auto;
+    /* Auto width for custom logos */
+    object-fit: contain;
+}
+
+
+
+/* Links (Primary & Secondary) */
+.nav-links {
+    display: flex;
+    gap: 24px;
+    height: 100%;
+    align-items: center;
+}
+
+.nav-link {
+    color: #dadada;
+    font-size: 0.95rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    /* For icons inside links */
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    color: var(--clr-accent, #f47521);
+}
+
+/* When scrolled, hovering a nav-link gets a full-height accent bg */
+.navbar.scrolled .nav-link {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 12px;
+    margin: 0 -12px;
+    border-radius: 0;
+}
+
+.navbar.scrolled .nav-link:hover {
+    background-color: var(--clr-accent, #f47521);
+    color: #fff;
+}
+
+.nav-link.dropdown-trigger {
+    padding-right: 4px;
+}
+
+.nav-link .material-icons {
+    font-size: 18px;
+    margin-top: 1px;
+}
+
+/* Right Section */
+.nav-end {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+
+
+/* Dropdown Menu (Browse) */
+
+
+
+
+
+
+.dropdown-item {
+    padding: 10px 20px;
+    color: #e5e5e5;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: #2a2a2a;
+    color: white;
+}
+
+/* Icons / Actions */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-icon-btn {
+    background: transparent;
+    border: none;
+    color: #dadada;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    transition: color 0.2s;
+}
+
+.nav-icon-btn:hover {
+    color: var(--clr-accent, #f47521);
+}
+
+.nav-icon-btn .material-icons {
+    font-size: 24px;
+}
+
+/* Avatar & User Dropdown */
+.nav-avatar-container {
+    position: relative;
+    margin-left: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.nav-avatar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+}
+
+.nav-avatar-wrapper:hover {
+    opacity: 0.8;
+}
+
+.nav-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid transparent;
+}
+
+.nav-avatar-placeholder {
+    font-size: 48px;
+    color: #dadada;
+}
+
+.avatar-arrow {
+    color: #dadada;
+    font-size: 24px;
+    transition: transform 0.2s ease;
+}
+
+.nav-avatar-container.active .avatar-arrow {
+    transform: rotate(180deg);
+}
+
+/* User Menu Dropdown */
+.nav-dropdown-menu.usermenu {
+    width: 320px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.user-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #232323;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.user-menu-header:hover {
+    background: #2a2a2a;
+}
+
+.header-avatar-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+}
+
+.menu-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-menu-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.user-name {
+    color: #fff;
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.user-status {
+    color: var(--clr-accent, #f47521);
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-status .material-icons {
+    font-size: 14px;
+}
+
+.edit-icon {
+    color: #dadada;
+    font-size: 20px;
+    opacity: 0.8;
+    transition: color 0.2s;
+}
+
+.user-menu-header:hover .edit-icon {
+    color: #fff;
+}
+
+/* Dropdown Content Override */
+.nav-dropdown-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: #191919;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px 0;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    z-index: 1002;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.nav-dropdown-menu button {
+    background: transparent;
+    border: none;
+    color: #e5e5e5;
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.nav-dropdown-menu button:hover {
+    background: #2a2a2a;
+    color: white;
+}
+
+.nav-dropdown-menu button .material-icons {
+    font-size: 24px;
+    opacity: 0.8;
+    color: #dadada;
+}
+
+.nav-dropdown-menu button:hover .material-icons {
+    color: white;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #333;
+    margin: 8px 0;
+}
+
+/* Divider between categories and Requests in nav-start */
+.nav-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+/* Section labels inside profile dropdown */
+.menu-section-label {
+    padding: 8px 16px 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+
+/* --- Mobile Menu Styles --- */
+.desktop-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-hamburger {
+    display: none;
+}
+
+/* Overlay */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Drawer */
+.mobile-menu-drawer {
+    width: 85%;
+    max-width: 340px;
+    height: 100%;
+    background: #141414;
+    /* Slightly darker/richer */
+    border-left: 1px solid #333;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.8);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-menu-overlay.active .mobile-menu-drawer {
+    transform: translateX(0);
+}
+
+/* Header */
+.mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    /* border-bottom: 1px solid #2a2a2a; */
+    /* Remove border for cleaner look? Or keep. Let's keep it subtle. */
+    background: transparent;
+}
+
+.mobile-logo-small {
+    display: flex;
+    align-items: center;
+}
+
+.mobile-menu-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+}
+
+.mobile-menu-close {
+    background: transparent;
+    border: none;
+    color: #dadada;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.mobile-menu-close:hover {
+    color: #fff;
+}
+
+/* Content */
+.mobile-menu-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 24px 30px;
+    /* Side padding */
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Search Trigger (Fake Input) */
+.mobile-search-trigger {
+    background: #262626;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #a0a0a0;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    margin-top: 8px;
+    /* Spacing from header */
+}
+
+.mobile-search-trigger:hover {
+    background: #333;
+    border-color: #444;
+    color: #fff;
+}
+
+.mobile-search-trigger .search-icon {
+    color: #fff;
+    opacity: 0.7;
+}
+
+.search-placeholder {
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin-left: 1rem;
+}
+
+/* Links List */
+.mobile-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-link-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 14px 12px;
+    background: transparent;
+    border: none;
+    color: #e5e5e5;
+    font-size: 0.9rem;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.mobile-link-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.mobile-link-item.active {
+    background: rgba(var(--clr-accent-rgb), 0.1);
+    color: var(--clr-accent, #f47521);
+}
+
+.link-icon {
+    color: #a0a0a0;
+    transition: color 0.2s;
+}
+
+.mobile-link-item:hover .link-icon {
+    color: #fff;
+}
+
+/* Bottom Actions */
+.mobile-bottom-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    /* Push to bottom if content is short */
+}
+
+/* Random Button Special Style */
+.mobile-link-item.special-random {
+    color: var(--clr-accent, #f47521);
+    background: rgba(var(--clr-accent-rgb, 244, 117, 33), 0.1);
+    border: 1px solid rgba(var(--clr-accent-rgb, 244, 117, 33), 0.2);
+}
+
+.mobile-link-item.special-random:hover {
+    background: rgba(var(--clr-accent-rgb, 244, 117, 33), 0.2);
+    color: #fff;
+    border-color: var(--clr-accent, #f47521);
+}
+
+.mobile-link-item.special-random .link-icon {
+    color: inherit;
+}
+
+.mobile-divider {
+    height: 1px;
+    background: #2a2a2a;
+    margin: 12px 0;
+    width: 100%;
+}
+
+.mobile-link-item.small {
+    font-size: 0.95rem;
+    padding: 12px 12px;
+    color: #aaa;
+}
+
+.mobile-link-item.small:hover {
+    color: #fff;
+}
+
+/* Submenu Styles */
+.mobile-submenu-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-submenu {
+    display: flex;
+    flex-direction: column;
+    padding-left: 16px;
+    margin-top: 4px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    margin-left: 12px;
+}
+
+.mobile-link-item.submenu-item {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.mobile-link-item.submenu-item:hover {
+    color: #fff;
+    background: transparent;
+}
+
+.mobile-link-item.active-submenu {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+
+/* --- Responsive Updates --- */
+@media (max-width: 900px) {
+
+
+
+
+
+    .primary-links, .desktop-actions {
+        display: none;
+        /* Hide desktop nav and actions */
+    }
+
+    .mobile-hamburger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Show hamburger */
+    }
+
+    
+
+
+
+
+}
+
+/* -- Mobile User Menu (Bottom Sheet) - KEEPING THIS FOR DESKTOP USER MENU OVERSIGHT 
+     Actually, we added Profile/Settings to the Drawer, so we might not need the User Menu Bottom Sheet 
+     on mobile anymore if the user avatar isn't even shown. 
+     BUT, if the user clicks the Avatar in the Navbar (if we decide to show it), this styles it. 
+     Currently Navbar hides avatar on mobile? 
+     Let's check Navbar.jsx -> .nav-end -> .desktop-actions (hidden) -> .nav-avatar-container (NOT HIDDEN?)
+     
+     Wait, .nav-avatar-container does NOT have a class that hides it on mobile in the JSX.
+     .desktop-actions has display:none on mobile.
+     
+     So Avatar IS visible on mobile?
+     If so, we should probably hide it or keep the bottom sheet logic. 
+     User request was "Slideout hamburger menu... add big search... add My List...".
+     Usually with a drawer, you hide the avatar/search icons in the navbar and put everything in the drawer.
+     
+     Let's hide the avatar container on mobile to clean up the navbar, relying solely on Hamburger.
+*/
+
+@media (max-width: 900px) {
+
+
+
+
+    .nav-avatar-container {
+        display: none !important;
+    }
+
+
+
+
+}
+
+/* ==========================================================================
+   Cast & SyncPlay Modals (Moved to separate stylesheets)
+   ========================================================================== */

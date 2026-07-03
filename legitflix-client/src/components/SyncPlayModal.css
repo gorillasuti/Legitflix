@@ -1,0 +1,275 @@
+/* ====================================================
+   SyncPlayModal — Theme-Aware CSS
+   Uses --lf-* variables that toggle between light/dark.
+   Fallbacks ensure correctness if variables are missing.
+   ==================================================== */
+
+.lf-syncplay-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: lfFadeIn 0.2s ease-out;
+}
+
+.lf-syncplay-modal-content {
+    background: var(--lf-surface-1, #141414);
+    border: 1px solid var(--lf-border, rgba(255, 255, 255, 0.1));
+    border-radius: 14px;
+    width: 90%;
+    max-width: 440px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    color: var(--lf-text-primary, #ffffff);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: lfScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lf-syncplay-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.lf-syncplay-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--lf-text-primary, #ffffff);
+}
+
+.lf-syncplay-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--lf-text-secondary, #aaaaaa);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    border-radius: 50%;
+}
+
+.lf-syncplay-modal-close:hover {
+    color: var(--lf-text-primary, #ffffff);
+}
+
+.lf-syncplay-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lf-syncplay-input-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.lf-syncplay-pill-input {
+    flex: 1;
+    background: var(--lf-surface-2, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--lf-border, rgba(255, 255, 255, 0.15));
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--lf-text-primary, #ffffff);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lf-syncplay-pill-input::placeholder {
+    color: var(--lf-text-secondary, rgba(255, 255, 255, 0.35));
+}
+
+.lf-syncplay-pill-input:focus {
+    border-color: var(--clr-accent, #ff7e00);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent, #ff7e00) 15%, transparent);
+}
+
+.lf-syncplay-btn-create {
+    background: var(--clr-accent, #ff7e00);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+}
+
+.lf-syncplay-btn-create:hover {
+    filter: brightness(1.1);
+}
+
+.lf-syncplay-btn-create:active {
+    transform: translateY(0);
+}
+
+.lf-syncplay-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--lf-text-secondary, #666666);
+    font-size: 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--lf-border, rgba(255, 255, 255, 0.08));
+}
+
+.lf-syncplay-modal-loader {
+    text-align: center;
+    padding: 24px 20px;
+    color: var(--lf-text-secondary, #aaaaaa);
+    font-size: 14px;
+}
+
+.lf-syncplay-empty-state {
+    color: var(--lf-text-secondary, rgba(255, 255, 255, 0.4));
+    font-size: 14px;
+    text-align: center;
+    padding: 24px 0;
+    line-height: 1.8;
+}
+
+.lf-syncplay-device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lf-syncplay-device-list::-webkit-scrollbar-thumb {
+    background: var(--lf-border, rgba(255, 255, 255, 0.15));
+    border-radius: 3px;
+}
+
+.lf-syncplay-device-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--lf-surface-2, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--lf-border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    color: var(--lf-text-primary, #e2e4e9);
+}
+
+.lf-syncplay-device-item:hover {
+    background: var(--lf-surface-hover, rgba(255, 255, 255, 0.07));
+    border-color: var(--lf-border-hover, rgba(255, 255, 255, 0.18));
+}
+
+.lf-syncplay-device-item.active {
+    border-color: var(--clr-accent, #ff7e00);
+    background: color-mix(in srgb, var(--clr-accent, #ff7e00) 8%, transparent);
+    color: var(--lf-text-primary, #ffffff);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--clr-accent, #ff7e00) 30%, transparent);
+}
+
+.lf-syncplay-device-icon {
+    font-size: 22px;
+    color: var(--lf-text-secondary, rgba(255, 255, 255, 0.5));
+    flex-shrink: 0;
+}
+
+.lf-syncplay-device-item.active .lf-syncplay-device-icon {
+    color: var(--clr-accent, #ff7e00);
+}
+
+.lf-syncplay-device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.lf-syncplay-device-name {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lf-syncplay-device-client {
+    font-size: 12px;
+    color: var(--lf-text-secondary, rgba(255, 255, 255, 0.45));
+}
+
+.lf-syncplay-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    border-top: 1px solid var(--lf-border, rgba(255, 255, 255, 0.08));
+    padding-top: 16px;
+}
+
+.lf-syncplay-btn-leave {
+    background: transparent;
+    border: 1.5px solid var(--lf-border, rgba(255, 255, 255, 0.2));
+    border-radius: 6px;
+    color: var(--lf-text-primary, #ffffff);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lf-syncplay-btn-leave:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.5);
+    color: #f87171;
+}
+
+@keyframes lfFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes lfScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

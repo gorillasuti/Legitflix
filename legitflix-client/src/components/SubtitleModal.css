@@ -1,0 +1,357 @@
+.lf-sub-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: lfFadeIn 0.2s ease-out;
+}
+
+.lf-sub-modal {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    padding: 24px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: lfScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+
+/* Header */
+.lf-sub-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.lf-sub-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.lf-sub-header__close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.lf-sub-header__close:hover {
+    color: #fff;
+}
+
+/* Confirmation Box */
+.lf-sub-confirm-box {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: lfScaleUp 0.2s ease;
+}
+
+.lf-sub-confirm-box h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.lf-sub-confirm-box p {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.4;
+}
+
+.lf-sub-confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* Status Message */
+.lf-sub-status {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: lfFadeIn 0.2s ease;
+}
+
+
+
+
+
+/* Content */
+.lf-sub-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-bottom: 8px;
+}
+
+.lf-sub-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lf-sub-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lf-sub-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+/* Selectors Row */
+.lf-sub-selectors {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.lf-sub-selectors > div {
+    flex: 1;
+}
+
+.lf-sub-label {
+    display: block;
+    color: #aaa;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lf-sub-select {
+    width: 100%;
+    padding: 10px 14px;
+    background: #202020;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.lf-sub-select:focus {
+    border-color: var(--clr-accent, #ff7e00);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--clr-accent, #ff7e00) 15%, transparent);
+}
+
+.lf-sub-select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+/* Section title */
+.lf-sub-section-title {
+    color: var(--clr-accent, #ff7e00);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+/* Subtitle list */
+.lf-sub-list {
+    background: #1a1a1a;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.lf-sub-list__empty {
+    padding: 20px;
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+}
+
+.lf-sub-list__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lf-sub-list__item:last-child {
+    border-bottom: none;
+}
+
+.lf-sub-list__name {
+    color: #fff;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.lf-sub-list__meta {
+    color: #777;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.lf-sub-list__info {
+    overflow: hidden;
+    margin-right: 12px;
+    min-width: 0;
+}
+
+.lf-sub-list__info .lf-sub-list__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Action buttons */
+.lf-sub-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.lf-sub-action-btn .material-icons {
+    font-size: 16px;
+}
+
+/* Delete variant */
+.lf-sub-action-btn--delete {
+    background: transparent;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}
+
+.lf-sub-action-btn--delete:hover {
+    background: rgba(244, 67, 54, 0.1);
+    border-color: #f44336;
+}
+
+/* Download variant */
+.lf-sub-action-btn--download {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.lf-sub-action-btn--download:hover {
+    background: var(--clr-accent, #ff7e00);
+    border-color: var(--clr-accent, #ff7e00);
+}
+
+/* Search variant */
+.lf-sub-action-btn--search {
+    background: var(--clr-accent, #ff7e00);
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    height: 38px;
+}
+
+.lf-sub-action-btn--search:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.lf-sub-action-btn--search:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Search form row */
+.lf-sub-search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+/* Language select optgroup divider */
+.lf-sub-select optgroup {
+    font-weight: 600;
+    color: #888;
+    background: #1a1a1a;
+}
+
+/* Section spacing */
+.lf-sub-section {
+    margin-bottom: 20px;
+}
+
+.lf-sub-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Loading spinner */
+.lf-sub-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    color: #777;
+    font-size: 14px;
+}
+
+.lf-sub-loading .material-icons {
+    font-size: 20px;
+    animation: lf-spin 1s linear infinite;
+}
+
+@keyframes lf-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes lfFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes lfScaleUp {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
