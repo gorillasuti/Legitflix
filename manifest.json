@@ -3,19 +3,19 @@
         "owner": "Legitflix",
         "versions": [
             {
-                "changelog": "Initial Release: Modern UI replacement for Jellyfin. Features all the native functions with an updated look. Auto-playing trailers, skip intro/recap/credits, and custom HLS player.",
-                "version": "1.0.0.0",
-                "checksum": "634c4b37e66bec927d137e52353cc7bc",
-                "timestamp": "2026-07-04T00:16:47Z",
+                "changelog": "v1.1.0: Added server-side settings sync, poster resolution badges, gamepad support, and security hardening against XSS and prototype pollution.",
+                "version": "1.1.0.0",
+                "checksum": "5640f5a123bdacdb2468ec5558eea633",
+                "timestamp": "2026-07-05T20:22:15Z",
                 "targetAbi": "10.11.11.0",
-                "sourceUrl": "https://github.com/gorillasuti/Legitflix/releases/download/v1.0.0.0/LegitFlix.Plugin_1.0.0.0.zip"
+                "sourceUrl": "https://github.com/gorillasuti/Legitflix/releases/download/v1.1.0.0/LegitFlix.Plugin_1.1.0.0.zip"
             }
         ],
         "overview": "Transforms Jellyfin into a proper streaming service. Legitflix delivers a completely custom React frontend featuring a multi-user 'Who's Watching' profile switcher, a cinematic home screen with auto-playing Youtube trailers, a custom video player with native HLS support, Skip Intro/Recap/Credits buttons, and integrated subtitle search and downloading. It operates as a Zero-Flash UI replacement, loading instantly without showing the stock Jellyfin interface.",
         "category": "User Interface",
         "guid": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
         "name": "Legitflix",
-        "description": "Total UI replacement for Jellyfin. Native functions updated look. Auto-playing trailers, skip intro/recap/credits, and custom HLS player.",
+        "description": "Complete UI replacement for Jellyfin. Native functions updated look. Auto-playing trailers, skip intro/recap/credits, and custom HLS player.",
         "imageUrl": "https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/Image%20gallery/Legitflix-Plugin.jpg"
     }
 ]
