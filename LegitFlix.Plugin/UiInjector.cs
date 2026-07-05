@@ -91,12 +91,14 @@ namespace LegitFlix.Plugin
         jellyseerrUrl: {sJellyUrl},
         showLibraryTitles: {Bool(config.ShowLibraryTitles)},
         showNavbarRequests: {Bool(config.ShowNavbarRequests)},
+        showHomeRequestsCard: {Bool(config.ShowHomeRequestsCard)},
         showNavbarRandom: {Bool(config.ShowNavbarRandom)},
         contentSortMode: {sSort},
         jellyseerrText: {sJellyTxt},
         playerSeekTime: {config.PlayerSeekTime},
         playerAutoSkip: {Bool(config.PlayerAutoSkip)},
-        playerAutoNextEp: {Bool(config.PlayerAutoNextEp)}
+        playerAutoNextEp: {Bool(config.PlayerAutoNextEp)},
+        jellyseerrGlobalOverride: {Bool(config.JellyseerrGlobalOverride)}
     }};
 </script>";
         }

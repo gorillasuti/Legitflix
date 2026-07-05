@@ -110,6 +110,22 @@
                     </label>
                     <div class="fieldDescription">Display requests tab in the top navigation bar.</div>
                 </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top: 10px;">
+                    <label>
+                        <input type="checkbox" is="emby-checkbox" id="chkShowHomeRequestsCard" />
+                        <span>Show Requests Card on Home Screen</span>
+                    </label>
+                    <div class="fieldDescription">Display requests integration card on the main library home row.</div>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top: 15px;">
+                    <label>
+                        <input type="checkbox" is="emby-checkbox" id="chkJellyseerrGlobalOverride" />
+                        <span>Force Lock Requests Configuration Globally</span>
+                    </label>
+                    <div class="fieldDescription">If enabled, locks Jellyseerr URLs/text globally for everyone, independent of the general theme settings lock policy.</div>
+                </div>
             </div>
 
             <!-- Video Player customization -->
@@ -167,6 +183,8 @@
                                 document.querySelector('#txtJellyseerrUrl').value = config.JellyseerrUrl || 'https://request.legitflix.eu';
                                 document.querySelector('#txtJellyseerrText').value = config.JellyseerrText || 'Request';
                                 document.querySelector('#chkShowNavbarRequests').checked = config.ShowNavbarRequests !== false;
+                                document.querySelector('#chkShowHomeRequestsCard').checked = config.ShowHomeRequestsCard !== false;
+                                document.querySelector('#chkJellyseerrGlobalOverride').checked = !!config.JellyseerrGlobalOverride;
                                 
                                 document.querySelector('#txtPlayerSeekTime').value = config.PlayerSeekTime || 10;
                                 document.querySelector('#chkPlayerAutoSkip').checked = !!config.PlayerAutoSkip;
@@ -207,6 +225,8 @@
                         JellyseerrUrl: document.querySelector('#txtJellyseerrUrl').value,
                         JellyseerrText: document.querySelector('#txtJellyseerrText').value,
                         ShowNavbarRequests: document.querySelector('#chkShowNavbarRequests').checked,
+                        ShowHomeRequestsCard: document.querySelector('#chkShowHomeRequestsCard').checked,
+                        JellyseerrGlobalOverride: document.querySelector('#chkJellyseerrGlobalOverride').checked,
                         
                         PlayerSeekTime: parseInt(document.querySelector('#txtPlayerSeekTime').value) || 10,
                         PlayerAutoSkip: document.querySelector('#chkPlayerAutoSkip').checked,

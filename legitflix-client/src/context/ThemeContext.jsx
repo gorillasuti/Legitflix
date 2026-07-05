@@ -1,9 +1,9 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { jellyfinService } from '../services/jellyfin';
 
 const ThemeContext = createContext();
 
-const sanitizeUrl = (url) => {
 const sanitizeUrlStrict = (url) => {
     if (!url) return '';
     const trimmed = String(url).trim();
@@ -32,6 +32,10 @@ const sanitizeHex = (hex) => {
     }
     return '';
 };
+
+// Keys that must never be written to any config object via dynamic iteration.
+// Allowing these through a for-in loop enables prototype pollution.
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 const deepSanitizeObject = (obj) => {
     if (obj === null || typeof obj !== 'object') return obj;
@@ -81,6 +85,80 @@ const sanitizeFullConfig = (raw) => {
     return config;
 };
 
+const serializeToCustomPrefs = (config) => {
+    const customPrefs = {};
+    for (const [key, val] of Object.entries(config)) {
+        if (DANGEROUS_KEYS.has(key)) continue;
+        if (val === null || val === undefined) {
+            continue;
+        }
+        if (typeof val === 'object') {
+            customPrefs[`__json:${key}`] = JSON.stringify(val);
+        } else {
+            customPrefs[key] = String(val);
+        }
+    }
+    return customPrefs;
+};
+
+const deserializeFromCustomPrefs = (customPrefs) => {
+    const config = {};
+    if (!customPrefs) return config;
+    
+    for (const [key, val] of Object.entries(customPrefs)) {
+        if (DANGEROUS_KEYS.has(key)) continue;
+        
+        if (key.startsWith('__json:')) {
+            const realKey = key.slice(7);
+            if (DANGEROUS_KEYS.has(realKey)) continue;
+            try {
+                const parsed = JSON.parse(val);
+                config[realKey] = deepSanitizeObject(parsed);
+            } catch (e) {
+                console.error(`Failed to parse custom pref JSON for ${realKey}`, e);
+            }
+        } else {
+            if (val === 'true') {
+                config[key] = true;
+            } else if (val === 'false') {
+                config[key] = false;
+            } else if (!isNaN(Number(val)) && val.trim() !== '') {
+                config[key] = Number(val);
+            } else {
+                config[key] = val;
+            }
+        }
+    }
+    return config;
+};
+
+/**
+ * Validates that a CSS color value is a safe literal before it is passed
+ * into style.setProperty(). Accepts: #hex, rgb(...), rgba(...), hsl(...),
+ * and named CSS keywords (letters only). Rejects everything else.
+ */
+const sanitizeCssColor = (value, fallback) => {
+    if (!value) return fallback;
+    const v = String(value).trim();
+    // Hex
+    if (/^#[0-9A-Fa-f]{3,8}$/.test(v)) return v;
+    // rgb / rgba / hsl / hsla — digits, commas, spaces, dots, slashes, %
+    if (/^(rgb|rgba|hsl|hsla)\([\d\s,%.]+\)$/i.test(v)) return v;
+    // Pure keyword (e.g. 'white', 'transparent')
+    if (/^[a-zA-Z]+$/.test(v)) return v;
+    return fallback;
+};
+
+/**
+ * Validates a CSS size/percentage value (e.g. '100%', '1.2em', '16px').
+ */
+const sanitizeCssSize = (value, fallback) => {
+    if (!value) return fallback;
+    const v = String(value).trim();
+    if (/^[0-9]+(\.?[0-9]*)?(px|em|rem|%|vw|vh)?$/.test(v)) return v;
+    return fallback;
+};
+
 // Map preset accent colors → matching default logo
 const ACCENT_LOGO_MAP = {
     '#ff7e00': 'https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/public/default-logo-orange.png',
@@ -127,6 +205,7 @@ export const ThemeProvider = ({ children }) => {
         showNavbarSearch: true,
         showNavbarBookmarks: true,
         showNavbarRequests: true,
+        showHomeRequestsCard: true,
         showLibraryTitles: true,
         appBackground: null,
         userAvatar: null,
@@ -144,7 +223,222 @@ export const ThemeProvider = ({ children }) => {
         screensaverType: 'none',
         screensaverTime: 180,
         screensaverInterval: 10,
+        // New Subtitle Customizations
+        subtitleLanguagePreference: 'eng',
+        subtitleMode: 'Default',
+        subtitleBurnIn: 'Auto',
+        subtitleTextSize: 'Normal',
+        subtitleTextWeight: 'Normal',
+        subtitleFontFamily: 'Default',
+        subtitleColor: '#ffffff',
+        subtitleShadow: 'Drop Shadow',
+        subtitleVerticalPosition: 'Bottom',
+        // Media Card Poster Badges
+        showQualityTags: false,
+        showGenreTags: false,
+        showLanguageTags: false,
+        // Playback Behaviors
+        playerAutoPause: false,
+        playerAutoResume: false,
+        playerAutoPip: false,
+        playerLongPressSpeed: true,
+        enableGamepad: false,
     });
+
+    const debounceTimerRef = useRef(null);
+    const pendingWriteRef = useRef(null);
+
+    const syncFromServer = async () => {
+        try {
+            const user = await jellyfinService.getCurrentUser();
+            if (!user) return;
+
+            const prefsId = "legitflix-theme";
+            let prefs = await jellyfinService.getDisplayPreferences(prefsId);
+
+            // Determine if server preferences are empty/uninitialized
+            const serverIsEmpty = !prefs || !prefs.CustomPrefs || Object.keys(prefs.CustomPrefs).length === 0;
+
+            // Load local config to see if we have historical data to migrate
+            let localConfig = null;
+            const localConfigStr = localStorage.getItem('LegitFlix_Config');
+            if (localConfigStr) {
+                try {
+                    localConfig = JSON.parse(localConfigStr);
+                } catch (e) {
+                    console.error("[LegitFlix] Failed to parse local config during sync", e);
+                }
+            }
+
+            const localHasRealData = localConfig
+                && Object.keys(localConfig).length > 5
+                && localConfig._syncedToServer !== true;
+
+            if (serverIsEmpty && localHasRealData) {
+                // One-time migration: upload local settings to server
+                const customPrefs = serializeToCustomPrefs(localConfig);
+                const newPrefs = { Id: prefsId, CustomPrefs: customPrefs };
+                await jellyfinService.updateDisplayPreferences(prefsId, newPrefs);
+                
+                // Tag local config
+                const updatedLocal = { ...localConfig, _syncedToServer: true };
+                localStorage.setItem('LegitFlix_Config', JSON.stringify(updatedLocal));
+                
+                setConfig(prev => ({ ...prev, _syncedToServer: true }));
+                return;
+            }
+
+            if (prefs && prefs.CustomPrefs) {
+                const serverConfig = sanitizeFullConfig(deserializeFromCustomPrefs(prefs.CustomPrefs));
+                
+                setConfig(prev => {
+                    let updated = { ...prev, ...serverConfig, _syncedToServer: true };
+                    
+                    // Re-enforce server configurations if global overrides are enabled!
+                    if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
+                        const sc = window.LegitFlix_ServerConfig;
+                        if (sc.accentColor !== undefined) updated.accentColor = sanitizeHex(sc.accentColor) || '#ff7e00';
+                        if (sc.themeMode !== undefined) updated.themeMode = sc.themeMode;
+                        if (sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrlStrict(sc.logoUrl);
+                        if (sc.showNavbarCategories !== undefined) updated.showNavbarCategories = sc.showNavbarCategories;
+                        if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
+                        if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
+                        if (sc.showLibraryTitles !== undefined) updated.showLibraryTitles = sc.showLibraryTitles;
+                        if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
+                        if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
+                        if (sc.showNavbarRandom !== undefined) updated.showNavbarRandom = sc.showNavbarRandom;
+                        if (sc.contentSortMode !== undefined) updated.contentSortMode = sc.contentSortMode;
+                        if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
+                        if (sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
+                        if (sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
+                        if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
+                    }
+
+                    // Check server Jellyseerr global overrides lock
+                    if (window.LegitFlix_ServerConfig) {
+                        const sc = window.LegitFlix_ServerConfig;
+                        if (sc.jellyseerrGlobalOverride) {
+                            if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
+                            if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
+                            if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
+                            if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
+                            if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
+                        }
+                    }
+
+                    updated = sanitizeFullConfig(updated);
+
+                    localStorage.setItem('LegitFlix_Config', JSON.stringify(updated));
+                    
+                    if (updated.accentColor) applyAccentColor(updated.accentColor);
+                    if (updated.faviconUrl !== undefined) applyFavicon(updated.faviconUrl);
+                    if (updated.themeMode) applyThemeMode(updated.themeMode);
+
+                    applySubtitleStyles(
+                        updated.subtitleTextSize,
+                        updated.subtitleColor,
+                        updated.subtitleTextWeight,
+                        updated.subtitleFontFamily,
+                        updated.subtitleShadow
+                    );
+
+                    return updated;
+                });
+            }
+        } catch (err) {
+            console.error("[LegitFlix] Failed to sync settings from server", err);
+        }
+    };
+
+    const saveSettingsToServer = async (configData) => {
+        try {
+            const user = await jellyfinService.getCurrentUser();
+            if (!user) return;
+            
+            const prefsId = "legitflix-theme";
+            let prefs = await jellyfinService.getDisplayPreferences(prefsId);
+            if (!prefs) prefs = { Id: prefsId, CustomPrefs: {} };
+            if (!prefs.CustomPrefs) prefs.CustomPrefs = {};
+
+            const customPrefs = serializeToCustomPrefs(configData);
+            prefs.CustomPrefs = customPrefs;
+
+            await jellyfinService.updateDisplayPreferences(prefsId, prefs);
+            pendingWriteRef.current = null;
+        } catch (e) {
+            console.error("[LegitFlix] Failed to save settings to server", e);
+        }
+    };
+
+    const flushPendingToServer = () => {
+        const pending = pendingWriteRef.current;
+        if (!pending) return;
+
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        try {
+            const token = jellyfinService.api?.accessToken || jellyfinService.api?.configuration?.accessToken;
+            const userId = jellyfinService.api?.user?.id || jellyfinService._cachedUser?.Id;
+            const basePath = jellyfinService.api?.configuration?.basePath || jellyfinService.api?.basePath || '';
+            
+            if (!token || !userId) return;
+
+            const url = `${basePath}/DisplayPreferences/legitflix-theme?userId=${userId}&client=LegitFlixClient`;
+            const customPrefs = serializeToCustomPrefs(pending);
+            const bodyPayload = JSON.stringify({
+                Id: "legitflix-theme",
+                CustomPrefs: customPrefs
+            });
+
+            // Native fetch with keepalive: true
+            fetch(url, {
+                method: 'POST',
+                keepalive: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `MediaBrowser Token="${token}"`
+                },
+                body: bodyPayload
+            }).catch(() => {});
+        } catch (e) {
+            console.error("[LegitFlix] Unload flush failed", e);
+        }
+
+        pendingWriteRef.current = null;
+    };
+
+    useEffect(() => {
+        const handleUnload = () => {
+            flushPendingToServer();
+        };
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                flushPendingToServer();
+            }
+        };
+
+        window.addEventListener('beforeunload', handleUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleUnload);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        syncFromServer();
+
+        const handleAuthSuccess = () => {
+            syncFromServer();
+        };
+        window.addEventListener('legitflix-sync-settings', handleAuthSuccess);
+        return () => {
+            window.removeEventListener('legitflix-sync-settings', handleAuthSuccess);
+        };
+    }, []);
 
     useEffect(() => {
         // 1. Start with client default config
@@ -172,9 +466,12 @@ export const ThemeProvider = ({ children }) => {
             
             // Helper to load setting: if global overrides are enabled, server wins.
             // If disabled, user's local config wins.
+            // Also supports server-level JellyseerrGlobalOverride.
             const getVal = (key, fallback) => {
                 if (sc[key] === undefined) return fallback;
-                if (enableGlobalOverwrites) {
+                const isJellyseerrKey = ['enableJellyseerr', 'jellyseerrUrl', 'jellyseerrText', 'showNavbarRequests', 'showHomeRequestsCard'].includes(key);
+                const isLocked = enableGlobalOverwrites || (isJellyseerrKey && !!sc.jellyseerrGlobalOverride);
+                if (isLocked) {
                     return sc[key];
                 } else {
                     return (localConfig && localConfig[key] !== undefined) ? localConfig[key] : sc[key];
@@ -186,12 +483,13 @@ export const ThemeProvider = ({ children }) => {
                 enableGlobalOverwrites,
                 accentColor: sanitizeHex(getVal('accentColor', initialConfig.accentColor)) || initialConfig.accentColor,
                 themeMode: getVal('themeMode', initialConfig.themeMode),
-                logoUrl: getVal('logoUrl', initialConfig.logoUrl) !== undefined ? sanitizeUrl(getVal('logoUrl', initialConfig.logoUrl)) : initialConfig.logoUrl,
+                logoUrl: getVal('logoUrl', initialConfig.logoUrl) !== undefined ? sanitizeUrlStrict(getVal('logoUrl', initialConfig.logoUrl)) : initialConfig.logoUrl,
                 showNavbarCategories: getVal('showNavbarCategories', initialConfig.showNavbarCategories) !== false,
                 enableJellyseerr: getVal('enableJellyseerr', initialConfig.enableJellyseerr) !== false,
-                jellyseerrUrl: sanitizeUrl(getVal('jellyseerrUrl', initialConfig.jellyseerrUrl)) || initialConfig.jellyseerrUrl,
+                jellyseerrUrl: sanitizeUrlStrict(getVal('jellyseerrUrl', initialConfig.jellyseerrUrl)) || initialConfig.jellyseerrUrl,
                 showLibraryTitles: getVal('showLibraryTitles', initialConfig.showLibraryTitles) !== false,
                 showNavbarRequests: getVal('showNavbarRequests', initialConfig.showNavbarRequests) !== false,
+                showHomeRequestsCard: getVal('showHomeRequestsCard', initialConfig.showHomeRequestsCard) !== false,
                 showNavbarRandom: getVal('showNavbarRandom', initialConfig.showNavbarRandom) !== false,
                 contentSortMode: getVal('contentSortMode', initialConfig.contentSortMode),
                 jellyseerrText: sanitizeText(getVal('jellyseerrText', initialConfig.jellyseerrText)) || initialConfig.jellyseerrText,
@@ -210,6 +508,10 @@ export const ThemeProvider = ({ children }) => {
         if (localConfig) {
             const scKeys = window.LegitFlix_ServerConfig ? Object.keys(window.LegitFlix_ServerConfig) : [];
             for (const key in localConfig) {
+                // Prototype pollution guard: skip any key that could climb the prototype chain
+                if (DANGEROUS_KEYS.has(key)) continue;
+                // Only own properties — never inherited ones
+                if (!Object.prototype.hasOwnProperty.call(localConfig, key)) continue;
                 if (key === 'enableGlobalOverwrites') continue; // NEVER allow local storage to override server lock policy
                 if (!enableGlobalOverwrites || !scKeys.includes(key)) {
                     initialConfig[key] = localConfig[key];
@@ -218,19 +520,19 @@ export const ThemeProvider = ({ children }) => {
         }
 
         // Sanitize final values
-        if (initialConfig.accentColor !== undefined) initialConfig.accentColor = sanitizeHex(initialConfig.accentColor) || '#ff7e00';
-        if (initialConfig.logoUrl !== undefined) initialConfig.logoUrl = sanitizeUrl(initialConfig.logoUrl);
-        if (initialConfig.faviconUrl !== undefined) initialConfig.faviconUrl = sanitizeUrl(initialConfig.faviconUrl);
-        if (initialConfig.jellyseerrUrl !== undefined) initialConfig.jellyseerrUrl = sanitizeUrl(initialConfig.jellyseerrUrl);
-        if (initialConfig.jellyseerrBackground !== undefined) initialConfig.jellyseerrBackground = sanitizeUrl(initialConfig.jellyseerrBackground);
-        if (initialConfig.jellyseerrText !== undefined) initialConfig.jellyseerrText = sanitizeText(initialConfig.jellyseerrText);
-        if (initialConfig.appBackground !== undefined) initialConfig.appBackground = sanitizeUrl(initialConfig.appBackground);
+        initialConfig = sanitizeFullConfig(initialConfig);
 
         setConfig(initialConfig);
         applyAccentColor(initialConfig.accentColor);
         if (initialConfig.faviconUrl) applyFavicon(initialConfig.faviconUrl);
         applyThemeMode(initialConfig.themeMode || 'dark');
-        applySubtitleStyles(initialConfig.subtitleSize, initialConfig.subtitleColor, initialConfig.subtitleBackground);
+        applySubtitleStyles(
+            initialConfig.subtitleTextSize,
+            initialConfig.subtitleColor,
+            initialConfig.subtitleTextWeight,
+            initialConfig.subtitleFontFamily,
+            initialConfig.subtitleShadow
+        );
     }, []);
 
     const hexToHslValues = (hex) => {
@@ -330,58 +632,78 @@ export const ThemeProvider = ({ children }) => {
         }
     };
 
-    const applySubtitleStyles = (size, color, background) => {
+    const applySubtitleStyles = (sizeName, color, weightName, fontFamily, shadowName) => {
         const root = document.documentElement;
-        root.style.setProperty('--lf-sub-size', size || '100%');
-        root.style.setProperty('--lf-sub-color', color || '#ffffff');
 
-        // Background & Shadow logic
-        let textShadow = '0px 1px 2px rgba(0,0,0,0.8)';
-        let bgColor = 'transparent';
+        const sizeMap = {
+            'Small': '80%',
+            'Normal': '100%',
+            'Medium': '120%',
+            'Large': '150%',
+            'Extra Large': '200%'
+        };
+        const size = sizeMap[sizeName] || '100%';
 
-        if (background === 'drop-shadow') {
-            textShadow = '0px 2px 4px rgba(0,0,0,0.9)';
-        } else if (background === 'outline') {
-            textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
-        } else if (background === 'box') {
-            bgColor = 'rgba(0,0,0,0.7)';
-            textShadow = 'none';
-        } else if (background === 'none') {
-            textShadow = 'none';
-        }
+        const weightMap = {
+            'Light': '300',
+            'Normal': 'normal',
+            'Bold': 'bold'
+        };
+        const weight = weightMap[weightName] || 'normal';
 
-        root.style.setProperty('--lf-sub-shadow', textShadow);
-        root.style.setProperty('--lf-sub-bg', bgColor);
+        const fontMap = {
+            'Default': 'inherit',
+            'Serif': 'serif',
+            'Sans-Serif': 'sans-serif',
+            'Monospace': 'monospace'
+        };
+        const font = fontMap[fontFamily] || 'inherit';
+
+        const shadowMap = {
+            'None': 'none',
+            'Drop Shadow': '0px 2px 4px rgba(0,0,0,0.9)',
+            'Raised': '1px 1px 0px #000, 2px 2px 0px #000',
+            'Depressed': '1px 1px 0px #fff, -1px -1px 0px #000',
+            'Outline': '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+        };
+        const shadow = shadowMap[shadowName] || '0px 2px 4px rgba(0,0,0,0.9)';
+
+        root.style.setProperty('--lf-sub-size', sanitizeCssSize(size, '100%'));
+        root.style.setProperty('--lf-sub-color', sanitizeCssColor(color, '#ffffff'));
+        root.style.setProperty('--lf-sub-weight', weight);
+        root.style.setProperty('--lf-sub-font', font);
+        root.style.setProperty('--lf-sub-shadow', shadow);
     };
 
     const updateConfig = (newConfig) => {
-        const sanitizedConfig = { ...newConfig };
         // Strip prototype-polluting keys before touching any object
         const sanitizedConfig = Object.fromEntries(
             Object.entries(newConfig).filter(([k]) => !DANGEROUS_KEYS.has(k))
         );
         if (sanitizedConfig.accentColor !== undefined) sanitizedConfig.accentColor = sanitizeHex(sanitizedConfig.accentColor) || '#ff7e00';
-        if (sanitizedConfig.logoUrl !== undefined) sanitizedConfig.logoUrl = sanitizeUrl(sanitizedConfig.logoUrl);
-        if (sanitizedConfig.faviconUrl !== undefined) sanitizedConfig.faviconUrl = sanitizeUrl(sanitizedConfig.faviconUrl);
-        if (sanitizedConfig.jellyseerrUrl !== undefined) sanitizedConfig.jellyseerrUrl = sanitizeUrl(sanitizedConfig.jellyseerrUrl);
-        if (sanitizedConfig.jellyseerrBackground !== undefined) sanitizedConfig.jellyseerrBackground = sanitizeUrl(sanitizedConfig.jellyseerrBackground);
+        if (sanitizedConfig.logoUrl !== undefined) sanitizedConfig.logoUrl = sanitizeUrlStrict(sanitizedConfig.logoUrl);
+        if (sanitizedConfig.faviconUrl !== undefined) sanitizedConfig.faviconUrl = sanitizeUrlStrict(sanitizedConfig.faviconUrl);
+        if (sanitizedConfig.jellyseerrUrl !== undefined) sanitizedConfig.jellyseerrUrl = sanitizeUrlStrict(sanitizedConfig.jellyseerrUrl);
+        if (sanitizedConfig.jellyseerrBackground !== undefined) sanitizedConfig.jellyseerrBackground = sanitizeUrlStrict(sanitizedConfig.jellyseerrBackground);
         if (sanitizedConfig.jellyseerrText !== undefined) sanitizedConfig.jellyseerrText = sanitizeText(sanitizedConfig.jellyseerrText);
-        if (sanitizedConfig.appBackground !== undefined) sanitizedConfig.appBackground = sanitizeUrl(sanitizedConfig.appBackground);
+        if (sanitizedConfig.appBackground !== undefined) sanitizedConfig.appBackground = sanitizeUrlStrict(sanitizedConfig.appBackground);
+        if (sanitizedConfig.userAvatar !== undefined) sanitizedConfig.userAvatar = sanitizeUrlStrict(sanitizedConfig.userAvatar);
 
         setConfig(prev => {
             const updated = { ...prev, ...sanitizedConfig };
             
-            // Re-enforce server configurations if global overwrites are enabled!
+            // Re-enforce server configurations if global overrides are enabled!
             if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
                 const sc = window.LegitFlix_ServerConfig;
                 if (sc.accentColor !== undefined) updated.accentColor = sanitizeHex(sc.accentColor) || '#ff7e00';
                 if (sc.themeMode !== undefined) updated.themeMode = sc.themeMode;
-                if (sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrl(sc.logoUrl);
+                if (sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrlStrict(sc.logoUrl);
                 if (sc.showNavbarCategories !== undefined) updated.showNavbarCategories = sc.showNavbarCategories;
                 if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
-                if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrl(sc.jellyseerrUrl);
+                if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
                 if (sc.showLibraryTitles !== undefined) updated.showLibraryTitles = sc.showLibraryTitles;
                 if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
+                if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
                 if (sc.showNavbarRandom !== undefined) updated.showNavbarRandom = sc.showNavbarRandom;
                 if (sc.contentSortMode !== undefined) updated.contentSortMode = sc.contentSortMode;
                 if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
@@ -390,17 +712,47 @@ export const ThemeProvider = ({ children }) => {
                 if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
             }
 
-            localStorage.setItem('LegitFlix_Config', JSON.stringify(updated));
-            if (updated.accentColor) applyAccentColor(updated.accentColor);
-            if (updated.faviconUrl !== undefined) applyFavicon(updated.faviconUrl);
-            if (updated.themeMode) applyThemeMode(updated.themeMode);
-            const cleanUpdated = sanitizeFullConfig(updated);
-
-            if (updated.subtitleSize !== undefined || updated.subtitleColor !== undefined || updated.subtitleBackground !== undefined) {
-                applySubtitleStyles(updated.subtitleSize, updated.subtitleColor, updated.subtitleBackground);
+            // Separately check server Jellyseerr global overrides lock
+            if (window.LegitFlix_ServerConfig) {
+                const sc = window.LegitFlix_ServerConfig;
+                if (sc.jellyseerrGlobalOverride) {
+                    if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
+                    if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
+                    if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
+                    if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
+                    if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
+                }
             }
 
-            return updated;
+            const cleanUpdated = sanitizeFullConfig(updated);
+
+            localStorage.setItem('LegitFlix_Config', JSON.stringify(cleanUpdated));
+            if (cleanUpdated.accentColor) applyAccentColor(cleanUpdated.accentColor);
+            if (cleanUpdated.faviconUrl !== undefined) applyFavicon(cleanUpdated.faviconUrl);
+            if (cleanUpdated.themeMode) applyThemeMode(cleanUpdated.themeMode);
+
+            applySubtitleStyles(
+                cleanUpdated.subtitleTextSize,
+                cleanUpdated.subtitleColor,
+                cleanUpdated.subtitleTextWeight,
+                cleanUpdated.subtitleFontFamily,
+                cleanUpdated.subtitleShadow
+            );
+
+            // Queue debounced write to server
+            const cleanToSave = { ...cleanUpdated };
+            delete cleanToSave.enableGlobalOverwrites;
+            delete cleanToSave._syncedToServer;
+
+            pendingWriteRef.current = cleanToSave;
+
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            debounceTimerRef.current = setTimeout(() => {
+                saveSettingsToServer(cleanToSave);
+            }, 300);
+
             return cleanUpdated;
         });
     };

@@ -315,6 +315,9 @@ const ProtectedRoute = () => {
                 const user = await jellyfinService.getCurrentUser();
                 if (user) {
                     setIsAuthenticated(true);
+                    // Register LegitFlix's capabilities so other Jellyfin clients can cast to it
+                    jellyfinService.reportSessionCapabilities();
+                    window.dispatchEvent(new CustomEvent('legitflix-sync-settings'));
                 } else {
                     setIsAuthenticated(false);
                 }

@@ -14,6 +14,7 @@ namespace LegitFlix.Plugin.Configuration
         public string JellyseerrUrl { get; set; } = "https://request.legitflix.eu";
         public bool ShowLibraryTitles { get; set; } = true;
         public bool ShowNavbarRequests { get; set; } = true;
+        public bool ShowHomeRequestsCard { get; set; } = true;
         public bool ShowNavbarRandom { get; set; } = true;
         public string ContentSortMode { get; set; } = "latest";
         public string JellyseerrText { get; set; } = "Request";
@@ -21,5 +22,6 @@ namespace LegitFlix.Plugin.Configuration
         public bool PlayerAutoSkip { get; set; } = false;
         public bool PlayerAutoNextEp { get; set; } = true;
         public bool EnableGlobalOverwrites { get; set; } = false;
+        public bool JellyseerrGlobalOverride { get; set; } = false;
     }
 }

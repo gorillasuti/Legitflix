@@ -33,6 +33,17 @@ const AvatarPickerModal = ({ isOpen, onClose, onSave, userId }) => {
 
             await jellyfinService.updateDisplayPreferences(prefsId, prefs);
 
+            // Fetch custom avatar from GitHub and upload it as user's native Jellyfin profile image
+            try {
+                const imgRes = await fetch(selectedImage);
+                if (imgRes.ok) {
+                    const imgBlob = await imgRes.blob();
+                    await jellyfinService.uploadUserImage(userId, 'Primary', imgBlob);
+                }
+            } catch (err) {
+                console.error("Failed to upload custom avatar to Jellyfin server", err);
+            }
+
             // Update local cache immediately so avatars match everywhere
             try {
                 const cachedAvatars = JSON.parse(localStorage.getItem('legitflix_user_avatars') || '{}');
@@ -75,8 +86,7 @@ const AvatarPickerModal = ({ isOpen, onClose, onSave, userId }) => {
                     <div className="apm-content">
                         <div className="apm-grid">
                             {images.map(imgName => {
-                                const basePath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
-                                const url = `${basePath}/avatars/${selectedCategory}/${imgName}`;
+                                const url = `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/${selectedCategory}/${imgName}`;
                                 return (
                                     <div
                                         key={imgName}

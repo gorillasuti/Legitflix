@@ -10,22 +10,23 @@ const UserAvatar = ({ userId, userName, tag }) => {
     const [imgLoading, setImgLoading] = useState(true);
 
     let imageUrl = null;
-    try {
-        const cachedAvatars = JSON.parse(localStorage.getItem('legitflix_user_avatars') || '{}');
-        if (cachedAvatars[userId]) {
-            imageUrl = cachedAvatars[userId];
-        }
-    } catch (e) { }
+    if (!tag) {
+        try {
+            const cachedAvatars = JSON.parse(localStorage.getItem('legitflix_user_avatars') || '{}');
+            if (cachedAvatars[userId]) {
+                imageUrl = cachedAvatars[userId];
+            }
+        } catch (e) { }
+    }
 
     if (!imageUrl) {
         imageUrl = jellyfinService.getUserImageUrl(userId, { tag });
     }
 
     if (imgError || !imageUrl) {
-        const prodPath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
         return (
             <img
-                src={`${prodPath}/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`}
+                src="https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png"
                 alt={userName}
                 className="netflix-avatar"
             />
