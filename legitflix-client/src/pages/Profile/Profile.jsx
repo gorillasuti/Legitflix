@@ -752,96 +752,96 @@ const Profile = () => {
     const renderHomeScreen = () => (
         <>
             <div className="settings-card">
-            <h3 className="settings-card-title">Home Screen Sections</h3>
-            <p className="settings-description">Choose which sections to display on your home screen.</p>
-            <div className="setting-rows-list">
-                {homeSections.map(section => (
-                    <div className="setting-row" key={section.id}>
+                <h3 className="settings-card-title">Home Screen Sections</h3>
+                <p className="settings-description">Choose which sections to display on your home screen.</p>
+                <div className="setting-rows-list">
+                    {homeSections.map(section => (
+                        <div className="setting-row" key={section.id}>
+                            <div className="setting-row-label">
+                                <span>{section.label}</span>
+                            </div>
+                            <label className="toggle-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={section.enabled}
+                                    onChange={() => toggleHomeSection(section.id)}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="settings-card">
+                <h3 className="settings-card-title">Jellyfin Library Options</h3>
+                <p className="settings-description">Configure native Jellyfin content preferences for your account.</p>
+
+                <div className="setting-rows-list">
+                    <div className="setting-row">
                         <div className="setting-row-label">
-                            <span>{section.label}</span>
+                            <span>Group movies into collections</span>
+                            <span className="setting-hint">Display collections of movies as a single item on rows</span>
                         </div>
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={section.enabled}
-                                onChange={() => toggleHomeSection(section.id)}
+                                checked={groupCollections}
+                                onChange={e => setGroupCollections(e.target.checked)}
                             />
                             <span className="slider"></span>
                         </label>
                     </div>
-                ))}
-            </div>
-        </div>
 
-        <div className="settings-card">
-            <h3 className="settings-card-title">Jellyfin Library Options</h3>
-            <p className="settings-description">Configure native Jellyfin content preferences for your account.</p>
-
-            <div className="setting-rows-list">
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Group movies into collections</span>
-                        <span className="setting-hint">Display collections of movies as a single item on rows</span>
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Display missing episodes within seasons</span>
+                            <span className="setting-hint">Shows placeholders for missing episodes in series</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={displayMissing}
+                                onChange={e => setDisplayMissing(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </label>
                     </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={groupCollections}
-                            onChange={e => setGroupCollections(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
-                </div>
 
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Display missing episodes within seasons</span>
-                        <span className="setting-hint">Shows placeholders for missing episodes in series</span>
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Display unaired episodes</span>
+                            <span className="setting-hint">Show metadata for upcoming episodes that haven't aired yet</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={displayUnaired}
+                                onChange={e => setDisplayUnaired(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </label>
                     </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={displayMissing}
-                            onChange={e => setDisplayMissing(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
-                </div>
 
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Display unaired episodes</span>
-                        <span className="setting-hint">Show metadata for upcoming episodes that haven't aired yet</span>
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Hide watched media from Latest</span>
+                            <span className="setting-hint">Filter out played media from the recently added categories</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={hidePlayedInLatest}
+                                onChange={e => setHidePlayedInLatest(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </label>
                     </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={displayUnaired}
-                            onChange={e => setDisplayUnaired(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
-                </div>
-
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Hide watched media from Latest</span>
-                        <span className="setting-hint">Filter out played media from the recently added categories</span>
-                    </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={hidePlayedInLatest}
-                            onChange={e => setHidePlayedInLatest(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
                 </div>
             </div>
-        </div>
 
-        <div className="settings-card">
-            <h3 className="settings-card-title">Poster & Navigation Overlays</h3>
+            <div className="settings-card">
+                <h3 className="settings-card-title">Poster & Navigation Overlays</h3>
                 <p className="settings-description">Select which badges appear on media card posters and navbar menus.</p>
 
                 <div className="setting-rows-list">
@@ -912,115 +912,115 @@ const Profile = () => {
                     </div>
 
                     <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
-                    <div className="setting-row-label">
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                            Show Random Play Button
-                            {config.enableGlobalOverwrites && (
-                                <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
-                            )}
-                        </span>
-                        <span className="setting-hint">Display the random play picker button in navigation bar</span>
+                        <div className="setting-row-label">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Random Play Button
+                                {config.enableGlobalOverwrites && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </span>
+                            <span className="setting-hint">Display the random play picker button in navigation bar</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showNavbarRandom}
+                                disabled={config.enableGlobalOverwrites}
+                                onChange={e => updateConfig({ showNavbarRandom: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
                     </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={!!config.showNavbarRandom}
-                            disabled={config.enableGlobalOverwrites}
-                            onChange={e => updateConfig({ showNavbarRandom: e.target.checked })}
-                        />
-                        <span className="slider"></span>
-                    </label>
-                </div>
 
-                {!!config.showNavbarRandom && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingLeft: '12px', borderLeft: '2px solid rgba(255,255,255,0.05)', marginBottom: '15px', marginTop: '-5px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div className="setting-row-label">
-                                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Randomize From</span>
-                                <span className="setting-hint">Select which libraries should be used for the random button. (None selected = All)</span>
+                    {!!config.showNavbarRandom && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingLeft: '12px', borderLeft: '2px solid rgba(255,255,255,0.05)', marginBottom: '15px', marginTop: '-5px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div className="setting-row-label">
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Randomize From</span>
+                                    <span className="setting-hint">Select which libraries should be used for the random button. (None selected = All)</span>
+                                </div>
+                                <div className="content-type-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                                    {availableLibraries.map(lib => {
+                                        const isSelected = randomLibraries.includes(lib.Id);
+                                        return (
+                                            <button
+                                                key={lib.Id}
+                                                type="button"
+                                                className={`content-type-chip ${isSelected ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setRandomLibraries(prev => prev.filter(id => id !== lib.Id));
+                                                    } else {
+                                                        setRandomLibraries(prev => [...prev, lib.Id]);
+                                                    }
+                                                }}
+                                            >
+                                                <span className="material-icons" style={{ fontSize: '16px', marginRight: '4px' }}>
+                                                    {lib.Type === 'movies' ? 'movie' : (lib.Type === 'tvshows' ? 'tv' : 'folder')}
+                                                </span>
+                                                {lib.Name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            <div className="content-type-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                                {availableLibraries.map(lib => {
-                                    const isSelected = randomLibraries.includes(lib.Id);
-                                    return (
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div className="setting-row-label">
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Content Types</span>
+                                    <span className="setting-hint">Filter by content type</span>
+                                </div>
+                                <div className="content-type-grid" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                    {['Movie', 'Series', 'Episode'].map(type => (
                                         <button
-                                            key={lib.Id}
+                                            key={type}
                                             type="button"
-                                            className={`content-type-chip ${isSelected ? 'active' : ''}`}
+                                            className={`content-type-chip ${randomFilters[type] ? 'active' : ''}`}
                                             onClick={() => {
-                                                if (isSelected) {
-                                                    setRandomLibraries(prev => prev.filter(id => id !== lib.Id));
-                                                } else {
-                                                    setRandomLibraries(prev => [...prev, lib.Id]);
-                                                }
+                                                setRandomFilters(prev => ({ ...prev, [type]: !prev[type] }));
                                             }}
                                         >
-                                            <span className="material-icons" style={{ fontSize: '16px', marginRight: '4px' }}>
-                                                {lib.Type === 'movies' ? 'movie' : (lib.Type === 'tvshows' ? 'tv' : 'folder')}
-                                            </span>
-                                            {lib.Name}
+                                            {type}
                                         </button>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div className="setting-row-label">
-                                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Content Types</span>
-                                <span className="setting-hint">Filter by content type</span>
-                            </div>
-                            <div className="content-type-grid" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                {['Movie', 'Series', 'Episode'].map(type => (
-                                    <button
-                                        key={type}
-                                        type="button"
-                                        className={`content-type-chip ${randomFilters[type] ? 'active' : ''}`}
-                                        onClick={() => {
-                                            setRandomFilters(prev => ({ ...prev, [type]: !prev[type] }));
-                                        }}
-                                    >
-                                        {type}
-                                    </button>
-                                ))}
-                            </div>
+                    <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
+                        <div className="setting-row-label">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Requests in Navbar
+                                {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </span>
+                            <span className="setting-hint">Display the requests integration button in navigation bar</span>
                         </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showNavbarRequests}
+                                disabled={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride}
+                                onChange={e => updateConfig({ showNavbarRequests: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                {homeMsg && (
+                    <div className={`form-message ${homeMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
+                        <span className="material-icons">
+                            {homeMsg.type === 'success' ? 'check_circle' : 'error'}
+                        </span>
+                        {homeMsg.text}
                     </div>
                 )}
-
-                <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
-                    <div className="setting-row-label">
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                            Show Requests in Navbar
-                            {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
-                                <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
-                            )}
-                        </span>
-                        <span className="setting-hint">Display the requests integration button in navigation bar</span>
-                    </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={!!config.showNavbarRequests}
-                            disabled={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride}
-                            onChange={e => updateConfig({ showNavbarRequests: e.target.checked })}
-                        />
-                        <span className="slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            {homeMsg && (
-                <div className={`form-message ${homeMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
-                    <span className="material-icons">
-                        {homeMsg.type === 'success' ? 'check_circle' : 'error'}
-                    </span>
-                    {homeMsg.text}
-                </div>
-            )}
-            <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveHomeScreen} disabled={homeLoading} style={{ marginTop: '20px' }}>
-                {homeLoading ? 'Saving...' : 'Save Preferences'}
-            </button>
+                <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveHomeScreen} disabled={homeLoading} style={{ marginTop: '20px' }}>
+                    {homeLoading ? 'Saving...' : 'Save Preferences'}
+                </button>
             </div>
         </>
     );
@@ -1060,6 +1060,20 @@ const Profile = () => {
                     <option value="8000000">8 Mbps (720p)</option>
                     <option value="4000000">4 Mbps</option>
                     <option value="2000000">2 Mbps</option>
+                </select>
+            </div>
+            <div className="form-group">
+                <label>Seek Time</label>
+                <select
+                    className="settings-select"
+                    value={config.playerSeekTime || 10}
+                    onChange={e => updateConfig({ playerSeekTime: parseInt(e.target.value, 10) })}
+                >
+                    <option value="5">5 Seconds</option>
+                    <option value="10">10 Seconds (Default)</option>
+                    <option value="15">15 Seconds</option>
+                    <option value="30">30 Seconds</option>
+                    <option value="60">60 Seconds</option>
                 </select>
             </div>
             <div className="setting-rows-list">
@@ -1129,6 +1143,34 @@ const Profile = () => {
                             type="checkbox"
                             checked={cinemaMode}
                             onChange={e => setCinemaMode(e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Auto Skip Intros</span>
+                        <span className="setting-hint">Automatically skip intro / opening sequences when detected</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.playerAutoSkip}
+                            onChange={e => updateConfig({ playerAutoSkip: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Auto Skip Recaps</span>
+                        <span className="setting-hint">Automatically skip "previously on" recap segments when detected</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.playerAutoSkipRecap}
+                            onChange={e => updateConfig({ playerAutoSkipRecap: e.target.checked })}
                         />
                         <span className="slider"></span>
                     </label>
@@ -1222,172 +1264,172 @@ const Profile = () => {
         <>
             <div className="settings-card">
                 <h3 className="settings-card-title">Subtitle Preferences</h3>
-            <div className="form-group">
-                <label>Preferred Subtitle Language</label>
-                <select
-                    className="settings-select"
-                    value={subLang}
-                    onChange={e => setSubLang(e.target.value)}
-                >
-                    <option value="">None</option>
-                    <option value="eng">English</option>
-                    <option value="hun">Hungarian</option>
-                    <option value="jpn">Japanese</option>
-                    <option value="ger">German</option>
-                    <option value="fre">French</option>
-                    <option value="spa">Spanish</option>
-                </select>
-            </div>
-            <div className="form-group">
-                <label>Subtitle Mode</label>
-                <select
-                    className="settings-select"
-                    value={subMode}
-                    onChange={e => setSubMode(e.target.value)}
-                >
-                    <option value="Default">Default</option>
-                    <option value="Always">Always Show</option>
-                    <option value="OnlyForced">Only Forced</option>
-                    <option value="None">None</option>
-                    <option value="Smart">Smart (match audio)</option>
-                </select>
-            </div>
-            <div className="setting-rows-list">
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Remember Subtitle Selections</span>
-                        <span className="setting-hint">Remember manually selected subtitle tracks for future playback</span>
-                    </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={rememberSubtitles}
-                            onChange={e => setRememberSubtitles(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
+                <div className="form-group">
+                    <label>Preferred Subtitle Language</label>
+                    <select
+                        className="settings-select"
+                        value={subLang}
+                        onChange={e => setSubLang(e.target.value)}
+                    >
+                        <option value="">None</option>
+                        <option value="eng">English</option>
+                        <option value="hun">Hungarian</option>
+                        <option value="jpn">Japanese</option>
+                        <option value="ger">German</option>
+                        <option value="fre">French</option>
+                        <option value="spa">Spanish</option>
+                    </select>
                 </div>
-                <div className="setting-row">
-                    <div className="setting-row-label">
-                        <span>Burn in Subtitles</span>
-                        <span className="setting-hint">Permanently render subtitles into the video stream</span>
+                <div className="form-group">
+                    <label>Subtitle Mode</label>
+                    <select
+                        className="settings-select"
+                        value={subMode}
+                        onChange={e => setSubMode(e.target.value)}
+                    >
+                        <option value="Default">Default</option>
+                        <option value="Always">Always Show</option>
+                        <option value="OnlyForced">Only Forced</option>
+                        <option value="None">None</option>
+                        <option value="Smart">Smart (match audio)</option>
+                    </select>
+                </div>
+                <div className="setting-rows-list">
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Remember Subtitle Selections</span>
+                            <span className="setting-hint">Remember manually selected subtitle tracks for future playback</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={rememberSubtitles}
+                                onChange={e => setRememberSubtitles(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </label>
                     </div>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={burnInSubtitles}
-                            onChange={e => setBurnInSubtitles(e.target.checked)}
-                        />
-                        <span className="slider"></span>
-                    </label>
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Burn in Subtitles</span>
+                            <span className="setting-hint">Permanently render subtitles into the video stream</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={burnInSubtitles}
+                                onChange={e => setBurnInSubtitles(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="settings-card">
-            <h3 className="settings-card-title">Subtitle Style & Appearance</h3>
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Text Size</label>
-                <select className="settings-select" value={config.subtitleTextSize} onChange={e => updateConfig({ subtitleTextSize: e.target.value })}>
-                    <option value="Small">Small</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Large">Large</option>
-                    <option value="Extra Large">Extra Large</option>
-                </select>
-            </div>
+            <div className="settings-card">
+                <h3 className="settings-card-title">Subtitle Style & Appearance</h3>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Text Size</label>
+                    <select className="settings-select" value={config.subtitleTextSize} onChange={e => updateConfig({ subtitleTextSize: e.target.value })}>
+                        <option value="Small">Small</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Large">Large</option>
+                        <option value="Extra Large">Extra Large</option>
+                    </select>
+                </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Text Weight</label>
-                <select className="settings-select" value={config.subtitleTextWeight} onChange={e => updateConfig({ subtitleTextWeight: e.target.value })}>
-                    <option value="Light">Light</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Bold">Bold</option>
-                </select>
-            </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Text Weight</label>
+                    <select className="settings-select" value={config.subtitleTextWeight} onChange={e => updateConfig({ subtitleTextWeight: e.target.value })}>
+                        <option value="Light">Light</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Bold">Bold</option>
+                    </select>
+                </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Font Family</label>
-                <select className="settings-select" value={config.subtitleFontFamily} onChange={e => updateConfig({ subtitleFontFamily: e.target.value })}>
-                    <option value="Default">Default</option>
-                    <option value="Serif">Serif</option>
-                    <option value="Sans-Serif">Sans-Serif</option>
-                    <option value="Monospace">Monospace</option>
-                </select>
-            </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Font Family</label>
+                    <select className="settings-select" value={config.subtitleFontFamily} onChange={e => updateConfig({ subtitleFontFamily: e.target.value })}>
+                        <option value="Default">Default</option>
+                        <option value="Serif">Serif</option>
+                        <option value="Sans-Serif">Sans-Serif</option>
+                        <option value="Monospace">Monospace</option>
+                    </select>
+                </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Text Color</label>
-                <select className="settings-select" value={config.subtitleColor} onChange={e => updateConfig({ subtitleColor: e.target.value })}>
-                    <option value="#ffffff">White</option>
-                    <option value="#ffff00">Yellow</option>
-                    <option value="#00ff00">Green</option>
-                    <option value="#00ffff">Cyan</option>
-                    <option value="#ff00ff">Magenta</option>
-                    <option value="#ff0000">Red</option>
-                    <option value="#000000">Black</option>
-                </select>
-            </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Text Color</label>
+                    <select className="settings-select" value={config.subtitleColor} onChange={e => updateConfig({ subtitleColor: e.target.value })}>
+                        <option value="#ffffff">White</option>
+                        <option value="#ffff00">Yellow</option>
+                        <option value="#00ff00">Green</option>
+                        <option value="#00ffff">Cyan</option>
+                        <option value="#ff00ff">Magenta</option>
+                        <option value="#ff0000">Red</option>
+                        <option value="#000000">Black</option>
+                    </select>
+                </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Drop Shadow</label>
-                <select className="settings-select" value={config.subtitleShadow} onChange={e => updateConfig({ subtitleShadow: e.target.value })}>
-                    <option value="None">None</option>
-                    <option value="Drop Shadow">Drop Shadow</option>
-                    <option value="Raised">Raised</option>
-                    <option value="Depressed">Depressed</option>
-                    <option value="Outline">Outline</option>
-                </select>
-            </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Drop Shadow</label>
+                    <select className="settings-select" value={config.subtitleShadow} onChange={e => updateConfig({ subtitleShadow: e.target.value })}>
+                        <option value="None">None</option>
+                        <option value="Drop Shadow">Drop Shadow</option>
+                        <option value="Raised">Raised</option>
+                        <option value="Depressed">Depressed</option>
+                        <option value="Outline">Outline</option>
+                    </select>
+                </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Vertical Position</label>
-                <select className="settings-select" value={config.subtitleVerticalPosition} onChange={e => updateConfig({ subtitleVerticalPosition: e.target.value })}>
-                    <option value="Bottom">Bottom</option>
-                    <option value="Top">Top</option>
-                </select>
-            </div>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                    <label>Vertical Position</label>
+                    <select className="settings-select" value={config.subtitleVerticalPosition} onChange={e => updateConfig({ subtitleVerticalPosition: e.target.value })}>
+                        <option value="Bottom">Bottom</option>
+                        <option value="Top">Top</option>
+                    </select>
+                </div>
 
-            <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-                <label className="setting-row-label" style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '8px' }}>Live Subtitle Preview</label>
-                <div className="lf-subtitle-preview-box" style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '80px',
-                    background: '#141414',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '6px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <span style={{
-                        fontSize: config.subtitleTextSize === 'Small' ? '0.75rem' : config.subtitleTextSize === 'Normal' ? '1rem' : config.subtitleTextSize === 'Medium' ? '1.25rem' : config.subtitleTextSize === 'Large' ? '1.5rem' : '1.75rem',
-                        color: config.subtitleColor,
-                        fontWeight: config.subtitleTextWeight === 'Normal' ? 'normal' : config.subtitleTextWeight === 'Bold' ? 'bold' : '300',
-                        fontFamily: config.subtitleFontFamily === 'Default' ? 'inherit' : config.subtitleFontFamily === 'Serif' ? 'serif' : config.subtitleFontFamily === 'Sans-Serif' ? 'sans-serif' : 'monospace',
-                        textShadow: config.subtitleShadow === 'None' ? 'none' : config.subtitleShadow === 'Drop Shadow' ? '0px 2px 4px rgba(0,0,0,0.9)' : config.subtitleShadow === 'Raised' ? '1px 1px 0px #000, 2px 2px 0px #000' : config.subtitleShadow === 'Depressed' ? '1px 1px 0px #fff, -1px -1px 0px #000' : '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
-                        position: 'absolute',
-                        bottom: config.subtitleVerticalPosition === 'Bottom' ? '12px' : 'auto',
-                        top: config.subtitleVerticalPosition === 'Top' ? '12px' : 'auto',
-                        transition: 'all 0.2s ease'
+                <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+                    <label className="setting-row-label" style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '8px' }}>Live Subtitle Preview</label>
+                    <div className="lf-subtitle-preview-box" style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '80px',
+                        background: '#141414',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '6px',
+                        position: 'relative',
+                        overflow: 'hidden'
                     }}>
-                        The quick brown fox jumps over the lazy dog.
-                    </span>
+                        <span style={{
+                            fontSize: config.subtitleTextSize === 'Small' ? '0.75rem' : config.subtitleTextSize === 'Normal' ? '1rem' : config.subtitleTextSize === 'Medium' ? '1.25rem' : config.subtitleTextSize === 'Large' ? '1.5rem' : '1.75rem',
+                            color: config.subtitleColor,
+                            fontWeight: config.subtitleTextWeight === 'Normal' ? 'normal' : config.subtitleTextWeight === 'Bold' ? 'bold' : '300',
+                            fontFamily: config.subtitleFontFamily === 'Default' ? 'inherit' : config.subtitleFontFamily === 'Serif' ? 'serif' : config.subtitleFontFamily === 'Sans-Serif' ? 'sans-serif' : 'monospace',
+                            textShadow: config.subtitleShadow === 'None' ? 'none' : config.subtitleShadow === 'Drop Shadow' ? '0px 2px 4px rgba(0,0,0,0.9)' : config.subtitleShadow === 'Raised' ? '1px 1px 0px #000, 2px 2px 0px #000' : config.subtitleShadow === 'Depressed' ? '1px 1px 0px #fff, -1px -1px 0px #000' : '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+                            position: 'absolute',
+                            bottom: config.subtitleVerticalPosition === 'Bottom' ? '12px' : 'auto',
+                            top: config.subtitleVerticalPosition === 'Top' ? '12px' : 'auto',
+                            transition: 'all 0.2s ease'
+                        }}>
+                            The quick brown fox jumps over the lazy dog.
+                        </span>
+                    </div>
                 </div>
-            </div>
 
-            {subtitlesMsg && (
-                <div className={`form-message ${subtitlesMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
-                    <span className="material-icons">
-                        {subtitlesMsg.type === 'success' ? 'check_circle' : 'error'}
-                    </span>
-                    {subtitlesMsg.text}
-                </div>
-            )}
-            <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveSubtitles} disabled={subtitlesLoading} style={{ marginTop: '20px' }}>
-                {subtitlesLoading ? 'Saving...' : 'Save Preferences'}
-            </button>
+                {subtitlesMsg && (
+                    <div className={`form-message ${subtitlesMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
+                        <span className="material-icons">
+                            {subtitlesMsg.type === 'success' ? 'check_circle' : 'error'}
+                        </span>
+                        {subtitlesMsg.text}
+                    </div>
+                )}
+                <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveSubtitles} disabled={subtitlesLoading} style={{ marginTop: '20px' }}>
+                    {subtitlesLoading ? 'Saving...' : 'Save Preferences'}
+                </button>
             </div>
         </>
     );

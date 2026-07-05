@@ -75,6 +75,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
     // Player customization state
     const [playerSeekTime, setPlayerSeekTime] = useState(config.playerSeekTime || 10);
     const [playerAutoSkip, setPlayerAutoSkip] = useState(!!config.playerAutoSkip);
+    const [playerAutoSkipRecap, setPlayerAutoSkipRecap] = useState(!!config.playerAutoSkipRecap);
     const [playerAutoNextEp, setPlayerAutoNextEp] = useState(config.playerAutoNextEp !== false);
 
     // Subtitle customization state
@@ -172,6 +173,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             setJellyseerrBackground(config.jellyseerrBackground || '');
             setPlayerSeekTime(config.playerSeekTime || 10);
             setPlayerAutoSkip(!!config.playerAutoSkip);
+            setPlayerAutoSkipRecap(!!config.playerAutoSkipRecap);
             setPlayerAutoNextEp(config.playerAutoNextEp !== false);
 
             // Subtitles
@@ -263,6 +265,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             // Player Settings
             playerSeekTime,
             playerAutoSkip,
+            playerAutoSkipRecap,
             playerAutoNextEp,
 
             // Subtitle Settings
@@ -315,7 +318,6 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
         setRandomFilters({ Movie: true, Series: true, Episode: true });
         setRandomLibraries([]);
 
-        setSortMode('latest');
         // Poster Tags Reset
         setShowQualityTags(false);
         setShowGenreTags(false);
@@ -1005,20 +1007,45 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
         {
             id: 'playerAutoSkip',
             tab: 'player',
-            label: 'Auto Skip Intros & Recaps',
-            keywords: ['auto', 'skip', 'intro', 'recap', 'outro', 'player'],
+            label: 'Auto Skip Intros',
+            keywords: ['auto', 'skip', 'intro', 'opening', 'player'],
             render: () => (
                 <div className="setting-section" key="playerAutoSkip">
                     <div className="setting-row">
                         <div>
-                            <h3 className="setting-title">Auto Skip Intros & Recaps</h3>
-                            <p className="setting-desc">Automatically skip intros and recaps when they are detected</p>
+                            <h3 className="setting-title">Auto Skip Intros</h3>
+                            <p className="setting-desc">Automatically skip intro / opening sequences when detected</p>
                         </div>
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
                                 checked={playerAutoSkip}
                                 onChange={(e) => setPlayerAutoSkip(e.target.checked)}
+                                disabled={config.enableGlobalOverwrites}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'playerAutoSkipRecap',
+            tab: 'player',
+            label: 'Auto Skip Recaps',
+            keywords: ['auto', 'skip', 'recap', 'previously', 'player'],
+            render: () => (
+                <div className="setting-section" key="playerAutoSkipRecap">
+                    <div className="setting-row">
+                        <div>
+                            <h3 className="setting-title">Auto Skip Recaps</h3>
+                            <p className="setting-desc">Automatically skip "previously on" recap segments when detected</p>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={playerAutoSkipRecap}
+                                onChange={(e) => setPlayerAutoSkipRecap(e.target.checked)}
                                 disabled={config.enableGlobalOverwrites}
                             />
                             <span className="slider"></span>
@@ -1108,7 +1135,6 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 <div className="setting-section" key="playerLongPressSpeed">
                     <div className="setting-row">
                         <div>
-                            <h3 className="setting-title">Long Press for 2x Speed (β)</h3>
                             <h3 className="setting-title">Long Press for 2x Speed</h3>
                             <p className="setting-desc">Press and hold on the video player to play at 2x speed (ideal for touch/mobile)</p>
                         </div>
@@ -1131,10 +1157,10 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             label: 'Poster Badges',
             keywords: ['poster', 'badge', 'tag', 'quality', 'genre', 'language', 'rating'],
             render: () => (
-                <div className="setting-section" key="posterTags" style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+                <div className="setting-section" key="posterTags">
                     <h3>Hover Card Overlay Badges</h3>
                     <p className="setting-desc">Select which overlay tags appear when hovering over library/home media item cards</p>
-                    
+
                     <div className="setting-row" style={{ marginTop: '15px' }}>
                         <div>
                             <h4 className="setting-title" style={{ fontSize: '0.9rem' }}>Quality Tags</h4>
@@ -1145,7 +1171,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                             <span className="slider"></span>
                         </label>
                     </div>
-                    
+
                     <div className="setting-row" style={{ marginTop: '15px' }}>
                         <div>
                             <h4 className="setting-title" style={{ fontSize: '0.9rem' }}>Genre Tags</h4>
@@ -1181,7 +1207,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             render: () => (
                 <div className="setting-section" key="subtitlesGeneral">
                     <h3>Subtitles</h3>
-                    
+
                     <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
                         <label className="setting-title" style={{ fontSize: '0.9rem' }}>Preferred subtitle language</label>
                         <select className="legit-select" style={{ width: '100%' }} value={subtitleLanguagePreference} onChange={(e) => setSubtitleLanguagePreference(e.target.value)}>
@@ -1232,7 +1258,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 };
 
                 return (
-                    <div className="setting-section" key="subtitlesStyling" style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+                    <div className="setting-section" key="subtitlesStyling">
                         <h3>Subtitle Appearance</h3>
                         <p className="setting-desc">These settings affect text subtitles rendered on this device</p>
 
