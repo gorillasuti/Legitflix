@@ -33,11 +33,30 @@ const STANDARD_QUALITIES = [
 
 const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) => {
     const { config } = useTheme();
+    const [castTarget, setCastTarget] = useState(() => {
+        try {
+            const saved = localStorage.getItem('legitflix_cast_target');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
+    const isSyncingRef = useRef(false);
+    const [syncPlayActive, setSyncPlayActive] = useState(
+        () => localStorage.getItem('legitflix_syncplay_joined_group') !== null
+    );
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
     const progressIntervalRef = useRef(null);
     const resumeTimeRef = useRef(0);
     const lastSavedLocalTimeRef = useRef(0);
+    const autoPausedRef = useRef(false);
+    const longPressedRef = useRef(false);
+    const spaceTimerRef = useRef(null);
+    const spaceSpeedActiveRef = useRef(false);
+
+    const [isLongPressing, setIsLongPressing] = useState(false);
+    const longPressTimerRef = useRef(null);
 
     // Playback state
     const [item, setItem] = useState(null);
@@ -84,7 +103,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
     const [aspectRatio, setAspectRatio] = useState('auto'); // 'auto', 'cover', 'fill', '16:9', '4:3'
     const [playbackSpeed, setPlaybackSpeed] = useState(1); // 0.5, 0.75, 1, 1.25, 1.5, 2
     const [repeatMode, setRepeatMode] = useState('none'); // 'none', 'one', 'all'
-    
+
     // Playback Stats for Nerds overlay
     const [showStats, setShowStats] = useState(false);
     const [droppedFrames, setDroppedFrames] = useState(0);
@@ -124,7 +143,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
         setTrickplayManifest(null);
         setShowHoverPreview(false);
         setSubtitleDelay(0);
-        
+
         setShowJellyfinMenu(false);
         setJellyfinMenuView('main');
         setAspectRatio('auto');
@@ -457,7 +476,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
 
     // HLS.js or Native Video streaming lifecycle
     useEffect(() => {
-        if (!streamUrl || !videoRef.current) return;
+        if (!streamUrl || !videoRef.current || castTarget) return;
 
         const video = videoRef.current;
         setIsLoading(true);
@@ -527,7 +546,117 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                 hlsRef.current = null;
             }
         };
-    }, [streamUrl, useHls]);
+    }, [streamUrl, useHls, castTarget]);
+
+    // Cast Target playback & state sync loop
+    useEffect(() => {
+        if (!castTarget) return;
+
+        console.log(`[LegitFlix Cast] Casting to session: ${castTarget.id} (name: ${castTarget.name})`);
+
+        jellyfinService.playOnSession(castTarget.id, itemId)
+            .then(() => console.log(`[LegitFlix Cast] playOnSession command sent.`))
+            .catch(err => console.error("[LegitFlix Cast] Failed to cast item:", err));
+
+        setIsLoading(false);
+        setIsPlaying(true);
+        setPlaybackStarted(true);
+
+        const syncState = async () => {
+            try {
+                const sessions = await jellyfinService.getSessions();
+                const session = sessions.find(s => s.Id === castTarget.id);
+                if (session) {
+                    if (session.NowPlayingItem && session.NowPlayingItem.Id === itemId) {
+                        const positionSecs = (session.PlayState.PositionTicks || 0) / 10000000;
+                        setCurrentTime(positionSecs);
+                        setIsPlaying(!session.PlayState.IsPaused);
+                        if (session.NowPlayingItem.RunTimeTicks) {
+                            setDuration(session.NowPlayingItem.RunTimeTicks / 10000000);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("[LegitFlix Cast] Sync error:", err);
+            }
+        };
+
+        syncState();
+        const interval = setInterval(syncState, 4000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [itemId, castTarget]);
+
+    // Cast Target + SyncPlay state update listeners
+    useEffect(() => {
+        const handleCastUpdated = (e) => {
+            setCastTarget(e.detail);
+        };
+        const handleSyncJoined = () => {
+            setSyncPlayActive(true);
+        };
+        const handleSyncLeft = () => {
+            setSyncPlayActive(false);
+        };
+        window.addEventListener('castTargetUpdated', handleCastUpdated);
+        window.addEventListener('syncPlayJoined', handleSyncJoined);
+        window.addEventListener('syncPlayLeft', handleSyncLeft);
+        return () => {
+            window.removeEventListener('castTargetUpdated', handleCastUpdated);
+            window.removeEventListener('syncPlayJoined', handleSyncJoined);
+            window.removeEventListener('syncPlayLeft', handleSyncLeft);
+        };
+    }, []);
+
+    // SyncPlay Synchronization Hook
+    useEffect(() => {
+        if (!syncPlayActive || castTarget) return;
+
+        jellyfinService.connectWebSocket();
+
+        console.log("[LegitFlix SyncPlay] Initializing synchronization observer...");
+
+        const unsubscribe = jellyfinService.registerPlayer((event, data) => {
+            if (event === 'SyncPlayCommand') {
+                const cmd = data.Command;
+                const positionSecs = (data.PositionTicks || 0) / 10000000;
+                const video = videoRef.current;
+                if (!video) return;
+
+                console.log(`[LegitFlix SyncPlay] WS Command received: ${cmd} (Position: ${positionSecs}s)`);
+
+                isSyncingRef.current = true;
+                if (cmd === 'Pause') {
+                    video.pause();
+                    setIsPlaying(false);
+                } else if (cmd === 'Unpause') {
+                    video.play().catch(() => { });
+                    setIsPlaying(true);
+                } else if (cmd === 'Seek') {
+                    video.currentTime = positionSecs;
+                    setCurrentTime(positionSecs);
+                }
+
+                setTimeout(() => {
+                    isSyncingRef.current = false;
+                }, 200);
+            }
+        });
+
+        const pingInterval = setInterval(() => {
+            if (videoRef.current && !isSyncingRef.current && isPlaying) {
+                const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+                jellyfinService.syncPlayPing(ticks).catch(() => { });
+            }
+        }, 5000);
+
+        return () => {
+            unsubscribe();
+            clearInterval(pingInterval);
+        };
+    }, [itemId, isPlaying, castTarget, syncPlayActive]);
 
     // Playback Progress Reporting
     useEffect(() => {
@@ -585,6 +714,263 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
+    useEffect(() => {
+        const handlePauseOnFocusLoss = () => {
+            if (!videoRef.current) return;
+            const isPlayingElement = !videoRef.current.paused;
+
+            // Hidden tab or blurred window
+            if (document.hidden || !document.hasFocus()) {
+                if (config.playerAutoPip) {
+                    if (document.pictureInPictureEnabled && videoRef.current.requestPictureInPicture) {
+                        videoRef.current.requestPictureInPicture().catch(err => {
+                            console.log("[LegitFlix] Failed auto PiP:", err);
+                            if (config.playerAutoPause && isPlayingElement) {
+                                videoRef.current.pause();
+                                autoPausedRef.current = true;
+                            }
+                        });
+                    } else if (config.playerAutoPause && isPlayingElement) {
+                        videoRef.current.pause();
+                        autoPausedRef.current = true;
+                    }
+                } else if (config.playerAutoPause && isPlayingElement) {
+                    videoRef.current.pause();
+                    autoPausedRef.current = true;
+                }
+            }
+        };
+
+        const handleResumeOnFocusGain = () => {
+            if (!videoRef.current) return;
+            if (!document.hidden && document.hasFocus()) {
+                if (document.pictureInPictureElement) {
+                    document.exitPictureInPicture().catch(e => console.log("[LegitFlix] Failed exit PiP:", e));
+                }
+                if (config.playerAutoResume && autoPausedRef.current) {
+                    videoRef.current.play().catch(e => console.error("[LegitFlix] Auto resume failed:", e));
+                    autoPausedRef.current = false;
+                }
+            }
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) handlePauseOnFocusLoss();
+            else handleResumeOnFocusGain();
+        };
+
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        window.addEventListener('blur', handlePauseOnFocusLoss);
+        window.addEventListener('focus', handleResumeOnFocusGain);
+
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            window.removeEventListener('blur', handlePauseOnFocusLoss);
+            window.removeEventListener('focus', handleResumeOnFocusGain);
+        };
+    }, [config]);
+
+    // Keyboard controls
+    useEffect(() => {
+        const cycleAspectRatio = () => {
+            const modes = ['auto', 'cover', 'fill', '16:9', '4:3'];
+            setAspectRatio(prev => {
+                const idx = modes.indexOf(prev);
+                return modes[(idx + 1) % modes.length];
+            });
+        };
+
+        const cycleSubtitleTracks = () => {
+            if (subtitleStreams.length === 0) return;
+            const choices = [null, ...subtitleStreams.map(s => s.Index)];
+            const currentIndex = selectedSubtitleIndex === null ? 0 : choices.indexOf(selectedSubtitleIndex);
+            const nextIndex = (currentIndex + 1) % choices.length;
+            setSelectedSubtitleIndex(choices[nextIndex]);
+        };
+
+        const cycleAudioTracks = () => {
+            if (audioStreams.length === 0) return;
+            const currentIndex = selectedAudioIndex === null ? 0 : audioStreams.findIndex(s => s.Index === selectedAudioIndex);
+            const nextIndex = (currentIndex + 1) % audioStreams.length;
+            setSelectedAudioIndex(audioStreams[nextIndex].Index);
+        };
+
+        const changePlaybackSpeed = (delta) => {
+            setPlaybackSpeed(prev => {
+                const newVal = Math.round((prev + delta) * 10) / 10;
+                return Math.max(0.5, Math.min(2.0, newVal));
+            });
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            resetIdleTimer();
+            switch (e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    if (e.repeat) return;
+                    if (config.playerLongPressSpeed && !castTarget && videoRef.current) {
+                        spaceSpeedActiveRef.current = false;
+                        if (spaceTimerRef.current) clearTimeout(spaceTimerRef.current);
+                        spaceTimerRef.current = setTimeout(() => {
+                            if (videoRef.current) {
+                                videoRef.current.playbackRate = 2.0;
+                                setIsLongPressing(true);
+                                spaceSpeedActiveRef.current = true;
+                            }
+                        }, 400);
+                    } else {
+                        togglePlay();
+                    }
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    skipTime(-(config.playerSeekTime || 10));
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    skipTime(config.playerSeekTime || 10);
+                    break;
+                case 'KeyF':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'Escape':
+                    if (document.fullscreenElement) {
+                        e.preventDefault();
+                        document.exitFullscreen();
+                    }
+                    break;
+                case 'KeyM':
+                    e.preventDefault();
+                    toggleMute();
+                    break;
+                case 'KeyA':
+                    e.preventDefault();
+                    cycleAspectRatio();
+                    break;
+                case 'KeyI':
+                    e.preventDefault();
+                    setShowStats(prev => !prev);
+                    break;
+                case 'KeyC':
+                    e.preventDefault();
+                    cycleSubtitleTracks();
+                    break;
+                case 'KeyV':
+                    e.preventDefault();
+                    cycleAudioTracks();
+                    break;
+                case 'KeyS':
+                    e.preventDefault();
+                    setShowSettingsMenu(true);
+                    setSettingsMenuView('subtitles');
+                    break;
+                case 'Equal':
+                case 'NumpadAdd':
+                    if (e.shiftKey || e.code === 'NumpadAdd') {
+                        e.preventDefault();
+                        changePlaybackSpeed(0.1);
+                    }
+                    break;
+                case 'Minus':
+                case 'NumpadSubtract':
+                    e.preventDefault();
+                    changePlaybackSpeed(-0.1);
+                    break;
+                case 'KeyR':
+                    e.preventDefault();
+                    setPlaybackSpeed(1.0);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.code === 'Space') {
+                if (spaceTimerRef.current) {
+                    clearTimeout(spaceTimerRef.current);
+                    spaceTimerRef.current = null;
+                }
+                if (spaceSpeedActiveRef.current) {
+                    e.preventDefault();
+                    if (videoRef.current) {
+                        videoRef.current.playbackRate = playbackSpeed;
+                    }
+                    setIsLongPressing(false);
+                    spaceSpeedActiveRef.current = false;
+                } else if (config.playerLongPressSpeed) {
+                    e.preventDefault();
+                    togglePlay();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [isPlaying, duration, isMuted, config, playbackSpeed, subtitleStreams, selectedSubtitleIndex, audioStreams, selectedAudioIndex]);
+
+
+    // Gamepad controls loop
+    useEffect(() => {
+        if (!config.enableGamepad) return;
+
+        let active = true;
+        const lastButtonStates = {};
+
+        const pollGamepad = () => {
+            if (!active) return;
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = gamepads.find(g => g !== null);
+
+            if (gp) {
+                gp.buttons.forEach((btn, idx) => {
+                    const pressed = btn.pressed;
+                    const wasPressed = !!lastButtonStates[idx];
+
+                    if (pressed && !wasPressed) {
+                        switch (idx) {
+                            case 0: // A button -> play/pause
+                                togglePlay();
+                                break;
+                            case 1: // B button -> back
+                                navigate(-1);
+                                break;
+                            case 12: // D-pad Up -> volume up
+                                setVolume(prev => Math.min(1, prev + 0.05));
+                                break;
+                            case 13: // D-pad Down -> volume down
+                                setVolume(prev => Math.max(0, prev - 0.05));
+                                break;
+                            case 14: // D-pad Left -> seek backward
+                                skipTime(-(config.playerSeekTime || 10));
+                                break;
+                            case 15: // D-pad Right -> seek forward
+                                skipTime(config.playerSeekTime || 10);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    lastButtonStates[idx] = pressed;
+                });
+            }
+
+            requestAnimationFrame(pollGamepad);
+        };
+
+        pollGamepad();
+
+        return () => {
+            active = false;
+        };
+    }, [config.enableGamepad, isPlaying, duration, volume]);
 
     // Apply playback speed
     useEffect(() => {
@@ -622,6 +1008,10 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
         if (videoRef.current) {
             videoRef.current.playbackRate = playbackSpeed;
         }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current) {
+            jellyfinService.syncPlayUnpause().catch(() => { });
+        }
     };
 
     const handlePause = () => {
@@ -629,6 +1019,18 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
         if (itemId && videoRef.current) {
             const ticks = Math.floor(videoRef.current.currentTime * 10000000);
             jellyfinService.reportPlaybackProgress(itemId, ticks, true, mediaSourceId);
+        }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current) {
+            jellyfinService.syncPlayPause().catch(() => { });
+        }
+    };
+
+    const handleSeeked = () => {
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlaySeek(ticks).catch(() => { });
         }
     };
 
@@ -662,6 +1064,12 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                         }
                         if (Math.abs(cue.endTime - targetEnd) > 0.01) {
                             cue.endTime = targetEnd;
+                        }
+                        // Apply vertical position line offset dynamically
+                        if (config.subtitleVerticalPosition === 'Top') {
+                            if (cue.line !== 2) cue.line = 2;
+                        } else if (config.subtitleVerticalPosition === 'Bottom') {
+                            if (cue.line !== -2) cue.line = -2;
                         }
                     }
                 }
@@ -699,12 +1107,22 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
 
     const handleWaiting = () => {
         setIsLoading(true);
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlayBuffering(ticks, isPlaying).catch(() => { });
+        }
     };
 
     const handlePlaying = () => {
         setIsLoading(false);
         if (videoRef.current) {
             videoRef.current.playbackRate = playbackSpeed;
+        }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlayReady(ticks, isPlaying).catch(() => { });
         }
     };
 
@@ -716,7 +1134,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
             }
         } else {
             if (containerRef.current && document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
+                document.exitFullscreen().catch(() => { });
             }
             navigate(-1);
         }
@@ -724,6 +1142,16 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
 
     // User Controls Implementation
     const togglePlay = () => {
+        if (longPressedRef.current) {
+            longPressedRef.current = false;
+            return;
+        }
+        if (castTarget) {
+            jellyfinService.sendPlaystateCommand(castTarget.id, isPlaying ? 'Pause' : 'Unpause')
+                .then(() => setIsPlaying(!isPlaying))
+                .catch(err => console.error(err));
+            return;
+        }
         if (!videoRef.current) return;
         if (isPlaying) {
             videoRef.current.pause();
@@ -733,7 +1161,45 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
         resetIdleTimer();
     };
 
+    const handleLongPressStart = (e) => {
+        if (!config.playerLongPressSpeed || castTarget || !videoRef.current) return;
+        longPressedRef.current = false;
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = setTimeout(() => {
+            if (videoRef.current) {
+                videoRef.current.playbackRate = 2.0;
+                setIsLongPressing(true);
+                longPressedRef.current = true;
+            }
+        }, 400);
+    };
+
+    const handleLongPressEnd = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+        if (isLongPressing || longPressedRef.current) {
+            if (videoRef.current) {
+                videoRef.current.playbackRate = playbackSpeed;
+            }
+            setIsLongPressing(false);
+            setTimeout(() => {
+                longPressedRef.current = false;
+            }, 100);
+        }
+    };
+
     const skipTime = (amount) => {
+        if (castTarget) {
+            let target = currentTime + amount;
+            if (target < 0) target = 0;
+            if (target > duration) target = duration;
+            jellyfinService.sendPlaystateCommand(castTarget.id, 'Seek', Math.floor(target * 10000000))
+                .then(() => setCurrentTime(target))
+                .catch(err => console.error(err));
+            return;
+        }
         if (!videoRef.current) return;
         let target = videoRef.current.currentTime + amount;
         if (target < 0) target = 0;
@@ -743,9 +1209,15 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
     };
 
     const handleTimelineChange = (e) => {
-        if (!videoRef.current) return;
         const targetPercent = parseFloat(e.target.value);
         const targetSecs = (targetPercent / 100) * duration;
+        if (castTarget) {
+            jellyfinService.sendPlaystateCommand(castTarget.id, 'Seek', Math.floor(targetSecs * 10000000))
+                .then(() => setCurrentTime(targetSecs))
+                .catch(err => console.error(err));
+            return;
+        }
+        if (!videoRef.current) return;
         videoRef.current.currentTime = targetSecs;
         setCurrentTime(targetSecs);
         resetIdleTimer();
@@ -907,18 +1379,18 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
     const getOriginalMediaInfo = () => {
         if (!item || !item.MediaSources || item.MediaSources.length === 0) return {};
         const source = item.MediaSources[0];
-        
-        const sizeMiB = source.Size 
-            ? `${(source.Size / (1024 * 1024)).toFixed(1)} MiB` 
+
+        const sizeMiB = source.Size
+            ? `${(source.Size / (1024 * 1024)).toFixed(1)} MiB`
             : 'N/A';
-            
-        const bitrateMbps = source.Bitrate 
-            ? `${(source.Bitrate / 1000000).toFixed(1)} Mbps` 
+
+        const bitrateMbps = source.Bitrate
+            ? `${(source.Bitrate / 1000000).toFixed(1)} Mbps`
             : 'N/A';
-            
+
         const videoStream = source.MediaStreams?.find(s => s.Type === 'Video');
         const audioStream = source.MediaStreams?.find(s => s.Type === 'Audio');
-        
+
         return {
             container: source.Container || 'N/A',
             size: sizeMiB,
@@ -933,7 +1405,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
             audioBitDepth: audioStream?.BitDepth ? `${audioStream.BitDepth}` : 'N/A'
         };
     };
-    
+
     const originalMediaInfo = getOriginalMediaInfo();
 
     const currentPercent = duration ? (currentTime / duration) * 100 : 0;
@@ -954,28 +1426,69 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
             onMouseMove={handleMouseMove}
             style={{ width: '100%', height: '100%' }}
         >
-            {/* HTML5 Video Tag */}
-            <video
-                ref={videoRef}
-                className="lf-player-video-element"
-                preload="auto"
-                onClick={togglePlay}
-                onDoubleClick={toggleFullscreen}
-                onPlay={handlePlay}
-                onPause={handlePause}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onWaiting={handleWaiting}
-                onPlaying={handlePlaying}
-                onEnded={handleVideoEnded}
-                style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: aspectRatio === 'auto' ? 'contain' : (aspectRatio === 'cover' ? 'cover' : 'fill'), 
-                    aspectRatio: (aspectRatio === '16:9' ? '16/9' : (aspectRatio === '4:3' ? '4/3' : 'auto')),
-                    background: '#000' 
-                }}
-            />
+            {/* HTML5 Video Tag or Cast Screen Poster */}
+            {castTarget ? (
+                <div className="lf-player-cast-screen" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                    <span className="material-icons lf-player-cast-screen-icon" style={{ fontSize: '72px', color: 'var(--clr-accent, #ff7e00)', marginBottom: '16px', animation: 'pulse 2s infinite' }}>cast_connected</span>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#fff' }}>Casting to {castTarget.name}</h3>
+                    <p style={{ margin: 0, fontSize: '15px', color: 'rgba(255,255,255,0.6)' }}>{item?.Name || 'Loading movie...'}</p>
+                </div>
+            ) : (
+                <>
+                    {isLongPressing && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'rgba(0, 0, 0, 0.75)',
+                            backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            color: '#fff',
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            zIndex: 1000,
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                        }}>
+                            <span className="material-icons" style={{ fontSize: '1rem', color: 'var(--clr-accent, #ff7e00)' }}>fast_forward</span>
+                            2X Speed
+                        </div>
+                    )}
+                    <video
+                        ref={videoRef}
+                        className="lf-player-video-element"
+                        preload="auto"
+                        onClick={togglePlay}
+                        onDoubleClick={toggleFullscreen}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onTimeUpdate={handleTimeUpdate}
+                        onSeeked={handleSeeked}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onWaiting={handleWaiting}
+                        onPlaying={handlePlaying}
+                        onEnded={handleVideoEnded}
+                        onMouseDown={handleLongPressStart}
+                        onMouseUp={handleLongPressEnd}
+                        onMouseLeave={handleLongPressEnd}
+                        onTouchStart={handleLongPressStart}
+                        onTouchEnd={handleLongPressEnd}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: aspectRatio === 'auto' ? 'contain' : (aspectRatio === 'cover' ? 'cover' : 'fill'),
+                            aspectRatio: (aspectRatio === '16:9' ? '16/9' : (aspectRatio === '4:3' ? '4/3' : 'auto')),
+                            background: '#000'
+                        }}
+                    />
+                </>
+            )}
 
             {/* Loading / Buffering Spinner */}
             {isLoading && (
@@ -1230,6 +1743,66 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                                         </li>
                                                     ))}
                                                 </ul>
+                                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 16px' }}></div>
+                                                <div onClick={() => setSettingsMenuView('subtitle-style')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '10px 16px', color: '#ccc' }}>
+                                                    <span className="material-icons" style={{ fontSize: '1.2rem', marginRight: '8px' }}>palette</span>
+                                                    <span>Style Appearance...</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {settingsMenuView === 'subtitle-style' && (
+                                            <div className="cr-settings-submenu">
+                                                <div className="submenu-header" onClick={() => setSettingsMenuView('subtitles')}>
+                                                    <span className="material-icons">chevron_left</span>
+                                                    <span>Subtitle Style</span>
+                                                </div>
+                                                <div style={{ padding: '10px 15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Text Size</span>
+                                                        <select
+                                                            className="legit-select"
+                                                            style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                            value={config.subtitleTextSize}
+                                                            onChange={(e) => updateConfig({ subtitleTextSize: e.target.value })}
+                                                        >
+                                                            <option value="Small">Small</option>
+                                                            <option value="Normal">Normal</option>
+                                                            <option value="Medium">Medium</option>
+                                                            <option value="Large">Large</option>
+                                                            <option value="Extra Large">Extra Large</option>
+                                                        </select>
+                                                    </div>
+                                                    <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Text Color</span>
+                                                        <select
+                                                            className="legit-select"
+                                                            style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                            value={config.subtitleColor}
+                                                            onChange={(e) => updateConfig({ subtitleColor: e.target.value })}
+                                                        >
+                                                            <option value="#ffffff">White</option>
+                                                            <option value="#ffff00">Yellow</option>
+                                                            <option value="#00ff00">Green</option>
+                                                            <option value="#00ffff">Cyan</option>
+                                                            <option value="#ff00ff">Magenta</option>
+                                                            <option value="#ff0000">Red</option>
+                                                            <option value="#000000">Black</option>
+                                                        </select>
+                                                    </div>
+                                                    <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Vertical Position</span>
+                                                        <select
+                                                            className="legit-select"
+                                                            style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                            value={config.subtitleVerticalPosition}
+                                                            onChange={(e) => updateConfig({ subtitleVerticalPosition: e.target.value })}
+                                                        >
+                                                            <option value="Bottom">Bottom</option>
+                                                            <option value="Top">Top</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
@@ -1344,8 +1917,8 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                                             key={mode}
                                                             className={aspectRatio === mode ? 'selected' : ''}
                                                             onClick={() => {
-                                                                    setAspectRatio(mode);
-                                                                    setShowJellyfinMenu(false);
+                                                                setAspectRatio(mode);
+                                                                setShowJellyfinMenu(false);
                                                             }}
                                                         >
                                                             <span className="cr-radio-circle"></span>
@@ -1369,8 +1942,8 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                                             key={speed}
                                                             className={playbackSpeed === speed ? 'selected' : ''}
                                                             onClick={() => {
-                                                                    setPlaybackSpeed(speed);
-                                                                    setShowJellyfinMenu(false);
+                                                                setPlaybackSpeed(speed);
+                                                                setShowJellyfinMenu(false);
                                                             }}
                                                         >
                                                             <span className="cr-radio-circle"></span>
@@ -1394,8 +1967,8 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                                             key={mode}
                                                             className={repeatMode === mode ? 'selected' : ''}
                                                             onClick={() => {
-                                                                    setRepeatMode(mode);
-                                                                    setShowJellyfinMenu(false);
+                                                                setRepeatMode(mode);
+                                                                setShowJellyfinMenu(false);
                                                             }}
                                                         >
                                                             <span className="cr-radio-circle"></span>
@@ -1447,7 +2020,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                 <div className="playerStats-stat-label">Stream type</div>
                                 <div className="playerStats-stat-value">Video</div>
                             </div>
-                            
+
                             <div className="playerStats-stat playerStats-stat-header">
                                 <div className="playerStats-stat-label">Video Info</div>
                                 <div className="playerStats-stat-value"></div>
@@ -1468,7 +2041,7 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                 <div className="playerStats-stat-label">Corrupted frames</div>
                                 <div className="playerStats-stat-value">{corruptedFrames}</div>
                             </div>
-                            
+
                             <div className="playerStats-stat playerStats-stat-header">
                                 <div className="playerStats-stat-label">Original Media Info</div>
                                 <div className="playerStats-stat-value"></div>

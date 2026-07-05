@@ -17,6 +17,7 @@ import Library from './pages/Library/Library';
 import Favorites from './pages/Favorites/Favorites';
 
 
+import QuickConnectModal from './components/QuickConnectModal';
 
 function AppContent() {
   const { config, updateConfig } = useTheme();
@@ -28,6 +29,7 @@ function AppContent() {
   const [screensaverTimeText, setScreensaverTimeText] = useState('');
   const [screensaverDateText, setScreensaverDateText] = useState('');
   const [screensaverPosition, setScreensaverPosition] = useState({ top: '20%', left: '20%' });
+  const [showQuickConnect, setShowQuickConnect] = useState(false);
 
   // Monitor Inactivity
   useEffect(() => {
@@ -55,6 +57,14 @@ function AppContent() {
 
       const hash = window.location.hash || '';
       if (hash.includes('/play') || hash.includes('/login') || hash.includes('/select-server') || hash.includes('/select-user')) {
+      if (hash.includes('/login') || hash.includes('/select-server') || hash.includes('/select-user')) {
+        lastActivity = Date.now();
+        return;
+      }
+
+      // Check if any video element is playing (not paused and not ended)
+      const hasActiveVideo = Array.from(document.querySelectorAll('video')).some(v => !v.paused && !v.ended);
+      if (hasActiveVideo) {
         lastActivity = Date.now();
         return;
       }
@@ -273,8 +283,94 @@ function AppContent() {
     return () => window.removeEventListener('show-toast', handleShowToast);
   }, []);
 
+  const triggerGlobalRandomPlay = async () => {
+    try {
+      const filters = config.randomContentFilters || { Movie: true, Series: true, Episode: true };
+      const includeItemTypes = Object.entries(filters)
+          .filter(([_, enabled]) => enabled)
+          .map(([type]) => type);
+
+      if (includeItemTypes.length === 0) return;
+
+      const user = await jellyfinService.getCurrentUser();
+      if (!user) return;
+
+      const query = {
+          sortBy: ['Random'],
+          limit: 1,
+          recursive: true,
+          includeItemTypes: includeItemTypes,
+          fields: ['MediaSources', 'SeriesId']
+      };
+
+      if (config.randomLibraries && config.randomLibraries.length > 0) {
+          query.parentId = config.randomLibraries.join(',');
+      }
+
+      const result = await jellyfinService.getItems(user.Id, query);
+
+      if (result && result.Items && result.Items.length > 0) {
+          const item = result.Items[0];
+          if (item.Type === 'Movie') {
+              window.location.hash = `#/movie/${item.Id}`;
+          } else if (item.Type === 'Series') {
+              window.location.hash = `#/series/${item.Id}`;
+          } else if (item.Type === 'Episode' && item.SeriesId) {
+              window.location.hash = `#/series/${item.SeriesId}`;
+          } else {
+              window.location.hash = `#/item/${item.Id}`;
+          }
+      }
+    } catch (e) {
+      console.error("Global random play failed", e);
+    }
+  };
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = async (e) => {
+      // Ignore when typing in inputs/selects/textareas
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Shift + H -> Home
+      if (e.shiftKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        window.location.hash = '#/';
+        return;
+      }
+
+      // Q -> Show Quick Connect Modal (Open to all users)
+      if (e.key.toLowerCase() === 'q' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        setShowQuickConnect(true);
+        return;
+      }
+
+      // D -> Admin Dashboard Redirect
+      if (e.key.toLowerCase() === 'd' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        try {
+          const user = await jellyfinService.getCurrentUser();
+          const isAdmin = !!user?.Policy?.IsAdministrator;
+          if (isAdmin) {
+            e.preventDefault();
+            window.location.href = '/web/index.html?classic=true#/dashboard';
+          }
+        } catch (err) {
+          console.error("Dashboard hotkey check failed", err);
+        }
+        return;
+      }
+
+      // R -> Play Random Item
+      if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        const hash = window.location.hash || '';
+        // If player is not actively showing, trigger random play
+        if (!hash.includes('/play') && !document.querySelector('video')) {
+          e.preventDefault();
+          await triggerGlobalRandomPlay();
+        }
+      }
+
+      // Classic view shortcut (Ctrl + K)
       if (e.ctrlKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         const date = new Date();
@@ -322,6 +418,7 @@ function AppContent() {
           </Route>
         </Routes>
       </Router>
+      <QuickConnectModal isOpen={showQuickConnect} onClose={() => setShowQuickConnect(false)} />
 
       {toast && (
         <div className={`lf-toast ${toast.type}`}>

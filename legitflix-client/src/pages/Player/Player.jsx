@@ -35,6 +35,18 @@ const STANDARD_QUALITIES = [
 
 const Player = () => {
     const { config } = useTheme();
+    const [castTarget, setCastTarget] = useState(() => {
+        try {
+            const saved = localStorage.getItem('legitflix_cast_target');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
+    const isSyncingRef = useRef(false);
+    const [syncPlayActive, setSyncPlayActive] = useState(
+        () => localStorage.getItem('legitflix_syncplay_joined_group') !== null
+    );
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -43,6 +55,13 @@ const Player = () => {
     const progressIntervalRef = useRef(null);
     const resumeTimeRef = useRef(0);
     const lastSavedLocalTimeRef = useRef(0);
+    const autoPausedRef = useRef(false);
+    const longPressedRef = useRef(false);
+    const spaceTimerRef = useRef(null);
+    const spaceSpeedActiveRef = useRef(false);
+
+    const [isLongPressing, setIsLongPressing] = useState(false);
+    const longPressTimerRef = useRef(null);
 
     // Data State
     const [item, setItem] = useState(null);
@@ -59,7 +78,7 @@ const Player = () => {
     const [subtitleStreams, setSubtitleStreams] = useState([]);
     const [selectedAudioIndex, setSelectedAudioIndex] = useState(null);
     const [selectedSubtitleIndex, setSelectedSubtitleIndex] = useState(null); // null = Off
-    
+
     // Play method state (true if using Hls.js, false if using static direct play)
     const [useHls, setUseHls] = useState(true);
 
@@ -94,7 +113,7 @@ const Player = () => {
     const [aspectRatio, setAspectRatio] = useState('auto'); // 'auto', 'cover', 'fill', '16:9', '4:3'
     const [playbackSpeed, setPlaybackSpeed] = useState(1); // 0.5, 0.75, 1, 1.25, 1.5, 2
     const [repeatMode, setRepeatMode] = useState('none'); // 'none', 'one', 'all'
-    
+
     // Playback Stats for Nerds overlay
     const [showStats, setShowStats] = useState(false);
     const [droppedFrames, setDroppedFrames] = useState(0);
@@ -169,7 +188,7 @@ const Player = () => {
         lastReportTimeRef.current = 0;
         lastSavedLocalTimeRef.current = 0;
         resumeTimeRef.current = 0;
-        
+
         setShowJellyfinMenu(false);
         setJellyfinMenuView('main');
         setAspectRatio('auto');
@@ -226,32 +245,32 @@ const Player = () => {
             try {
                 const user = await jellyfinService.getCurrentUser();
                 if (!user) return;
-                
+
                 const token = jellyfinService.api.accessToken;
                 const baseUrl = jellyfinService.api.configuration.basePath || '';
-                
+
                 const width = 320;
                 let url = `${baseUrl}/Videos/${id}/Trickplay/${width}/tiles.m3u8?api_key=${token}`;
                 if (mediaSourceId) {
                     url += `&mediaSourceId=${mediaSourceId}`;
                 }
-                
+
                 const res = await fetch(url);
                 if (!res.ok) {
                     console.warn(`[Trickplay] tiles.m3u8 fetch failed with status: ${res.status}`);
                     setTrickplayManifest(null);
                     return;
                 }
-                
+
                 const text = await res.text();
                 const lines = text.split('\n');
-                
+
                 let tileWidth = 10;
                 let tileHeight = 10;
                 let thumbWidth = 320;
                 let thumbHeight = 180;
                 let interval = 10000; // default 10 seconds
-                
+
                 for (const line of lines) {
                     if (line.startsWith('#EXT-X-LAYOUT:') || line.startsWith('#EXT-X-TILE:') || line.includes('LAYOUT=')) {
                         const layoutMatch = line.match(/LAYOUT=(\d+)x(\d+)/i);
@@ -259,19 +278,19 @@ const Player = () => {
                             tileWidth = parseInt(layoutMatch[1], 10);
                             tileHeight = parseInt(layoutMatch[2], 10);
                         }
-                        
+
                         const resMatch = line.match(/RESOLUTION=(\d+)x(\d+)/i);
                         if (resMatch) {
                             thumbWidth = parseInt(resMatch[1], 10);
                             thumbHeight = parseInt(resMatch[2], 10);
                         }
-                        
+
                         const durMatch = line.match(/DURATION=(\d+)/i);
                         if (durMatch) {
                             interval = parseInt(durMatch[1], 10) * 1000;
                         }
                     }
-                    
+
                     if (line.startsWith('#EXT-X-TARGETDURATION:')) {
                         const targetDur = parseInt(line.split(':')[1], 10);
                         if (targetDur > 0) {
@@ -279,7 +298,7 @@ const Player = () => {
                         }
                     }
                 }
-                
+
                 let extinfCount = 0;
                 let extinfDuration = 0;
                 for (const line of lines) {
@@ -292,12 +311,12 @@ const Player = () => {
                         }
                     }
                 }
-                
+
                 if (extinfDuration > 0) {
                     const thumbsPerSheet = tileWidth * tileHeight;
                     interval = (extinfDuration / thumbsPerSheet) * 1000;
                 }
-                
+
                 setTrickplayManifest({
                     Width: thumbWidth,
                     Height: thumbHeight,
@@ -307,13 +326,13 @@ const Player = () => {
                     SelectedWidth: width
                 });
                 console.log("[Trickplay] Parsed manifest details successfully:", { thumbWidth, thumbHeight, tileWidth, tileHeight, interval });
-                
+
             } catch (err) {
                 console.error("Error loading/parsing trickplay:", err);
                 setTrickplayManifest(null);
             }
         };
-        
+
         loadTrickplay();
     }, [id, mediaSourceId]);
 
@@ -331,7 +350,7 @@ const Player = () => {
                 if (!data) return;
 
                 setItem(data);
-                
+
                 let playerTitle = `Watching: ${data.Name || 'Player'}`;
                 if (data.Type === 'Episode') {
                     const season = String(data.ParentIndexNumber || 1).padStart(2, '0');
@@ -564,7 +583,7 @@ const Player = () => {
 
     // HLS.js or Native Video streaming lifecycle
     useEffect(() => {
-        if (!streamUrl || !videoRef.current) return;
+        if (!streamUrl || !videoRef.current || castTarget) return;
 
         const video = videoRef.current;
         setIsLoading(true);
@@ -648,7 +667,117 @@ const Player = () => {
                 hlsRef.current = null;
             }
         };
-    }, [streamUrl, useHls]);
+    }, [streamUrl, useHls, castTarget]);
+
+    // Cast Target playback & state sync loop
+    useEffect(() => {
+        if (!castTarget) return;
+
+        console.log(`[LegitFlix Cast] Casting to session: ${castTarget.id} (name: ${castTarget.name})`);
+
+        jellyfinService.playOnSession(castTarget.id, id)
+            .then(() => console.log(`[LegitFlix Cast] playOnSession command sent.`))
+            .catch(err => console.error("[LegitFlix Cast] Failed to cast item:", err));
+
+        setIsLoading(false);
+        setIsPlaying(true);
+        setPlaybackStarted(true);
+
+        const syncState = async () => {
+            try {
+                const sessions = await jellyfinService.getSessions();
+                const session = sessions.find(s => s.Id === castTarget.id);
+                if (session) {
+                    if (session.NowPlayingItem && session.NowPlayingItem.Id === id) {
+                        const positionSecs = (session.PlayState.PositionTicks || 0) / 10000000;
+                        setCurrentTime(positionSecs);
+                        setIsPlaying(!session.PlayState.IsPaused);
+                        if (session.NowPlayingItem.RunTimeTicks) {
+                            setDuration(session.NowPlayingItem.RunTimeTicks / 10000000);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("[LegitFlix Cast] Sync error:", err);
+            }
+        };
+
+        syncState();
+        const interval = setInterval(syncState, 4000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [id, castTarget]);
+
+    // Cast Target + SyncPlay state update listeners
+    useEffect(() => {
+        const handleCastUpdated = (e) => {
+            setCastTarget(e.detail);
+        };
+        const handleSyncJoined = () => {
+            setSyncPlayActive(true);
+        };
+        const handleSyncLeft = () => {
+            setSyncPlayActive(false);
+        };
+        window.addEventListener('castTargetUpdated', handleCastUpdated);
+        window.addEventListener('syncPlayJoined', handleSyncJoined);
+        window.addEventListener('syncPlayLeft', handleSyncLeft);
+        return () => {
+            window.removeEventListener('castTargetUpdated', handleCastUpdated);
+            window.removeEventListener('syncPlayJoined', handleSyncJoined);
+            window.removeEventListener('syncPlayLeft', handleSyncLeft);
+        };
+    }, []);
+
+    // SyncPlay Synchronization Hook
+    useEffect(() => {
+        if (!syncPlayActive || castTarget) return;
+
+        jellyfinService.connectWebSocket();
+
+        console.log("[LegitFlix SyncPlay] Initializing synchronization observer...");
+
+        const unsubscribe = jellyfinService.registerPlayer((event, data) => {
+            if (event === 'SyncPlayCommand') {
+                const cmd = data.Command;
+                const positionSecs = (data.PositionTicks || 0) / 10000000;
+                const video = videoRef.current;
+                if (!video) return;
+
+                console.log(`[LegitFlix SyncPlay] WS Command received: ${cmd} (Position: ${positionSecs}s)`);
+
+                isSyncingRef.current = true;
+                if (cmd === 'Pause') {
+                    video.pause();
+                    setIsPlaying(false);
+                } else if (cmd === 'Unpause') {
+                    video.play().catch(() => { });
+                    setIsPlaying(true);
+                } else if (cmd === 'Seek') {
+                    video.currentTime = positionSecs;
+                    setCurrentTime(positionSecs);
+                }
+
+                setTimeout(() => {
+                    isSyncingRef.current = false;
+                }, 200);
+            }
+        });
+
+        const pingInterval = setInterval(() => {
+            if (videoRef.current && !isSyncingRef.current && isPlaying) {
+                const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+                jellyfinService.syncPlayPing(ticks).catch(() => { });
+            }
+        }, 5000);
+
+        return () => {
+            unsubscribe();
+            clearInterval(pingInterval);
+        };
+    }, [id, isPlaying, castTarget, syncPlayActive]);
 
     // Handle Playback Reporting & Progress updates
     useEffect(() => {
@@ -744,6 +873,10 @@ const Player = () => {
         if (videoRef.current) {
             videoRef.current.playbackRate = playbackSpeed;
         }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current) {
+            jellyfinService.syncPlayUnpause().catch(() => { });
+        }
     };
 
     const handlePause = () => {
@@ -751,6 +884,18 @@ const Player = () => {
         if (item && videoRef.current) {
             const ticks = Math.floor(videoRef.current.currentTime * 10000000);
             jellyfinService.reportPlaybackProgress(item.Id, ticks, true, mediaSourceId, playSessionId);
+        }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current) {
+            jellyfinService.syncPlayPause().catch(() => { });
+        }
+    };
+
+    const handleSeeked = () => {
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlaySeek(ticks).catch(() => { });
         }
     };
 
@@ -779,6 +924,12 @@ const Player = () => {
                         }
                         if (Math.abs(cue.endTime - targetEnd) > 0.01) {
                             cue.endTime = targetEnd;
+                        }
+                        // Apply vertical position line offset dynamically
+                        if (config.subtitleVerticalPosition === 'Top') {
+                            if (cue.line !== 2) cue.line = 2;
+                        } else if (config.subtitleVerticalPosition === 'Bottom') {
+                            if (cue.line !== -2) cue.line = -2;
                         }
                     }
                 }
@@ -839,7 +990,7 @@ const Player = () => {
         if (!videoRef.current) return;
         setDuration(videoRef.current.duration);
         setIsLoading(false);
-        
+
         videoRef.current.playbackRate = playbackSpeed;
 
         // Restore playback position on load/re-negotiation
@@ -851,12 +1002,22 @@ const Player = () => {
 
     const handleWaiting = () => {
         setIsLoading(true);
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlayBuffering(ticks, isPlaying).catch(() => { });
+        }
     };
 
     const handlePlaying = () => {
         setIsLoading(false);
         if (videoRef.current) {
             videoRef.current.playbackRate = playbackSpeed;
+        }
+        const isSyncPlayActive = localStorage.getItem('legitflix_syncplay_joined_group') !== null;
+        if (isSyncPlayActive && !isSyncingRef.current && videoRef.current) {
+            const ticks = Math.floor(videoRef.current.currentTime * 10000000);
+            jellyfinService.syncPlayReady(ticks, isPlaying).catch(() => { });
         }
     };
 
@@ -914,6 +1075,16 @@ const Player = () => {
 
     // User Controls
     const togglePlay = () => {
+        if (longPressedRef.current) {
+            longPressedRef.current = false;
+            return;
+        }
+        if (castTarget) {
+            jellyfinService.sendPlaystateCommand(castTarget.id, isPlaying ? 'Pause' : 'Unpause')
+                .then(() => setIsPlaying(!isPlaying))
+                .catch(err => console.error(err));
+            return;
+        }
         if (!videoRef.current) return;
         if (isPlaying) {
             videoRef.current.pause();
@@ -923,7 +1094,45 @@ const Player = () => {
         resetIdleTimer();
     };
 
+    const handleLongPressStart = (e) => {
+        if (!config.playerLongPressSpeed || castTarget || !videoRef.current) return;
+        longPressedRef.current = false;
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = setTimeout(() => {
+            if (videoRef.current) {
+                videoRef.current.playbackRate = 2.0;
+                setIsLongPressing(true);
+                longPressedRef.current = true;
+            }
+        }, 400);
+    };
+
+    const handleLongPressEnd = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+        if (isLongPressing || longPressedRef.current) {
+            if (videoRef.current) {
+                videoRef.current.playbackRate = playbackSpeed;
+            }
+            setIsLongPressing(false);
+            setTimeout(() => {
+                longPressedRef.current = false;
+            }, 100);
+        }
+    };
+
     const skipTime = (amount) => {
+        if (castTarget) {
+            let target = currentTime + amount;
+            if (target < 0) target = 0;
+            if (target > duration) target = duration;
+            jellyfinService.sendPlaystateCommand(castTarget.id, 'Seek', Math.floor(target * 10000000))
+                .then(() => setCurrentTime(target))
+                .catch(err => console.error(err));
+            return;
+        }
         if (!videoRef.current) return;
         let target = videoRef.current.currentTime + amount;
         if (target < 0) target = 0;
@@ -933,9 +1142,15 @@ const Player = () => {
     };
 
     const handleTimelineChange = (e) => {
-        if (!videoRef.current) return;
         const targetPercent = parseFloat(e.target.value);
         const targetSecs = (targetPercent / 100) * duration;
+        if (castTarget) {
+            jellyfinService.sendPlaystateCommand(castTarget.id, 'Seek', Math.floor(targetSecs * 10000000))
+                .then(() => setCurrentTime(targetSecs))
+                .catch(err => console.error(err));
+            return;
+        }
+        if (!videoRef.current) return;
         videoRef.current.currentTime = targetSecs;
         setCurrentTime(targetSecs);
         resetIdleTimer();
@@ -1067,7 +1282,7 @@ const Player = () => {
         const h = Math.floor(secs / 3600);
         const m = Math.floor((secs % 3600) / 60);
         const s = Math.floor(secs % 60);
-        
+
         if (h > 0) {
             return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
         }
@@ -1147,22 +1362,52 @@ const Player = () => {
             const newFav = !isFavorite;
             // Optimistic update
             setIsFavorite(newFav);
-            window.dispatchEvent(new CustomEvent('favoriteToggled', { 
-                detail: { itemId: targetId, isFavorite: newFav } 
+            window.dispatchEvent(new CustomEvent('favoriteToggled', {
+                detail: { itemId: targetId, isFavorite: newFav }
             }));
             await jellyfinService.markFavorite(user.Id, targetId, newFav);
         } catch (err) {
             console.error("Favorite toggle failed", err);
             // Revert on failure
             setIsFavorite(!isFavorite);
-            window.dispatchEvent(new CustomEvent('favoriteToggled', { 
-                detail: { itemId: targetId, isFavorite: !isFavorite } 
+            window.dispatchEvent(new CustomEvent('favoriteToggled', {
+                detail: { itemId: targetId, isFavorite: !isFavorite }
             }));
         }
     };
 
     // Keyboard controls
     useEffect(() => {
+        const cycleAspectRatio = () => {
+            const modes = ['auto', 'cover', 'fill', '16:9', '4:3'];
+            setAspectRatio(prev => {
+                const idx = modes.indexOf(prev);
+                return modes[(idx + 1) % modes.length];
+            });
+        };
+
+        const cycleSubtitleTracks = () => {
+            if (subtitleStreams.length === 0) return;
+            const choices = [null, ...subtitleStreams.map(s => s.Index)];
+            const currentIndex = selectedSubtitleIndex === null ? 0 : choices.indexOf(selectedSubtitleIndex);
+            const nextIndex = (currentIndex + 1) % choices.length;
+            setSelectedSubtitleIndex(choices[nextIndex]);
+        };
+
+        const cycleAudioTracks = () => {
+            if (audioStreams.length === 0) return;
+            const currentIndex = selectedAudioIndex === null ? 0 : audioStreams.findIndex(s => s.Index === selectedAudioIndex);
+            const nextIndex = (currentIndex + 1) % audioStreams.length;
+            setSelectedAudioIndex(audioStreams[nextIndex].Index);
+        };
+
+        const changePlaybackSpeed = (delta) => {
+            setPlaybackSpeed(prev => {
+                const newVal = Math.round((prev + delta) * 10) / 10;
+                return Math.max(0.5, Math.min(2.0, newVal));
+            });
+        };
+
         const handleKeyDown = (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
@@ -1170,7 +1415,20 @@ const Player = () => {
             switch (e.code) {
                 case 'Space':
                     e.preventDefault();
-                    togglePlay();
+                    if (e.repeat) return;
+                    if (config.playerLongPressSpeed && !castTarget && videoRef.current) {
+                        spaceSpeedActiveRef.current = false;
+                        if (spaceTimerRef.current) clearTimeout(spaceTimerRef.current);
+                        spaceTimerRef.current = setTimeout(() => {
+                            if (videoRef.current) {
+                                videoRef.current.playbackRate = 2.0;
+                                setIsLongPressing(true);
+                                spaceSpeedActiveRef.current = true;
+                            }
+                        }, 400);
+                    } else {
+                        togglePlay();
+                    }
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
@@ -1184,17 +1442,196 @@ const Player = () => {
                     e.preventDefault();
                     toggleFullscreen();
                     break;
+                case 'Escape':
+                    if (document.fullscreenElement) {
+                        e.preventDefault();
+                        document.exitFullscreen();
+                    }
+                    break;
                 case 'KeyM':
                     e.preventDefault();
                     toggleMute();
+                    break;
+                case 'KeyA':
+                    e.preventDefault();
+                    cycleAspectRatio();
+                    break;
+                case 'KeyI':
+                    e.preventDefault();
+                    setShowStats(prev => !prev);
+                    break;
+                case 'KeyC':
+                    e.preventDefault();
+                    cycleSubtitleTracks();
+                    break;
+                case 'KeyV':
+                    e.preventDefault();
+                    cycleAudioTracks();
+                    break;
+                case 'KeyS':
+                    e.preventDefault();
+                    setShowSettingsMenu(true);
+                    setSettingsMenuView('subtitles');
+                    break;
+                case 'Equal':
+                case 'NumpadAdd':
+                    if (e.shiftKey || e.code === 'NumpadAdd') {
+                        e.preventDefault();
+                        changePlaybackSpeed(0.1);
+                    }
+                    break;
+                case 'Minus':
+                case 'NumpadSubtract':
+                    e.preventDefault();
+                    changePlaybackSpeed(-0.1);
+                    break;
+                case 'KeyR':
+                    e.preventDefault();
+                    setPlaybackSpeed(1.0);
                     break;
                 default:
                     break;
             }
         };
+
+        const handleKeyUp = (e) => {
+            if (e.code === 'Space') {
+                if (spaceTimerRef.current) {
+                    clearTimeout(spaceTimerRef.current);
+                    spaceTimerRef.current = null;
+                }
+                if (spaceSpeedActiveRef.current) {
+                    e.preventDefault();
+                    if (videoRef.current) {
+                        videoRef.current.playbackRate = playbackSpeed;
+                    }
+                    setIsLongPressing(false);
+                    spaceSpeedActiveRef.current = false;
+                } else if (config.playerLongPressSpeed) {
+                    e.preventDefault();
+                    togglePlay();
+                }
+            }
+        };
+
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isPlaying, duration, isMuted]);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [isPlaying, duration, isMuted, config, playbackSpeed, subtitleStreams, selectedSubtitleIndex, audioStreams, selectedAudioIndex]);
+
+    useEffect(() => {
+        const handlePauseOnFocusLoss = () => {
+            if (!videoRef.current) return;
+            const isPlayingElement = !videoRef.current.paused;
+
+            // Hidden tab or blurred window
+            if (document.hidden || !document.hasFocus()) {
+                if (config.playerAutoPip) {
+                    if (document.pictureInPictureEnabled && videoRef.current.requestPictureInPicture) {
+                        videoRef.current.requestPictureInPicture().catch(err => {
+                            console.log("[LegitFlix] Failed auto PiP:", err);
+                            if (config.playerAutoPause && isPlayingElement) {
+                                videoRef.current.pause();
+                                autoPausedRef.current = true;
+                            }
+                        });
+                    } else if (config.playerAutoPause && isPlayingElement) {
+                        videoRef.current.pause();
+                        autoPausedRef.current = true;
+                    }
+                } else if (config.playerAutoPause && isPlayingElement) {
+                    videoRef.current.pause();
+                    autoPausedRef.current = true;
+                }
+            }
+        };
+
+        const handleResumeOnFocusGain = () => {
+            if (!videoRef.current) return;
+            if (!document.hidden && document.hasFocus()) {
+                if (document.pictureInPictureElement) {
+                    document.exitPictureInPicture().catch(e => console.log("[LegitFlix] Failed exit PiP:", e));
+                }
+                if (config.playerAutoResume && autoPausedRef.current) {
+                    videoRef.current.play().catch(e => console.error("[LegitFlix] Auto resume failed:", e));
+                    autoPausedRef.current = false;
+                }
+            }
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) handlePauseOnFocusLoss();
+            else handleResumeOnFocusGain();
+        };
+
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        window.addEventListener('blur', handlePauseOnFocusLoss);
+        window.addEventListener('focus', handleResumeOnFocusGain);
+
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            window.removeEventListener('blur', handlePauseOnFocusLoss);
+            window.removeEventListener('focus', handleResumeOnFocusGain);
+        };
+    }, [config]);
+
+    // Gamepad controls loop
+    useEffect(() => {
+        if (!config.enableGamepad) return;
+
+        let active = true;
+        const lastButtonStates = {};
+
+        const pollGamepad = () => {
+            if (!active) return;
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = gamepads.find(g => g !== null);
+
+            if (gp) {
+                gp.buttons.forEach((btn, idx) => {
+                    const pressed = btn.pressed;
+                    const wasPressed = !!lastButtonStates[idx];
+
+                    if (pressed && !wasPressed) {
+                        switch (idx) {
+                            case 0: // A button -> play/pause
+                                togglePlay();
+                                break;
+                            case 1: // B button -> back
+                                navigate(-1);
+                                break;
+                            case 12: // D-pad Up -> volume up
+                                setVolume(prev => Math.min(1, prev + 0.05));
+                                break;
+                            case 13: // D-pad Down -> volume down
+                                setVolume(prev => Math.max(0, prev - 0.05));
+                                break;
+                            case 14: // D-pad Left -> seek backward
+                                skipTime(-(config.playerSeekTime || 10));
+                                break;
+                            case 15: // D-pad Right -> seek forward
+                                skipTime(config.playerSeekTime || 10);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    lastButtonStates[idx] = pressed;
+                });
+            }
+
+            requestAnimationFrame(pollGamepad);
+        };
+
+        pollGamepad();
+
+        return () => {
+            active = false;
+        };
+    }, [config.enableGamepad, isPlaying, duration, volume]);
 
     const currentPercent = duration ? (currentTime / duration) * 100 : 0;
     const progressStyles = {
@@ -1214,18 +1651,18 @@ const Player = () => {
     const getOriginalMediaInfo = () => {
         if (!item || !item.MediaSources || item.MediaSources.length === 0) return {};
         const source = item.MediaSources[0];
-        
-        const sizeMiB = source.Size 
-            ? `${(source.Size / (1024 * 1024)).toFixed(1)} MiB` 
+
+        const sizeMiB = source.Size
+            ? `${(source.Size / (1024 * 1024)).toFixed(1)} MiB`
             : 'N/A';
-            
-        const bitrateMbps = source.Bitrate 
-            ? `${(source.Bitrate / 1000000).toFixed(1)} Mbps` 
+
+        const bitrateMbps = source.Bitrate
+            ? `${(source.Bitrate / 1000000).toFixed(1)} Mbps`
             : 'N/A';
-            
+
         const videoStream = source.MediaStreams?.find(s => s.Type === 'Video');
         const audioStream = source.MediaStreams?.find(s => s.Type === 'Audio');
-        
+
         return {
             container: source.Container || 'N/A',
             size: sizeMiB,
@@ -1240,7 +1677,7 @@ const Player = () => {
             audioBitDepth: audioStream?.BitDepth ? `${audioStream.BitDepth}` : 'N/A'
         };
     };
-    
+
     const originalMediaInfo = getOriginalMediaInfo();
 
     if (!item) {
@@ -1264,28 +1701,69 @@ const Player = () => {
                 className={`lf-player-video-container cr-player-container ${isFullscreen ? 'is-fullscreen' : ''} ${!showControls ? 'hide-cursor' : ''}`}
                 onMouseMove={handleMouseMove}
             >
-                {/* HTML5 Native Video Tag */}
-                <video
-                    ref={videoRef}
-                    className="lf-player-video-element"
-                    preload="auto"
-                    onClick={togglePlay}
-                    onDoubleClick={toggleFullscreen}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onWaiting={handleWaiting}
-                    onPlaying={handlePlaying}
-                    onEnded={handleVideoEnded}
-                    style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: aspectRatio === 'auto' ? 'contain' : (aspectRatio === 'cover' ? 'cover' : 'fill'), 
-                        aspectRatio: (aspectRatio === '16:9' ? '16/9' : (aspectRatio === '4:3' ? '4/3' : 'auto')),
-                        background: '#000' 
-                    }}
-                />
+                {/* HTML5 Native Video Tag or Cast Screen Poster */}
+                {castTarget ? (
+                    <div className="lf-player-cast-screen" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                        <span className="material-icons lf-player-cast-screen-icon" style={{ fontSize: '72px', color: 'var(--clr-accent, #ff7e00)', marginBottom: '16px', animation: 'pulse 2s infinite' }}>cast_connected</span>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#fff' }}>Casting to {castTarget.name}</h3>
+                        <p style={{ margin: 0, fontSize: '15px', color: 'rgba(255,255,255,0.6)' }}>{item?.Name || 'Loading title...'}</p>
+                    </div>
+                ) : (
+                    <>
+                        {isLongPressing && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '20px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: 'rgba(0, 0, 0, 0.75)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                padding: '6px 12px',
+                                borderRadius: '20px',
+                                color: '#fff',
+                                fontSize: '0.85rem',
+                                fontWeight: 'bold',
+                                zIndex: 1000,
+                                pointerEvents: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                            }}>
+                                <span className="material-icons" style={{ fontSize: '1rem', color: 'var(--clr-accent, #ff7e00)' }}>fast_forward</span>
+                                2X Speed
+                            </div>
+                        )}
+                        <video
+                            ref={videoRef}
+                            className="lf-player-video-element"
+                            preload="auto"
+                            onClick={togglePlay}
+                            onDoubleClick={toggleFullscreen}
+                            onPlay={handlePlay}
+                            onPause={handlePause}
+                            onTimeUpdate={handleTimeUpdate}
+                            onSeeked={handleSeeked}
+                            onLoadedMetadata={handleLoadedMetadata}
+                            onWaiting={handleWaiting}
+                            onPlaying={handlePlaying}
+                            onEnded={handleVideoEnded}
+                            onMouseDown={handleLongPressStart}
+                            onMouseUp={handleLongPressEnd}
+                            onMouseLeave={handleLongPressEnd}
+                            onTouchStart={handleLongPressStart}
+                            onTouchEnd={handleLongPressEnd}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: aspectRatio === 'auto' ? 'contain' : (aspectRatio === 'cover' ? 'cover' : 'fill'),
+                                aspectRatio: (aspectRatio === '16:9' ? '16/9' : (aspectRatio === '4:3' ? '4/3' : 'auto')),
+                                background: '#000'
+                            }}
+                        />
+                    </>
+                )}
 
                 {/* Loading / Buffering Spinner */}
                 {isLoading && (
@@ -1352,7 +1830,7 @@ const Player = () => {
 
                 {/* Crunchyroll-Style HUD Overlay */}
                 <div className={`lf-player-hud-overlay cr-hud-overlay ${showControls ? 'visible' : 'hidden'}`}>
-                    
+
                     {/* Top HUD Row */}
                     <div className="hud-top-bar cr-hud-top">
                         <button className="hud-back-btn cr-back-btn" onClick={handleBackClick}>
@@ -1381,7 +1859,7 @@ const Player = () => {
                                     </span>
                                 )}
                             </span>
-                            
+
                             <div
                                 className="hud-slider-wrapper cr-slider-wrap"
                                 onMouseMove={handleSeekbarMouseMove}
@@ -1428,7 +1906,7 @@ const Player = () => {
                                     className="hud-seeker-range cr-seeker-range"
                                 />
                             </div>
-                            
+
                             <span className="hud-time-display cr-time">{formatTime(duration)}</span>
                         </div>
 
@@ -1620,6 +2098,66 @@ const Player = () => {
                                                             </li>
                                                         ))}
                                                     </ul>
+                                                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 16px' }}></div>
+                                                    <div onClick={() => setSettingsMenuView('subtitle-style')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '10px 16px', color: '#ccc' }}>
+                                                        <span className="material-icons" style={{ fontSize: '1.2rem', marginRight: '8px' }}>palette</span>
+                                                        <span>Style Appearance...</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {settingsMenuView === 'subtitle-style' && (
+                                                <div className="cr-settings-submenu">
+                                                    <div className="submenu-header" onClick={() => setSettingsMenuView('subtitles')}>
+                                                        <span className="material-icons">chevron_left</span>
+                                                        <span>Subtitle Style</span>
+                                                    </div>
+                                                    <div style={{ padding: '10px 15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                        <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                            <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Text Size</span>
+                                                            <select
+                                                                className="legit-select"
+                                                                style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                                value={config.subtitleTextSize}
+                                                                onChange={(e) => updateConfig({ subtitleTextSize: e.target.value })}
+                                                            >
+                                                                <option value="Small">Small</option>
+                                                                <option value="Normal">Normal</option>
+                                                                <option value="Medium">Medium</option>
+                                                                <option value="Large">Large</option>
+                                                                <option value="Extra Large">Extra Large</option>
+                                                            </select>
+                                                        </div>
+                                                        <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                            <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Text Color</span>
+                                                            <select
+                                                                className="legit-select"
+                                                                style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                                value={config.subtitleColor}
+                                                                onChange={(e) => updateConfig({ subtitleColor: e.target.value })}
+                                                            >
+                                                                <option value="#ffffff">White</option>
+                                                                <option value="#ffff00">Yellow</option>
+                                                                <option value="#00ff00">Green</option>
+                                                                <option value="#00ffff">Cyan</option>
+                                                                <option value="#ff00ff">Magenta</option>
+                                                                <option value="#ff0000">Red</option>
+                                                                <option value="#000000">Black</option>
+                                                            </select>
+                                                        </div>
+                                                        <div style={{ flexDirection: 'column', alignItems: 'flex-start', padding: 0, display: 'flex' }}>
+                                                            <span style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>Vertical Position</span>
+                                                            <select
+                                                                className="legit-select"
+                                                                style={{ width: '100%', padding: '6px', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '4px' }}
+                                                                value={config.subtitleVerticalPosition}
+                                                                onChange={(e) => updateConfig({ subtitleVerticalPosition: e.target.value })}
+                                                            >
+                                                                <option value="Bottom">Bottom</option>
+                                                                <option value="Top">Top</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
 
@@ -1837,7 +2375,7 @@ const Player = () => {
                                     <div className="playerStats-stat-label">Stream type</div>
                                     <div className="playerStats-stat-value">Video</div>
                                 </div>
-                                
+
                                 <div className="playerStats-stat playerStats-stat-header">
                                     <div className="playerStats-stat-label">Video Info</div>
                                     <div className="playerStats-stat-value"></div>
@@ -1858,7 +2396,7 @@ const Player = () => {
                                     <div className="playerStats-stat-label">Corrupted frames</div>
                                     <div className="playerStats-stat-value">{corruptedFrames}</div>
                                 </div>
-                                
+
                                 <div className="playerStats-stat playerStats-stat-header">
                                     <div className="playerStats-stat-label">Original Media Info</div>
                                     <div className="playerStats-stat-value"></div>
