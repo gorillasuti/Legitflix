@@ -4,9 +4,16 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const ThemeContext = createContext();
 
 const sanitizeUrl = (url) => {
+const sanitizeUrlStrict = (url) => {
     if (!url) return '';
-    const trimmed = url.trim();
-    if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+    const trimmed = String(url).trim();
+    let decoded;
+    try {
+        decoded = decodeURIComponent(trimmed);
+    } catch (e) {
+        decoded = trimmed;
+    }
+    if (/^https?:\/\//i.test(decoded) || /^\/[^\/]/i.test(decoded)) {
         return trimmed.replace(/["'()<>]/g, '');
     }
     return '';
@@ -24,6 +31,54 @@ const sanitizeHex = (hex) => {
         return trimmed;
     }
     return '';
+};
+
+const deepSanitizeObject = (obj) => {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(deepSanitizeObject);
+    
+    const clean = Object.create(null);
+    for (const key of Object.keys(obj)) {
+        if (DANGEROUS_KEYS.has(key)) continue;
+        const val = obj[key];
+        clean[key] = (typeof val === 'object' && val !== null) 
+            ? deepSanitizeObject(val) 
+            : val;
+    }
+    return clean;
+};
+
+const URL_KEYS = ['logoUrl', 'faviconUrl', 'jellyseerrUrl', 'jellyseerrBackground', 'appBackground', 'userAvatar'];
+const TEXT_KEYS = ['jellyseerrText', 'appName'];
+const HEX_KEYS = { accentColor: '#ff7e00', subtitleColor: '#ffffff' };
+
+const sanitizeFullConfig = (raw) => {
+    if (!raw) return {};
+    const config = { ...raw };
+    
+    for (const key of DANGEROUS_KEYS) {
+        delete config[key];
+    }
+    
+    for (const key of URL_KEYS) {
+        if (config[key] !== undefined) {
+            config[key] = sanitizeUrlStrict(config[key]);
+        }
+    }
+    
+    for (const key of TEXT_KEYS) {
+        if (config[key] !== undefined) {
+            config[key] = sanitizeText(config[key]);
+        }
+    }
+    
+    for (const [key, fallback] of Object.entries(HEX_KEYS)) {
+        if (config[key] !== undefined) {
+            config[key] = sanitizeHex(config[key]) || fallback;
+        }
+    }
+    
+    return config;
 };
 
 // Map preset accent colors → matching default logo
@@ -301,6 +356,10 @@ export const ThemeProvider = ({ children }) => {
 
     const updateConfig = (newConfig) => {
         const sanitizedConfig = { ...newConfig };
+        // Strip prototype-polluting keys before touching any object
+        const sanitizedConfig = Object.fromEntries(
+            Object.entries(newConfig).filter(([k]) => !DANGEROUS_KEYS.has(k))
+        );
         if (sanitizedConfig.accentColor !== undefined) sanitizedConfig.accentColor = sanitizeHex(sanitizedConfig.accentColor) || '#ff7e00';
         if (sanitizedConfig.logoUrl !== undefined) sanitizedConfig.logoUrl = sanitizeUrl(sanitizedConfig.logoUrl);
         if (sanitizedConfig.faviconUrl !== undefined) sanitizedConfig.faviconUrl = sanitizeUrl(sanitizedConfig.faviconUrl);
@@ -335,12 +394,14 @@ export const ThemeProvider = ({ children }) => {
             if (updated.accentColor) applyAccentColor(updated.accentColor);
             if (updated.faviconUrl !== undefined) applyFavicon(updated.faviconUrl);
             if (updated.themeMode) applyThemeMode(updated.themeMode);
+            const cleanUpdated = sanitizeFullConfig(updated);
 
             if (updated.subtitleSize !== undefined || updated.subtitleColor !== undefined || updated.subtitleBackground !== undefined) {
                 applySubtitleStyles(updated.subtitleSize, updated.subtitleColor, updated.subtitleBackground);
             }
 
             return updated;
+            return cleanUpdated;
         });
     };
 

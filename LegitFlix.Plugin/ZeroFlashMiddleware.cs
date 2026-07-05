@@ -122,9 +122,12 @@ namespace LegitFlix.Plugin
                 {
                     if (!context.Response.HasStarted)
                     {
-                        context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-                        context.Response.Headers["Pragma"]        = "no-cache";
-                        context.Response.Headers["Expires"]       = "0";
+                        context.Response.Headers["Cache-Control"]           = "no-cache, no-store, must-revalidate";
+                        context.Response.Headers["Pragma"]                  = "no-cache";
+                        context.Response.Headers["Expires"]                 = "0";
+                        context.Response.Headers["X-Content-Type-Options"]  = "nosniff";
+                        context.Response.Headers["X-Frame-Options"]         = "SAMEORIGIN";
+                        context.Response.Headers["X-XSS-Protection"]        = "0";
                         context.Response.ContentLength = System.Text.Encoding.UTF8.GetByteCount(body);
                     }
                 }
@@ -137,7 +140,8 @@ namespace LegitFlix.Plugin
             }
             else
             {
-                // Non-HTML or compressed — pass through unmodified
+                // Non-HTML or compressed — pass through unmodified using async copy
+                // so a slow/locked asset does not block the thread pool.
                 buffer.Seek(0, SeekOrigin.Begin);
                 await buffer.CopyToAsync(originalBodyStream);
             }
@@ -151,20 +155,48 @@ namespace LegitFlix.Plugin
         {
             context.Response.StatusCode  = 200;
             context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-            context.Response.Headers["Pragma"]        = "no-cache";
-            context.Response.Headers["Expires"]       = "0";
 
-            var htmlToServe = _cachedHtml!;
-            var config = Plugin.Instance?.Configuration;
+            // ── Security headers ──────────────────────────────────────
+            context.Response.Headers["Cache-Control"]           = "no-cache, no-store, must-revalidate";
+            context.Response.Headers["Pragma"]                  = "no-cache";
+            context.Response.Headers["Expires"]                 = "0";
+            context.Response.Headers["X-Content-Type-Options"]  = "nosniff";
+            context.Response.Headers["X-Frame-Options"]         = "SAMEORIGIN";
+            context.Response.Headers["X-XSS-Protection"]        = "0";
+            context.Response.Headers["Content-Security-Policy"] =
+                "default-src 'self'; " +
+                "script-src 'self' 'unsafe-inline'; " +
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                "font-src 'self' https://fonts.gstatic.com data:; " +
+                "img-src 'self' https: http: data: blob:; " +
+                "connect-src 'self' wss: ws:; " +
+                "media-src 'self' blob:; " +
+                "object-src 'none'; " +
+                "base-uri 'self';";
 
-            if (config != null)
+            try
             {
-                string injection = UiInjector.BuildCustomUiInjection(config);
-                htmlToServe = UiInjector.InjectIntoHtml(htmlToServe, injection);
-            }
+                var htmlToServe = _cachedHtml!;
+                var config = Plugin.Instance?.Configuration;
 
-            await context.Response.WriteAsync(htmlToServe);
+                if (config != null)
+                {
+                    string injection = UiInjector.BuildCustomUiInjection(config);
+                    htmlToServe = UiInjector.InjectIntoHtml(htmlToServe, injection);
+                }
+
+                await context.Response.WriteAsync(htmlToServe);
+            }
+            catch (Exception ex)
+            {
+                // If our injection logic fails, log and fall through to Jellyfin's
+                // default pipeline rather than returning a broken or empty page.
+                _logger.LogError(ex, "[LegitFlix] Custom UI injection failed; falling back to Jellyfin default UI.");
+
+                // Reset status so _next can set it correctly
+                context.Response.StatusCode = 200;
+                await _next(context);
+            }
         }
 
         // ─────────────────────────────────────────────────────────────
