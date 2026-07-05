@@ -40,13 +40,13 @@ const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const deepSanitizeObject = (obj) => {
     if (obj === null || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) return obj.map(deepSanitizeObject);
-    
+
     const clean = Object.create(null);
     for (const key of Object.keys(obj)) {
         if (DANGEROUS_KEYS.has(key)) continue;
         const val = obj[key];
-        clean[key] = (typeof val === 'object' && val !== null) 
-            ? deepSanitizeObject(val) 
+        clean[key] = (typeof val === 'object' && val !== null)
+            ? deepSanitizeObject(val)
             : val;
     }
     return clean;
@@ -59,29 +59,29 @@ const HEX_KEYS = { accentColor: '#ff7e00', subtitleColor: '#ffffff' };
 const sanitizeFullConfig = (raw) => {
     if (!raw) return {};
     const config = { ...raw };
-    
+
     for (const key of DANGEROUS_KEYS) {
         delete config[key];
     }
-    
+
     for (const key of URL_KEYS) {
         if (config[key] !== undefined) {
             config[key] = sanitizeUrlStrict(config[key]);
         }
     }
-    
+
     for (const key of TEXT_KEYS) {
         if (config[key] !== undefined) {
             config[key] = sanitizeText(config[key]);
         }
     }
-    
+
     for (const [key, fallback] of Object.entries(HEX_KEYS)) {
         if (config[key] !== undefined) {
             config[key] = sanitizeHex(config[key]) || fallback;
         }
     }
-    
+
     return config;
 };
 
@@ -104,10 +104,10 @@ const serializeToCustomPrefs = (config) => {
 const deserializeFromCustomPrefs = (customPrefs) => {
     const config = {};
     if (!customPrefs) return config;
-    
+
     for (const [key, val] of Object.entries(customPrefs)) {
         if (DANGEROUS_KEYS.has(key)) continue;
-        
+
         if (key.startsWith('__json:')) {
             const realKey = key.slice(7);
             if (DANGEROUS_KEYS.has(realKey)) continue;
@@ -213,6 +213,7 @@ export const ThemeProvider = ({ children }) => {
         // Player Settings
         playerSeekTime: 10,
         playerAutoSkip: false,
+        playerAutoSkipRecap: false,
         playerAutoNextEp: true,
         playerSeekForward: 30,
         playerSeekBackward: 10,
@@ -279,21 +280,21 @@ export const ThemeProvider = ({ children }) => {
                 const customPrefs = serializeToCustomPrefs(localConfig);
                 const newPrefs = { Id: prefsId, CustomPrefs: customPrefs };
                 await jellyfinService.updateDisplayPreferences(prefsId, newPrefs);
-                
+
                 // Tag local config
                 const updatedLocal = { ...localConfig, _syncedToServer: true };
                 localStorage.setItem('LegitFlix_Config', JSON.stringify(updatedLocal));
-                
+
                 setConfig(prev => ({ ...prev, _syncedToServer: true }));
                 return;
             }
 
             if (prefs && prefs.CustomPrefs) {
                 const serverConfig = sanitizeFullConfig(deserializeFromCustomPrefs(prefs.CustomPrefs));
-                
+
                 setConfig(prev => {
                     let updated = { ...prev, ...serverConfig, _syncedToServer: true };
-                    
+
                     // Re-enforce server configurations if global overrides are enabled!
                     if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
                         const sc = window.LegitFlix_ServerConfig;
@@ -311,6 +312,7 @@ export const ThemeProvider = ({ children }) => {
                         if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
                         if (sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
                         if (sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
+                        if (sc.playerAutoSkipRecap !== undefined) updated.playerAutoSkipRecap = sc.playerAutoSkipRecap;
                         if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
                     }
 
@@ -329,7 +331,7 @@ export const ThemeProvider = ({ children }) => {
                     updated = sanitizeFullConfig(updated);
 
                     localStorage.setItem('LegitFlix_Config', JSON.stringify(updated));
-                    
+
                     if (updated.accentColor) applyAccentColor(updated.accentColor);
                     if (updated.faviconUrl !== undefined) applyFavicon(updated.faviconUrl);
                     if (updated.themeMode) applyThemeMode(updated.themeMode);
@@ -354,7 +356,7 @@ export const ThemeProvider = ({ children }) => {
         try {
             const user = await jellyfinService.getCurrentUser();
             if (!user) return;
-            
+
             const prefsId = "legitflix-theme";
             let prefs = await jellyfinService.getDisplayPreferences(prefsId);
             if (!prefs) prefs = { Id: prefsId, CustomPrefs: {} };
@@ -382,7 +384,7 @@ export const ThemeProvider = ({ children }) => {
             const token = jellyfinService.api?.accessToken || jellyfinService.api?.configuration?.accessToken;
             const userId = jellyfinService.api?.user?.id || jellyfinService._cachedUser?.Id;
             const basePath = jellyfinService.api?.configuration?.basePath || jellyfinService.api?.basePath || '';
-            
+
             if (!token || !userId) return;
 
             const url = `${basePath}/DisplayPreferences/legitflix-theme?userId=${userId}&client=LegitFlixClient`;
@@ -401,7 +403,7 @@ export const ThemeProvider = ({ children }) => {
                     'Authorization': `MediaBrowser Token="${token}"`
                 },
                 body: bodyPayload
-            }).catch(() => {});
+            }).catch(() => { });
         } catch (e) {
             console.error("[LegitFlix] Unload flush failed", e);
         }
@@ -443,7 +445,7 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         // 1. Start with client default config
         let initialConfig = { ...config };
-        
+
         // 2. Load from local storage
         let localConfig = null;
         const localConfigStr = localStorage.getItem('LegitFlix_Config');
@@ -456,14 +458,14 @@ export const ThemeProvider = ({ children }) => {
         }
 
         // 3. Determine if server overrides are enabled
-        const enableGlobalOverwrites = window.LegitFlix_ServerConfig 
-            ? !!window.LegitFlix_ServerConfig.enableGlobalOverwrites 
+        const enableGlobalOverwrites = window.LegitFlix_ServerConfig
+            ? !!window.LegitFlix_ServerConfig.enableGlobalOverwrites
             : false;
 
         // 4. Merge server config if available
         if (window.LegitFlix_ServerConfig) {
             const sc = window.LegitFlix_ServerConfig;
-            
+
             // Helper to load setting: if global overrides are enabled, server wins.
             // If disabled, user's local config wins.
             // Also supports server-level JellyseerrGlobalOverride.
@@ -495,6 +497,7 @@ export const ThemeProvider = ({ children }) => {
                 jellyseerrText: sanitizeText(getVal('jellyseerrText', initialConfig.jellyseerrText)) || initialConfig.jellyseerrText,
                 playerSeekTime: getVal('playerSeekTime', initialConfig.playerSeekTime),
                 playerAutoSkip: !!getVal('playerAutoSkip', initialConfig.playerAutoSkip),
+                playerAutoSkipRecap: !!getVal('playerAutoSkipRecap', initialConfig.playerAutoSkipRecap),
                 playerAutoNextEp: getVal('playerAutoNextEp', initialConfig.playerAutoNextEp) !== false,
                 screensaverType: getVal('screensaverType', initialConfig.screensaverType),
                 screensaverTime: getVal('screensaverTime', initialConfig.screensaverTime),
@@ -691,7 +694,7 @@ export const ThemeProvider = ({ children }) => {
 
         setConfig(prev => {
             const updated = { ...prev, ...sanitizedConfig };
-            
+
             // Re-enforce server configurations if global overrides are enabled!
             if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
                 const sc = window.LegitFlix_ServerConfig;
@@ -709,6 +712,7 @@ export const ThemeProvider = ({ children }) => {
                 if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
                 if (sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
                 if (sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
+                if (sc.playerAutoSkipRecap !== undefined) updated.playerAutoSkipRecap = sc.playerAutoSkipRecap;
                 if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
             }
 

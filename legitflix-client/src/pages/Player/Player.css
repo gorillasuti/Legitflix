@@ -1595,3 +1595,20 @@ video {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Style Appearance button in subtitle menu */
+.style-appearance-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    cursor: pointer;
+    color: #e2e4e9;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.style-appearance-btn:hover {
+    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
+    color: var(--clr-accent, #ff6a00) !important;
+}

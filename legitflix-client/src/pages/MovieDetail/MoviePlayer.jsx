@@ -1743,9 +1743,9 @@ const MoviePlayer = ({ itemId, serverId, forceAutoPlay, onVideoRatioChange }) =>
                                                         </li>
                                                     ))}
                                                 </ul>
-                                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 16px' }}></div>
-                                                <div onClick={() => setSettingsMenuView('subtitle-style')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '10px 16px', color: '#ccc' }}>
-                                                    <span className="material-icons" style={{ fontSize: '1.2rem', marginRight: '8px' }}>palette</span>
+                                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 0' }}></div>
+                                                <div className="style-appearance-btn" onClick={() => setSettingsMenuView('subtitle-style')}>
+                                                    <span className="material-icons" style={{ fontSize: '1.2rem' }}>palette</span>
                                                     <span>Style Appearance...</span>
                                                 </div>
                                             </div>

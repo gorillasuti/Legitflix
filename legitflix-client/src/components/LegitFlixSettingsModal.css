@@ -195,23 +195,55 @@
         opacity: 0;
         transform: translateY(0) !important;
     }
+
     to {
         opacity: 1;
         transform: translateY(0) !important;
     }
 }
 
+.setting-section[key="posterTags"] {
+    margin-top: 0 !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+    /* This overrides the inline styles injected by the Jellyfin host */
+}
+
 .setting-section {
     margin-bottom: 24px;
     padding-bottom: 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    box-shadow: none !important;
     animation: lfSettingsFadeIn 0.2s ease-out !important;
 }
 
 .setting-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    border-bottom: none !important;
+    border-top: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.legit-settings-modal .setting-section {
+    border-top: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 24px !important;
+    padding-bottom: 24px !important;
+}
+
+.legit-settings-modal .setting-section:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 .setting-row {
@@ -435,6 +467,9 @@ input:checked+.slider:before {
 
 .setting-section {
     margin-bottom: 24px;
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 .setting-section h3 {
@@ -892,7 +927,7 @@ select.legit-input option {
     cursor: not-allowed;
 }
 
-input:disabled + .slider {
+input:disabled+.slider {
     background-color: #222 !important;
     cursor: not-allowed;
     opacity: 0.4;

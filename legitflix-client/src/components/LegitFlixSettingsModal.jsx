@@ -1078,6 +1078,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                     <div className="setting-row">
                         <div>
                             <h3 className="setting-title">Long Press for 2x Speed (β)</h3>
+                            <h3 className="setting-title">Long Press for 2x Speed</h3>
                             <p className="setting-desc">Press and hold on the video player to play at 2x speed (ideal for touch/mobile)</p>
                         </div>
                         <label className="toggle-switch">
@@ -1308,7 +1309,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 const shortcuts = [
                     { keys: 'Shift + H', desc: 'Go to Home Screen' },
                     { keys: 'F4', desc: 'Open Search Panel' },
-                    { keys: 'Ctrl + K', desc: 'Open Theme Accent Customizer' },
+                    { keys: 'Ctrl + K', desc: 'Switch Between Plugin UI / Jellyfin UI' },
                     { keys: 'D', desc: 'Go to Dashboard', adminOnly: true },
                     { keys: 'Q', desc: 'Quick Connect' },
                     { keys: 'R', desc: 'Play Random Item' },
