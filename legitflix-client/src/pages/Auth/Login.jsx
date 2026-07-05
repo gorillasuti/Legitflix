@@ -80,6 +80,7 @@ const Login = () => {
             await jellyfinService.authenticateUser(username, password);
             const user = await jellyfinService.getCurrentUser();
             if (user) {
+                window.dispatchEvent(new CustomEvent('legitflix-sync-settings'));
                 navigate('/');
             } else {
                 setError('Login succeeded but failed to retrieve user session.');
@@ -92,8 +93,7 @@ const Login = () => {
         }
     };
 
-    const prodPath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
-    const fallbackAvatar = `${prodPath}/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
+    const fallbackAvatar = `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
     let userPfpUrl = null;
     if (prefilledUserId) {
         try {

@@ -15,8 +15,7 @@ import './Navbar.css';
 
 const Navbar = ({ alwaysFilled = false }) => {
     const { config } = useTheme();
-    const prodPath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
-    const fallbackAvatar = `${prodPath}/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
+    const fallbackAvatar = `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
     const [user, setUser] = useState(null);
     const [libraries, setLibraries] = useState([]);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -577,9 +576,6 @@ const Navbar = ({ alwaysFilled = false }) => {
             <CastModal
                 isOpen={showCastModal}
                 onClose={() => setShowCastModal(false)}
-                activeTarget={castTarget}
-                onSelectTarget={handleSelectCastTarget}
-                fallbackAvatar={fallbackAvatar}
             />
             <SyncPlayModal
                 isOpen={showSyncPlayModal}

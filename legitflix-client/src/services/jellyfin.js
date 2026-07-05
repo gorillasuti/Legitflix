@@ -36,6 +36,11 @@ class JellyfinService {
             deviceInfo: { name: 'LegitFlix Web', id: deviceId }
         });
         this.api = null;
+        this.playerListeners = new Set();
+        this.activeWs = null;
+        this.wsKeepAliveInterval = null;
+        this.reconnectTimeout = null;
+        this.isWSEnabled = false;
     }
 
     initialize(accessToken = null, basePath = null) {
@@ -158,39 +163,36 @@ class JellyfinService {
             }
         }
 
-        // Check localStorage for the active user credentials
-        const storedCreds = localStorage.getItem('jellyfin_credentials');
-        if (storedCreds) {
+        // Check for active session:
+        // • Server URL + UserId live in localStorage (non-sensitive, needed for "remember server" UX)
+        // • AccessToken lives ONLY in sessionStorage — automatically wiped when the browser tab closes
+        const storedSession = localStorage.getItem('jellyfin_session_meta');
+        const storedToken   = sessionStorage.getItem('jellyfin_access_token');
+        if (storedSession && storedToken) {
             try {
-                const parsed = JSON.parse(storedCreds);
-                if (parsed.Servers && parsed.Servers.length > 0) {
-                    const activeServer = parsed.Servers.find(s => s.AccessToken && s.UserId);
-                    if (activeServer) {
-                        // Ensure API is initialized with the correct token
-                        if (!this.api || this.api.accessToken !== activeServer.AccessToken) {
-                            console.log("[LegitFlix] Initializing API with stored token");
-                            this.initialize(activeServer.AccessToken);
-                        }
+                const parsed = JSON.parse(storedSession);
+                if (parsed.UserId && parsed.ManualAddress) {
+                    // Ensure API is initialized with the in-session token
+                    if (!this.api || this.api.accessToken !== storedToken) {
+                        console.log("[LegitFlix] Initializing API with session token");
+                        this.initialize(storedToken, parsed.ManualAddress);
+                    }
 
-                        try {
-                            const response = await this.api.user.getUserById({ userId: activeServer.UserId });
-                            return response.data;
-                        } catch (apiError) {
-                            console.error("[LegitFlix] Token check failed.", apiError);
-                            // Only logout if explicitly unauthorized (401)
-                            if (apiError.response && apiError.response.status === 401) {
-                                console.warn("[LegitFlix] Token expired or invalid (401). Logging out.");
-                                this.logout();
-                            }
-                            // Otherwise (network error, server down), keep the token.
-                            // The app will redirect to login because we return null, 
-                            // but the user won't have to re-enter credentials once the server is back.
-                            return null;
+                    try {
+                        const response = await this.api.user.getUserById({ userId: parsed.UserId });
+                        return response.data;
+                    } catch (apiError) {
+                        console.error("[LegitFlix] Token check failed.", apiError);
+                        // Only logout if explicitly unauthorized (401)
+                        if (apiError.response && apiError.response.status === 401) {
+                            console.warn("[LegitFlix] Token expired or invalid (401). Logging out.");
+                            this.logout();
                         }
+                        return null;
                     }
                 }
             } catch (e) {
-                console.error("[LegitFlix] Failed to parse jellyfin_credentials", e);
+                console.error("[LegitFlix] Failed to parse session meta", e);
             }
         }
 
@@ -264,17 +266,21 @@ class JellyfinService {
             if (authResult.AccessToken && authResult.User) {
                 this.initialize(authResult.AccessToken);
 
-                // Store in LocalStorage (Simple format for now)
-                const storedData = {
-                    Servers: [{
-                        DateLastAccessed: new Date().toISOString(),
-                        AccessToken: authResult.AccessToken,
-                        UserId: authResult.User.Id,
-                        Name: authResult.User.Name,
-                        ManualAddress: this.api.basePath
-                    }]
+                // Split credential storage for security:
+                //   localStorage  → non-sensitive server meta (URL, userId, name)
+                //   sessionStorage → AccessToken only (cleared on tab/window close)
+                const sessionMeta = {
+                    DateLastAccessed: new Date().toISOString(),
+                    UserId: authResult.User.Id,
+                    Name: authResult.User.Name,
+                    ManualAddress: this.api.basePath
                 };
-                localStorage.setItem('jellyfin_credentials', JSON.stringify(storedData));
+                localStorage.setItem('jellyfin_session_meta', JSON.stringify(sessionMeta));
+                sessionStorage.setItem('jellyfin_access_token', authResult.AccessToken);
+                // Keep legacy key populated for Jellyfin's own ApiClient compatibility
+                localStorage.setItem('jellyfin_credentials', JSON.stringify({
+                    Servers: [{ ...sessionMeta, AccessToken: authResult.AccessToken }]
+                }));
                 return authResult.User;
             }
         } catch (e) {
@@ -387,7 +393,7 @@ class JellyfinService {
 
     async getResumeItems(userId, limit = 12) {
         try {
-            const fields = 'PrimaryImageAspectRatio,Overview,ImageTags,ProductionYear,RunTimeTicks,CommunityRating,OfficialRating,UserData';
+            const fields = 'PrimaryImageAspectRatio,Overview,ImageTags,ProductionYear,RunTimeTicks,CommunityRating,CriticRating,OfficialRating,UserData,MediaSources,Genres,MediaStreams,Width,Height';
             const response = await this.makeRequest(`/UserItems/Resume?userId=${userId}&limit=${limit}&fields=${fields}`);
             if (response && response.Items) {
                 return response;
@@ -406,7 +412,7 @@ class JellyfinService {
         const response = await this.api.tvShows.getNextUp({
             userId,
             limit,
-            fields: ['PrimaryImageAspectRatio', 'Overview', 'ImageTags', 'ProductionYear', 'RunTimeTicks', 'CommunityRating', 'OfficialRating', 'UserData']
+            fields: ['PrimaryImageAspectRatio', 'Overview', 'ImageTags', 'ProductionYear', 'RunTimeTicks', 'CommunityRating', 'CriticRating', 'OfficialRating', 'UserData', 'MediaSources', 'Genres', 'MediaStreams', 'Width', 'Height']
         });
         return response.data;
     }
@@ -538,7 +544,7 @@ class JellyfinService {
                 sortOrder: ['Descending'],
                 includeItemTypes: ['Movie', 'Series'],
                 recursive: true,
-                fields: ['PrimaryImageAspectRatio', 'Overview', 'ImageTags', 'ProductionYear', 'RunTimeTicks', 'CommunityRating', 'OfficialRating', 'ChildCount', 'UserData']
+                fields: ['PrimaryImageAspectRatio', 'Overview', 'ImageTags', 'ProductionYear', 'RunTimeTicks', 'CommunityRating', 'OfficialRating', 'ChildCount', 'UserData', 'MediaStreams', 'Width', 'Height']
             };
             if (user?.Configuration?.HidePlayedInLatest) {
                 query.filters = ['IsUnplayed'];
@@ -562,14 +568,11 @@ class JellyfinService {
         if (this.api?.configuration?.basePath) {
             return this.api.configuration.basePath;
         }
-        const storedCreds = localStorage.getItem('jellyfin_credentials');
-        if (storedCreds) {
+        const storedSession = localStorage.getItem('jellyfin_session_meta');
+        if (storedSession) {
             try {
-                const parsed = JSON.parse(storedCreds);
-                if (parsed.Servers && parsed.Servers.length > 0) {
-                    const activeServer = parsed.Servers.find(s => s.Address || s.ManualAddress);
-                    if (activeServer) return activeServer.Address || activeServer.ManualAddress;
-                }
+                const parsed = JSON.parse(storedSession);
+                if (parsed.ManualAddress) return parsed.ManualAddress;
             } catch (e) {}
         }
         return window.location.origin;
@@ -597,8 +600,7 @@ class JellyfinService {
         // 3. Fall back to standard Jellyfin URL or default Netflix avatar
         // Since we don't have a tag or cached avatar, the user likely doesn't have an image set in Jellyfin.
         // Return the default Netflix style avatar path.
-        const buildBasePath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
-        return `${buildBasePath}/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
+        return `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
     }
 
     getImageUrl(item, type = 'Primary', options = {}) {
@@ -711,11 +713,13 @@ class JellyfinService {
 
         const tryFetch = async (endpoint) => {
             const url = `${baseUrl}${endpoint}`;
-            console.log(`[Trickplay] Attempting to fetch manifest from: ${url}`);
+            // Log the endpoint only — never log a URL that may contain api_key tokens
+            console.log(`[Trickplay] Attempting to fetch manifest from endpoint: ${endpoint}`);
 
             try {
-                // Try with both header and query param for maximum reliability
-                const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}api_key=${token}`, {
+                // Authenticate via header only — do NOT duplicate the token in the query string
+                // (query string tokens appear in server access logs and browser history)
+                const response = await fetch(url, {
                     headers: {
                         'X-Emby-Authorization': authHeader,
                         'Accept': 'application/json'
@@ -1052,19 +1056,20 @@ class JellyfinService {
                     const token = authData.AccessToken;
                     const userProfile = authData.User;
 
-                    // Save Session
-                    this.initialize(token);
+                    this.initialize(token, this.api.basePath);
 
-                    const storedData = {
-                        Servers: [{
-                            DateLastAccessed: new Date().toISOString(),
-                            AccessToken: token,
-                            UserId: userProfile.Id,
-                            Name: userProfile.Name,
-                            ManualAddress: this.api.basePath
-                        }]
+                    const sessionMeta = {
+                        DateLastAccessed: new Date().toISOString(),
+                        UserId: userProfile.Id,
+                        Name: userProfile.Name,
+                        ManualAddress: this.api.basePath
                     };
-                    localStorage.setItem('jellyfin_credentials', JSON.stringify(storedData));
+                    localStorage.setItem('jellyfin_session_meta', JSON.stringify(sessionMeta));
+                    sessionStorage.setItem('jellyfin_access_token', token);
+                    // Keep legacy key for ApiClient compatibility
+                    localStorage.setItem('jellyfin_credentials', JSON.stringify({
+                        Servers: [{ ...sessionMeta, AccessToken: token }]
+                    }));
 
                     return userProfile;
                 }
@@ -1088,8 +1093,10 @@ class JellyfinService {
             }
         }
 
-        // 2. Clear Local Storage
-        localStorage.removeItem('jellyfin_credentials');
+        // Clear session storage (volatile token) + non-sensitive localStorage meta
+        sessionStorage.removeItem('jellyfin_access_token');
+        localStorage.removeItem('jellyfin_session_meta');
+        localStorage.removeItem('jellyfin_credentials'); // Legacy key
 
         // 3. Clear user cache & Instance
         this.clearUserCache();
@@ -1202,47 +1209,269 @@ class JellyfinService {
         return `${baseUrl}/Items/${itemId}/Download?api_key=${token}`;
     }
 
-    async getSessions() {
-        if (!this.api) this.initialize();
-        const response = await this.api.session.getSessions();
-        return response.data;
+    // --- Player Observer Registry ---
+    registerPlayer(listener) {
+        this.playerListeners.add(listener);
+        return () => this.playerListeners.delete(listener);
     }
 
-    async playOnSession(sessionId, itemId) {
-        if (!this.api) this.initialize();
-        return this.api.session.play({
-            sessionId,
-            playCommand: 'PlayNow',
-            itemIds: [itemId]
+    notifyPlayer(event, data) {
+        this.playerListeners.forEach(listener => {
+            try {
+                listener(event, data);
+            } catch (err) {
+                console.error("[LegitFlix] Error in player listener:", err);
+            }
         });
     }
 
+    // --- WebSocket Implementation ---
+    getWebSocketUrl() {
+        let baseUrl = this.getBasePath();
+        let token = this.api?.accessToken || this.api?.configuration?.accessToken;
+        if (window.ApiClient) {
+            token = token || window.ApiClient.accessToken();
+            baseUrl = baseUrl || window.ApiClient.serverAddress();
+        }
+
+        if (!baseUrl) return null;
+
+        // Remove trailing slashes
+        if (baseUrl.endsWith('/')) {
+            baseUrl = baseUrl.slice(0, -1);
+        }
+
+        // Change http(s) to ws(s)
+        let wsUrl = baseUrl.replace(/^http/i, 'ws');
+        const deviceId = this.jellyfin.deviceInfo.id;
+
+        return `${wsUrl}/socket?api_key=${token}&deviceId=${deviceId}`;
+    }
+
+    connectWebSocket() {
+        this.isWSEnabled = true;
+        
+        // Avoid duplicate sockets
+        if (this.activeWs) {
+            if (this.activeWs.readyState === WebSocket.OPEN || this.activeWs.readyState === WebSocket.CONNECTING) {
+                return;
+            }
+            this.disconnectWebSocket();
+        }
+
+        const url = this.getWebSocketUrl();
+        if (!url) {
+            console.warn("[LegitFlix] Cannot connect WebSocket: no server URL / token available.");
+            return;
+        }
+
+        console.log("[LegitFlix] Connecting to Jellyfin WebSocket...");
+        try {
+            const ws = new WebSocket(url);
+            this.activeWs = ws;
+
+            ws.onopen = () => {
+                console.log("[LegitFlix] WebSocket connected.");
+                
+                // Send Identity/SessionsStart
+                try {
+                    ws.send(JSON.stringify({
+                        MessageType: 'SessionsStart',
+                        Data: '0,1000'
+                    }));
+                } catch (e) {
+                    console.error("[LegitFlix] Failed to send SessionsStart", e);
+                }
+
+                // Start Keep-Alive every 15 seconds
+                if (this.wsKeepAliveInterval) clearInterval(this.wsKeepAliveInterval);
+                this.wsKeepAliveInterval = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        try {
+                            ws.send(JSON.stringify({ MessageType: 'KeepAlive' }));
+                        } catch {}
+                    }
+                }, 15000);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    // Notify any active player listeners
+                    if (message.MessageType === 'SyncPlayCommand') {
+                        this.notifyPlayer('SyncPlayCommand', message.Data);
+                    } else if (message.MessageType === 'SyncPlayGroupUpdate') {
+                        this.notifyPlayer('SyncPlayGroupUpdate', message.Data);
+                    } else if (message.MessageType === 'Play') {
+                        this.notifyPlayer('Play', message.Data);
+                    } else if (message.MessageType === 'Playstate') {
+                        this.notifyPlayer('Playstate', message.Data);
+                    } else if (message.MessageType === 'GeneralCommand') {
+                        this.notifyPlayer('GeneralCommand', message.Data);
+                    }
+                } catch (err) {
+                    // Ignore non-json messages
+                }
+            };
+
+            ws.onclose = () => {
+                console.log("[LegitFlix] WebSocket closed.");
+                this.cleanupWS();
+                
+                // Reconnect if WebSocket should be active
+                if (this.isWSEnabled) {
+                    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+                    this.reconnectTimeout = setTimeout(() => {
+                        this.connectWebSocket();
+                    }, 5000);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error("[LegitFlix] WebSocket error:", err);
+            };
+
+        } catch (e) {
+            console.error("[LegitFlix] Failed to open WebSocket:", e);
+        }
+    }
+
+    cleanupWS() {
+        if (this.wsKeepAliveInterval) {
+            clearInterval(this.wsKeepAliveInterval);
+            this.wsKeepAliveInterval = null;
+        }
+    }
+
+    disconnectWebSocket() {
+        this.isWSEnabled = false;
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
+        this.cleanupWS();
+        if (this.activeWs) {
+            try {
+                this.activeWs.close();
+            } catch {}
+            this.activeWs = null;
+        }
+        console.log("[LegitFlix] WebSocket disconnected.");
+    }
+
+    // --- Sessions & Cast APIs ---
+    async getSessions() {
+        return await this.makeRequest('/Sessions');
+    }
+
+    /**
+     * Returns all active remote sessions suitable for "Cast to Device".
+     * Excludes own session, cutoff increased to 300 seconds (5 mins) for TVs.
+     */
+    async getSessionsForCast(activeWithinSeconds = 300) {
+        const allSessions = await this.getSessions() || [];
+        const myDeviceId = this.jellyfin.deviceInfo.id;
+        const cutoff = Date.now() - activeWithinSeconds * 1000;
+        return allSessions.filter(s => {
+            // Exclude our own session
+            if (s.DeviceId === myDeviceId) return false;
+            // Filter to recently active sessions
+            if (s.LastActivityDate) {
+                const lastActive = new Date(s.LastActivityDate).getTime();
+                if (lastActive < cutoff) return false;
+            }
+            return true;
+        });
+    }
+
+    async reportSessionCapabilities() {
+        try {
+            await this.makeRequest('/Sessions/Capabilities/Full', 'POST', {
+                PlayableMediaTypes: ['Video', 'Audio'],
+                SupportedCommands: ['Play', 'PlayState', 'Seek', 'SetVolume', 'ToggleMute'],
+                SupportsMediaControl: true,
+                SupportsContentUploading: false,
+                SupportsPersistentIdentifier: true,
+                SupportsSync: false
+            });
+            console.log('[LegitFlix] Session capabilities reported.');
+        } catch (e) {
+            console.warn('[LegitFlix] Could not report session capabilities:', e);
+        }
+    }
+
+    async playOnSession(sessionId, itemId) {
+        return await this.makeRequest(`/Sessions/${sessionId}/Playing?itemIds=${itemId}&playCommand=PlayNow`, 'POST');
+    }
+
+    async sendPlaystateCommand(sessionId, command, seekPositionTicks = null) {
+        let query = '';
+        if (seekPositionTicks !== null) {
+            query = `?seekPositionTicks=${seekPositionTicks}`;
+        }
+        return await this.makeRequest(`/Sessions/${sessionId}/Playing/${command}${query}`, 'POST');
+    }
+
+    // --- SyncPlay REST APIs ---
     async getSyncPlayGroups() {
-        if (!this.api) this.initialize();
-        const response = await this.api.syncPlay.syncPlayGetGroups();
-        return response.data;
+        return await this.makeRequest('/SyncPlay/List');
     }
 
     async joinSyncPlayGroup(groupId) {
-        if (!this.api) this.initialize();
-        return this.api.syncPlay.syncPlayJoinGroup({
-            joinGroupRequestDto: {
-                GroupId: groupId
-            }
+        // Automatically ensure WebSocket is active when joining SyncPlay
+        this.connectWebSocket();
+        return await this.makeRequest('/SyncPlay/Join', 'POST', {
+            GroupId: groupId
         });
     }
 
     async leaveSyncPlayGroup() {
-        if (!this.api) this.initialize();
-        return this.api.syncPlay.syncPlayLeaveGroup();
+        this.disconnectWebSocket();
+        return await this.makeRequest('/SyncPlay/Leave', 'POST');
     }
 
     async createSyncPlayGroup(name) {
-        if (!this.api) this.initialize();
-        return this.api.syncPlay.syncPlayCreateGroup({
-            newGroupRequestDto: {
-                GroupName: name
-            }
+        const res = await this.makeRequest('/SyncPlay/New', 'POST', {
+            GroupName: name
+        });
+        // Auto connect socket on group creation
+        this.connectWebSocket();
+        return res;
+    }
+
+    async syncPlayPause() {
+        return await this.makeRequest('/SyncPlay/Pause', 'POST');
+    }
+
+    async syncPlayUnpause() {
+        return await this.makeRequest('/SyncPlay/Unpause', 'POST');
+    }
+
+    async syncPlaySeek(positionTicks) {
+        return await this.makeRequest('/SyncPlay/Seek', 'POST', {
+            PositionTicks: positionTicks
+        });
+    }
+
+    async syncPlayBuffering(positionTicks, isPlaying) {
+        return await this.makeRequest('/SyncPlay/Buffering', 'POST', {
+            PositionTicks: positionTicks,
+            IsPlaying: isPlaying,
+            When: new Date().toISOString()
+        });
+    }
+
+    async syncPlayReady(positionTicks, isPlaying) {
+        return await this.makeRequest('/SyncPlay/Ready', 'POST', {
+            PositionTicks: positionTicks,
+            IsPlaying: isPlaying,
+            When: new Date().toISOString()
+        });
+    }
+
+    async syncPlayPing(positionTicks) {
+        return await this.makeRequest('/SyncPlay/Ping', 'POST', {
+            Ping: positionTicks
         });
     }
 

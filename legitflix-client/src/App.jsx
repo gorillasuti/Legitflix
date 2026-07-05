@@ -15,8 +15,6 @@ import ItemRedirect from './pages/ItemRedirect/ItemRedirect';
 import Player from './pages/Player/Player';
 import Library from './pages/Library/Library';
 import Favorites from './pages/Favorites/Favorites';
-
-
 import QuickConnectModal from './components/QuickConnectModal';
 
 function AppContent() {
@@ -56,7 +54,6 @@ function AppContent() {
       if (type === 'none') return;
 
       const hash = window.location.hash || '';
-      if (hash.includes('/play') || hash.includes('/login') || hash.includes('/select-server') || hash.includes('/select-user')) {
       if (hash.includes('/login') || hash.includes('/select-server') || hash.includes('/select-user')) {
         lastActivity = Date.now();
         return;
@@ -233,8 +230,7 @@ function AppContent() {
             const tag = user.PrimaryImageTag || user.ImageTags.Primary;
             finalAvatarUrl = `${jellyfinService.api.basePath}/Users/${user.Id}/Images/Primary?tag=${tag}&quality=90`;
           } else {
-            const basePath = import.meta.env.PROD ? '/LegitFlix/Client' : '';
-            finalAvatarUrl = `${basePath}/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
+            finalAvatarUrl = `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
           }
 
           if (config.appBackground !== finalBannerUrl || config.userAvatar !== finalAvatarUrl) {
