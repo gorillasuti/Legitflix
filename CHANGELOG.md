@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+
+## [v1.1.1.0]
+
+
+### Changed
+- **Player Submenu Action Styling**: Polished select margins and added hover highlight visual feedback to the "Style Appearance" trigger in the player subtitle menu.
+- **Profile Playback Settings Sync**: Synchronized the Profile page's "Playback" settings tab with all player options from the settings modal (adding Seek Time dropdown, Auto Skip Intros toggle, and Auto Skip Recaps toggle) to make the Profile page a complete, granular settings collective.
+
+### Fixed
+- **Settings Modal Typo Fixes**: Corrected `Ctrl + K` description inside Keyboard Shortcuts list and removed beta suffix label from playback speed option headers.
+- **Settings Modal Divider Polishes**: Removed overlapping inline border-top styles in Settings Modal configuration blocks and added scoped CSS resets.
+- **Hover Card Metadata Resolution**: Added lazy-loading metadata queries (supporting structured parent series lookups for episodic items, direct series details fetches, and individual defensive try-catch safety wrappers) to HoverCard elements to support resolution, HDR, language, and genre badges for simplified item lists on the Home page (and prioritized genre classification over general "Animation").
+- **Vite Dev Server Path Typo**: Corrected the platform default Vite connection URL in `run-dev.example.ps1` to match the client router config.
+- **Settings Modal Reset Button**: Hooked 16 missing settings into the Reset button — all 9 subtitle styling options, 3 poster tag toggles, 3 playback behavior toggles (auto-pause, auto-resume, auto-PiP), long-press speed, random libraries, Jellyseerr button text, and Jellyseerr background.
+- **Recap Skip False Positives**: Removed `'prologue'` from the recap chapter detection keywords — prologues are actual story content and must not be auto-skipped as recaps.
+- **Separate Intro & Recap Skip Toggles**: Split the combined "Auto Skip Intros & Recaps" toggle into two independent settings: "Auto Skip Intros" (`playerAutoSkip`) and "Auto Skip Recaps" (`playerAutoSkipRecap`), each with its own toggle, config key, save/reset/sync handling, and ThemeContext wiring.
+
 ## [v1.1.0.0]
 
 ### Added

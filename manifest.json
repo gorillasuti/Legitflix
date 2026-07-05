@@ -3,7 +3,15 @@
         "owner": "Legitflix",
         "versions": [
             {
-                "changelog": "v1.1.0: Added server-side settings sync, poster resolution badges, gamepad support, and security hardening against XSS and prototype pollution.",
+                "changelog": "v1.1.1.0: Maintenance, polish, and recap skip refinements. Split intro/recap toggles and fixed UI divider clashes.",
+                "version": "1.1.1.0",
+                "checksum": "1b5c067b7b84b3b93100a66d277191d8",
+                "timestamp": "2026-07-05T20:22:15Z",
+                "targetAbi": "10.11.11.0",
+                "sourceUrl": "https://github.com/gorillasuti/Legitflix/releases/download/v1.1.0.0/LegitFlix.Plugin_1.1.0.0.zip"
+            },
+            {
+                "changelog": "v1.1.0.0: Added server-side settings sync, poster resolution badges, gamepad support, and security hardening against XSS and prototype pollution.",
                 "version": "1.1.0.0",
                 "checksum": "5640f5a123bdacdb2468ec5558eea633",
                 "timestamp": "2026-07-05T20:22:15Z",
