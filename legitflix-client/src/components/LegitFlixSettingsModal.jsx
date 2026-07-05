@@ -291,27 +291,58 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
     };
 
     const handleReset = () => {
+        // Appearance
         setAccentColor('#ff7e00');
         setThemeMode('dark');
         setLogoUrl('');
         setCustomHex('');
+
+        // Navigation
         setShowCategories(true);
         setEnableJellyseerr(true);
         setJellyseerrUrl('https://request.legitflix.eu');
+        setJellyseerrText('Request Feature');
+        setJellyseerrBackground('');
         setShowLibraryTitles(true);
         setShowNavbarRequests(true);
+
+        // Home Screen
         setContentTypes({ Movie: true, Series: true, MusicAlbum: false, Audio: false, MusicVideo: false });
+        setSortMode('latest');
 
         // Random Config Reset
         setShowNavbarRandom(true);
         setRandomFilters({ Movie: true, Series: true, Episode: true });
+        setRandomLibraries([]);
 
         setSortMode('latest');
+        // Poster Tags Reset
+        setShowQualityTags(false);
+        setShowGenreTags(false);
+        setShowLanguageTags(false);
 
         // Player Reset
         setPlayerSeekTime(10);
         setPlayerAutoSkip(false);
+        setPlayerAutoSkipRecap(false);
         setPlayerAutoNextEp(true);
+
+        // Playback Behaviors Reset
+        setPlayerAutoPause(false);
+        setPlayerAutoResume(false);
+        setPlayerAutoPip(false);
+        setPlayerLongPressSpeed(true);
+
+        // Subtitle Style Reset
+        setSubtitleLanguagePreference('eng');
+        setSubtitleMode('Default');
+        setSubtitleBurnIn('Auto');
+        setSubtitleTextSize('Normal');
+        setSubtitleTextWeight('Normal');
+        setSubtitleFontFamily('Default');
+        setSubtitleColor('#ffffff');
+        setSubtitleShadow('Drop Shadow');
+        setSubtitleVerticalPosition('Bottom');
     };
 
     const handleAvatarFile = async (url) => {
