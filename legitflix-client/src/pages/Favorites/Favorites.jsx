@@ -65,7 +65,7 @@ const Favorites = () => {
                 limit: ITEMS_PER_PAGE,
                 startIndex: pageIndex * ITEMS_PER_PAGE,
                 recursive: true,
-                fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'UserData', 'MediaSources'],
+                fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'UserData', 'MediaSources', 'MediaStreams', 'Width', 'Height'],
                 filters: ['IsFavorite'], // Key difference: Always filter by Favorites
             };
 

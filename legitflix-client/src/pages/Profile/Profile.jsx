@@ -16,6 +16,7 @@ const TABS = [
     { id: 'playback', label: 'Playback' },
     { id: 'subtitles', label: 'Subtitles' },
     { id: 'quickconnect', label: 'Quick Connect' },
+    { id: 'shortcuts', label: 'Shortcuts' },
     { id: 'advanced', label: 'Advanced' },
 ];
 
@@ -57,6 +58,11 @@ const Profile = () => {
     const [groupCollections, setGroupCollections] = useState(true);
     const [displayMissing, setDisplayMissing] = useState(false);
     const [displayUnaired, setDisplayUnaired] = useState(false);
+
+    // Random button state filters
+    const [randomFilters, setRandomFilters] = useState(config.randomContentFilters || { Movie: true, Series: true, Episode: true });
+    const [randomLibraries, setRandomLibraries] = useState(config.randomLibraries || []);
+    const [availableLibraries, setAvailableLibraries] = useState([]);
     const [hidePlayedInLatest, setHidePlayedInLatest] = useState(false);
     const [homeMsg, setHomeMsg] = useState(null);
     const [homeLoading, setHomeLoading] = useState(false);
@@ -109,6 +115,19 @@ const Profile = () => {
                 setDisplayMissing(cfg.DisplayMissingEpisodes === true);
                 setDisplayUnaired(cfg.DisplayUnairedEpisodes === true);
                 setHidePlayedInLatest(cfg.HidePlayedInLatest === true);
+
+                try {
+                    const views = await jellyfinService.getUserViews(u.Id);
+                    if (views && views.Items) {
+                        setAvailableLibraries(views.Items.map(item => ({
+                            Id: item.Id,
+                            Name: item.Name,
+                            Type: item.CollectionType
+                        })));
+                    }
+                } catch (e) {
+                    console.error("Failed to load libraries for Profile settings", e);
+                }
 
                 setSubLang(cfg.SubtitleLanguagePreference || '');
                 setSubMode(cfg.SubtitleMode || 'Default');
@@ -368,6 +387,13 @@ const Profile = () => {
             });
 
             await jellyfinService.updateDisplayPreferences(prefsId, prefs);
+
+            // Update theme settings for the randomizer button
+            updateConfig({
+                randomLibraries,
+                randomContentFilters: randomFilters
+            });
+
             setHomeMsg({ type: 'success', text: 'Home screen preferences updated successfully!' });
             window.dispatchEvent(new CustomEvent('homeSectionsUpdated'));
         } catch (err) {
@@ -724,7 +750,8 @@ const Profile = () => {
     );
 
     const renderHomeScreen = () => (
-        <div className="settings-card">
+        <>
+            <div className="settings-card">
             <h3 className="settings-card-title">Home Screen Sections</h3>
             <p className="settings-description">Choose which sections to display on your home screen.</p>
             <div className="setting-rows-list">
@@ -744,8 +771,10 @@ const Profile = () => {
                     </div>
                 ))}
             </div>
+        </div>
 
-            <h3 className="settings-card-title" style={{ marginTop: '8px' }}>Jellyfin Library Options</h3>
+        <div className="settings-card">
+            <h3 className="settings-card-title">Jellyfin Library Options</h3>
             <p className="settings-description">Configure native Jellyfin content preferences for your account.</p>
 
             <div className="setting-rows-list">
@@ -809,6 +838,177 @@ const Profile = () => {
                     </label>
                 </div>
             </div>
+        </div>
+
+        <div className="settings-card">
+            <h3 className="settings-card-title">Poster & Navigation Overlays</h3>
+                <p className="settings-description">Select which badges appear on media card posters and navbar menus.</p>
+
+                <div className="setting-rows-list">
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Quality Tags</span>
+                            <span className="setting-hint">Show UHD, 4K, 1080p, and HDR badges on hover overlay</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showQualityTags}
+                                onChange={e => updateConfig({ showQualityTags: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Genre Tags</span>
+                            <span className="setting-hint">Show primary category icons (e.g. Comedy, Action) on hover overlay</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showGenreTags}
+                                onChange={e => updateConfig({ showGenreTags: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+
+                    <div className="setting-row">
+                        <div className="setting-row-label">
+                            <span>Audio Language Flags</span>
+                            <span className="setting-hint">Show country flag badges of main audio language on hover overlay</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showLanguageTags}
+                                onChange={e => updateConfig({ showLanguageTags: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+
+                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                        <div className="setting-row-label">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Navbar Categories
+                                {config.enableGlobalOverwrites && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </span>
+                            <span className="setting-hint">Display Movies, TV Shows, etc. tabs in navigation bar</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showNavbarCategories}
+                                disabled={config.enableGlobalOverwrites}
+                                onChange={e => updateConfig({ showNavbarCategories: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+
+                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row-label">
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            Show Random Play Button
+                            {config.enableGlobalOverwrites && (
+                                <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                            )}
+                        </span>
+                        <span className="setting-hint">Display the random play picker button in navigation bar</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.showNavbarRandom}
+                            disabled={config.enableGlobalOverwrites}
+                            onChange={e => updateConfig({ showNavbarRandom: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+
+                {!!config.showNavbarRandom && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingLeft: '12px', borderLeft: '2px solid rgba(255,255,255,0.05)', marginBottom: '15px', marginTop: '-5px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="setting-row-label">
+                                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Randomize From</span>
+                                <span className="setting-hint">Select which libraries should be used for the random button. (None selected = All)</span>
+                            </div>
+                            <div className="content-type-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                                {availableLibraries.map(lib => {
+                                    const isSelected = randomLibraries.includes(lib.Id);
+                                    return (
+                                        <button
+                                            key={lib.Id}
+                                            type="button"
+                                            className={`content-type-chip ${isSelected ? 'active' : ''}`}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setRandomLibraries(prev => prev.filter(id => id !== lib.Id));
+                                                } else {
+                                                    setRandomLibraries(prev => [...prev, lib.Id]);
+                                                }
+                                            }}
+                                        >
+                                            <span className="material-icons" style={{ fontSize: '16px', marginRight: '4px' }}>
+                                                {lib.Type === 'movies' ? 'movie' : (lib.Type === 'tvshows' ? 'tv' : 'folder')}
+                                            </span>
+                                            {lib.Name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="setting-row-label">
+                                <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Content Types</span>
+                                <span className="setting-hint">Filter by content type</span>
+                            </div>
+                            <div className="content-type-grid" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                {['Movie', 'Series', 'Episode'].map(type => (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        className={`content-type-chip ${randomFilters[type] ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setRandomFilters(prev => ({ ...prev, [type]: !prev[type] }));
+                                        }}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row-label">
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            Show Requests in Navbar
+                            {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
+                                <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                            )}
+                        </span>
+                        <span className="setting-hint">Display the requests integration button in navigation bar</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.showNavbarRequests}
+                            disabled={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride}
+                            onChange={e => updateConfig({ showNavbarRequests: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+            </div>
 
             {homeMsg && (
                 <div className={`form-message ${homeMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
@@ -821,7 +1021,8 @@ const Profile = () => {
             <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveHomeScreen} disabled={homeLoading} style={{ marginTop: '20px' }}>
                 {homeLoading ? 'Saving...' : 'Save Preferences'}
             </button>
-        </div>
+            </div>
+        </>
     );
 
     const renderPlayback = () => (
@@ -932,6 +1133,76 @@ const Profile = () => {
                         <span className="slider"></span>
                     </label>
                 </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Auto Pause on Tab Switch</span>
+                        <span className="setting-hint">Pause playback when you switch browser tabs</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.playerAutoPause}
+                            onChange={e => updateConfig({ playerAutoPause: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Auto Resume on Tab Switch</span>
+                        <span className="setting-hint">Resume playback automatically when returning to tab</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.playerAutoResume}
+                            onChange={e => updateConfig({ playerAutoResume: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Auto Picture-in-Picture</span>
+                        <span className="setting-hint">Automatically enter PiP mode when switching browser tabs</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.playerAutoPip}
+                            onChange={e => updateConfig({ playerAutoPip: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Long Press for 2x Speed</span>
+                        <span className="setting-hint">Hold on player surface to playback at double speed</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={config.playerLongPressSpeed !== false}
+                            onChange={e => updateConfig({ playerLongPressSpeed: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <div className="setting-row-label">
+                        <span>Enable Gamepad Control</span>
+                        <span className="setting-hint">Control player and navigate the app using a connected gamepad</span>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={!!config.enableGamepad}
+                            onChange={e => updateConfig({ enableGamepad: e.target.checked })}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
             </div>
             {playbackMsg && (
                 <div className={`form-message ${playbackMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
@@ -948,8 +1219,9 @@ const Profile = () => {
     );
 
     const renderSubtitles = () => (
-        <div className="settings-card">
-            <h3 className="settings-card-title">Subtitle Preferences</h3>
+        <>
+            <div className="settings-card">
+                <h3 className="settings-card-title">Subtitle Preferences</h3>
             <div className="form-group">
                 <label>Preferred Subtitle Language</label>
                 <select
@@ -1010,6 +1282,101 @@ const Profile = () => {
                     </label>
                 </div>
             </div>
+        </div>
+
+        <div className="settings-card">
+            <h3 className="settings-card-title">Subtitle Style & Appearance</h3>
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Text Size</label>
+                <select className="settings-select" value={config.subtitleTextSize} onChange={e => updateConfig({ subtitleTextSize: e.target.value })}>
+                    <option value="Small">Small</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                    <option value="Extra Large">Extra Large</option>
+                </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Text Weight</label>
+                <select className="settings-select" value={config.subtitleTextWeight} onChange={e => updateConfig({ subtitleTextWeight: e.target.value })}>
+                    <option value="Light">Light</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Bold">Bold</option>
+                </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Font Family</label>
+                <select className="settings-select" value={config.subtitleFontFamily} onChange={e => updateConfig({ subtitleFontFamily: e.target.value })}>
+                    <option value="Default">Default</option>
+                    <option value="Serif">Serif</option>
+                    <option value="Sans-Serif">Sans-Serif</option>
+                    <option value="Monospace">Monospace</option>
+                </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Text Color</label>
+                <select className="settings-select" value={config.subtitleColor} onChange={e => updateConfig({ subtitleColor: e.target.value })}>
+                    <option value="#ffffff">White</option>
+                    <option value="#ffff00">Yellow</option>
+                    <option value="#00ff00">Green</option>
+                    <option value="#00ffff">Cyan</option>
+                    <option value="#ff00ff">Magenta</option>
+                    <option value="#ff0000">Red</option>
+                    <option value="#000000">Black</option>
+                </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Drop Shadow</label>
+                <select className="settings-select" value={config.subtitleShadow} onChange={e => updateConfig({ subtitleShadow: e.target.value })}>
+                    <option value="None">None</option>
+                    <option value="Drop Shadow">Drop Shadow</option>
+                    <option value="Raised">Raised</option>
+                    <option value="Depressed">Depressed</option>
+                    <option value="Outline">Outline</option>
+                </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label>Vertical Position</label>
+                <select className="settings-select" value={config.subtitleVerticalPosition} onChange={e => updateConfig({ subtitleVerticalPosition: e.target.value })}>
+                    <option value="Bottom">Bottom</option>
+                    <option value="Top">Top</option>
+                </select>
+            </div>
+
+            <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+                <label className="setting-row-label" style={{ fontSize: '0.85rem', color: '#aaa', display: 'block', marginBottom: '8px' }}>Live Subtitle Preview</label>
+                <div className="lf-subtitle-preview-box" style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '80px',
+                    background: '#141414',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '6px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <span style={{
+                        fontSize: config.subtitleTextSize === 'Small' ? '0.75rem' : config.subtitleTextSize === 'Normal' ? '1rem' : config.subtitleTextSize === 'Medium' ? '1.25rem' : config.subtitleTextSize === 'Large' ? '1.5rem' : '1.75rem',
+                        color: config.subtitleColor,
+                        fontWeight: config.subtitleTextWeight === 'Normal' ? 'normal' : config.subtitleTextWeight === 'Bold' ? 'bold' : '300',
+                        fontFamily: config.subtitleFontFamily === 'Default' ? 'inherit' : config.subtitleFontFamily === 'Serif' ? 'serif' : config.subtitleFontFamily === 'Sans-Serif' ? 'sans-serif' : 'monospace',
+                        textShadow: config.subtitleShadow === 'None' ? 'none' : config.subtitleShadow === 'Drop Shadow' ? '0px 2px 4px rgba(0,0,0,0.9)' : config.subtitleShadow === 'Raised' ? '1px 1px 0px #000, 2px 2px 0px #000' : config.subtitleShadow === 'Depressed' ? '1px 1px 0px #fff, -1px -1px 0px #000' : '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+                        position: 'absolute',
+                        bottom: config.subtitleVerticalPosition === 'Bottom' ? '12px' : 'auto',
+                        top: config.subtitleVerticalPosition === 'Top' ? '12px' : 'auto',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        The quick brown fox jumps over the lazy dog.
+                    </span>
+                </div>
+            </div>
+
             {subtitlesMsg && (
                 <div className={`form-message ${subtitlesMsg.type}`} style={{ marginTop: '16px', marginBottom: '16px' }}>
                     <span className="material-icons">
@@ -1021,8 +1388,72 @@ const Profile = () => {
             <button className="lf-btn lf-btn--primary lf-btn--ring-hover lf-btn--sm" onClick={handleSaveSubtitles} disabled={subtitlesLoading} style={{ marginTop: '20px' }}>
                 {subtitlesLoading ? 'Saving...' : 'Save Preferences'}
             </button>
-        </div>
+            </div>
+        </>
     );
+
+    const renderShortcuts = () => {
+        const isAdmin = !!user?.Policy?.IsAdministrator;
+        const shortcuts = [
+            { keys: 'Shift + H', desc: 'Go to Home Screen' },
+            { keys: 'F4', desc: 'Open Search Panel' },
+            { keys: 'Ctrl + K', desc: 'Open Theme Accent Customizer' },
+            { keys: 'D', desc: 'Go to Dashboard', adminOnly: true },
+            { keys: 'Q', desc: 'Quick Connect' },
+            { keys: 'R', desc: 'Play Random Item' },
+            { keys: 'Space / Click', desc: 'Play / Pause Video' },
+            { keys: 'Space (Hold) / Click (Hold)', desc: 'Fast-Forward at 2.0x playback speed' },
+            { keys: 'Arrow Left / Right', desc: 'Seek Backward / Forward' },
+            { keys: 'A', desc: 'Cycle Video Aspect Ratio' },
+            { keys: 'I', desc: 'Toggle Playback Info Overlay' },
+            { keys: 'S', desc: 'Open Subtitle Search Menu' },
+            { keys: 'C', desc: 'Cycle Subtitle Tracks' },
+            { keys: 'V', desc: 'Cycle Audio Tracks' },
+            { keys: '+ / -', desc: 'Increase / Decrease Playback Speed' },
+            { keys: ',', desc: 'Step Back 1 Frame (when paused)' },
+            { keys: '.', desc: 'Step Forward 1 Frame (when paused)' }
+        ];
+
+        const visibleShortcuts = shortcuts.filter(sh => !sh.adminOnly || isAdmin);
+
+        return (
+            <div className="settings-card">
+                <h3 className="settings-card-title">Keyboard Shortcuts</h3>
+                <p className="settings-description">Use keyboard buttons to control navigation and media playback.</p>
+
+                <div className="lf-shortcuts-list" style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    marginTop: '15px'
+                }}>
+                    {visibleShortcuts.map((sh, idx) => (
+                        <div key={idx} className="lf-shortcut-row" style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px 14px',
+                            borderRadius: '6px',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.05)'
+                        }}>
+                            <span style={{ fontSize: '0.85rem', color: '#ddd' }}>{sh.desc}</span>
+                            <kbd style={{
+                                background: '#333',
+                                border: '1px solid #555',
+                                borderRadius: '4px',
+                                color: '#fff',
+                                padding: '3px 8px',
+                                fontSize: '0.8rem',
+                                fontFamily: 'monospace',
+                                boxShadow: '0 2px 0 #111'
+                            }}>{sh.keys}</kbd>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     const renderQuickConnect = () => (
         <div className="settings-card">
@@ -1179,6 +1610,7 @@ const Profile = () => {
             case 'playback': return renderPlayback();
             case 'subtitles': return renderSubtitles();
             case 'quickconnect': return renderQuickConnect();
+            case 'shortcuts': return renderShortcuts();
             case 'advanced': return renderAdvanced();
             default: return null;
         }
@@ -1204,15 +1636,6 @@ const Profile = () => {
                             </button>
                         ))}
                     </div>
-
-                    <button
-                        className="settings-tab-logout"
-                        onClick={handleLogout}
-                        title="Sign Out"
-                    >
-                        <span className="material-icons" style={{ fontSize: '18px', marginRight: '6px', verticalAlign: 'middle' }}>logout</span>
-                        Sign Out
-                    </button>
                 </div>
 
                 {/* BANNER */}

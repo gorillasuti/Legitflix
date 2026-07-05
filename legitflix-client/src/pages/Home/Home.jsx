@@ -371,7 +371,7 @@ const Home = () => {
                         limit: 40,
                         recursive: true,
                         includeItemTypes: typeof config.heroMediaTypes === 'string' ? config.heroMediaTypes.split(',') : (config.heroMediaTypes || ['Movie', 'Series']),
-                        fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'Genres', 'ImageTags', 'BackdropImageTags', 'RunTimeTicks', 'UserData', 'MediaStreams', 'ChildCount', 'RecursiveItemCount']
+                        fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'Genres', 'ImageTags', 'BackdropImageTags', 'RunTimeTicks', 'UserData', 'MediaStreams', 'Width', 'Height', 'ChildCount', 'RecursiveItemCount']
                     })),
                     safeFetch(jellyfinService.getDisplayPreferences("usersettings"), {})
                 ]);

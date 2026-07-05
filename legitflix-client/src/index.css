@@ -107,6 +107,8 @@ video::cue {
   color: var(--lf-sub-color, white) !important;
   background-color: var(--lf-sub-bg, transparent) !important;
   text-shadow: var(--lf-sub-shadow, 0px 1px 2px rgba(0, 0, 0, 0.8)) !important;
+  font-weight: var(--lf-sub-weight, normal) !important;
+  font-family: var(--lf-sub-font, sans-serif) !important;
 }
 
 /* -- Premium Toast Notification -- */
@@ -159,12 +161,12 @@ video::cue {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  background-color: #000;
+  background-color: #050505;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .lf-screensaver-backdrop-img {
@@ -174,61 +176,69 @@ video::cue {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .lf-screensaver-backdrop-img.active {
-  opacity: 0.65;
+  opacity: 0.45;
 }
 
 .lf-screensaver-dim {
-  background-color: rgba(0, 0, 0, 0.95);
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(10, 10, 10, 0.25) 0%, rgba(5, 5, 5, 0.95) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .lf-screensaver-info {
   position: absolute;
+  z-index: 2;
   color: #ffffff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: all 1.2s ease-in-out;
+  transition: all 1.2s cubic-bezier(0.165, 0.84, 0.44, 1);
   pointer-events: none;
   font-family: 'Outfit', 'Inter', sans-serif;
   user-select: none;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 24px 36px;
-  border-radius: 12px;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  backdrop-filter: none;
+  border: none;
 }
 
 .lf-screensaver-clock {
-  font-size: 5rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -2px;
+  font-size: 6rem;
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -1px;
+  color: #ffffff;
 }
 
 .lf-screensaver-date {
-  font-size: 1.5rem;
-  font-weight: 400;
-  opacity: 0.8;
-  margin-top: 8px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--clr-accent);
+  margin-top: 16px;
 }
 
 .lf-screensaver-logo {
-  height: 40px;
+  height: 38px;
   object-fit: contain;
-  margin-bottom: 12px;
-  opacity: 0.85;
+  margin-bottom: 20px;
 }
 
 .lf-screensaver-hint {
   position: absolute;
-  bottom: 40px;
-  color: #fff;
-  opacity: 0.4;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+  bottom: 50px;
+  z-index: 2;
+  color: #ffffff;
+  opacity: 0.65;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }

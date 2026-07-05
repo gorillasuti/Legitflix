@@ -152,7 +152,7 @@ const Library = () => {
                 startIndex: pageIndex * ITEMS_PER_PAGE,
                 recursive: true,
                 includeItemTypes: ['Movie', 'Series'],
-                fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'UserData', 'MediaSources'],
+                fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'CriticRating', 'OfficialRating', 'UserData', 'MediaStreams', 'Width', 'Height', 'Genres'],
                 filters: [],
             };
 

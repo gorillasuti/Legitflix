@@ -6,12 +6,17 @@ const JellyseerrCard = () => {
     const { config } = useTheme();
 
     // Default to true if undefined, consistent with Settings Modal logic
-    if (config.enableJellyseerr === false) return null;
+    if (config.enableJellyseerr === false || config.showHomeRequestsCard === false) return null;
+
+    // Validate the configured URL before rendering as href to prevent javascript: URI injection
+    const safeJellyseerrUrl = /^https?:\/\//i.test(config.jellyseerrUrl ?? '')
+        ? config.jellyseerrUrl
+        : '#';
 
     return (
         <div className="library-card jellyseerr-card-wrapper">
             <a
-                href={config.jellyseerrUrl}
+                href={safeJellyseerrUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="jellyseerr-card"

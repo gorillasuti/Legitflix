@@ -486,8 +486,8 @@ const EditImagesModal = ({ isOpen, onClose, itemId }) => {
                                                         return (
                                                             <div key={index} className="lf-remote-img-card">
                                                                 <div className={`lf-remote-img-preview ${isTransparent ? 'transparent-bg' : ''}`}>
-                                                                    <a href={img.Url} target="_blank" rel="noopener noreferrer">
-                                                                        <img src={img.Url} alt={img.ProviderName} />
+                                                                    <a href={/^https?:\/\//i.test(img.Url) ? img.Url : '#'} target="_blank" rel="noopener noreferrer">
+                                                                        <img src={/^https?:\/\//i.test(img.Url) ? img.Url : ''} alt={img.ProviderName} />
                                                                     </a>
                                                                 </div>
                                                                 <div className="lf-remote-img-meta">

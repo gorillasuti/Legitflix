@@ -867,6 +867,23 @@ select.legit-input option {
     color: var(--clr-accent, #ff7e00);
 }
 
+.legit-select {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.legit-select option {
+    background-color: #252525 !important;
+    color: #ffffff !important;
+}
+
 .legit-input:disabled,
 .legit-select:disabled {
     background: rgba(255, 255, 255, 0.02) !important;

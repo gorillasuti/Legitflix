@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { jellyfinService } from '../services/jellyfin';
 import './SyncPlayModal.css';
+
+const STORAGE_KEY = 'legitflix_syncplay_joined_group';
 
 const SyncPlayModal = ({ isOpen, onClose }) => {
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newGroupName, setNewGroupName] = useState('');
-    const [joinedGroup, setJoinedGroup] = useState(null);
+    // Persist the joined group across modal open/close via localStorage
+    const [joinedGroup, setJoinedGroup] = useState(() => {
+        try { return localStorage.getItem(STORAGE_KEY) || null; } catch { return null; }
+    });
+    const pollRef = useRef(null);
 
     const fetchGroups = async () => {
         try {
@@ -20,10 +26,48 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
         }
     };
 
+    // On open: restore persisted join state, refresh groups, start polling
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            // Stop polling when modal closes
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+            return;
+        }
+
+        // Restore persisted joined group
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            setJoinedGroup(stored || null);
+        } catch {}
+
         fetchGroups();
+
+        // Live polling every 5 seconds while the modal is open
+        pollRef.current = setInterval(() => {
+            fetchGroups();
+        }, 5000);
+
+        return () => {
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+        };
     }, [isOpen]);
+
+    const persistJoin = (groupId) => {
+        setJoinedGroup(groupId);
+        try {
+            if (groupId) {
+                localStorage.setItem(STORAGE_KEY, groupId);
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        } catch {}
+    };
 
     const handleCreate = async () => {
         if (!newGroupName.trim()) return;
@@ -31,6 +75,15 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
             await jellyfinService.createSyncPlayGroup(newGroupName.trim());
             setNewGroupName('');
             await fetchGroups();
+            // After creating, fetch the new group and auto-join it
+            const updatedGroups = await jellyfinService.getSyncPlayGroups();
+            const created = updatedGroups?.find(g => g.GroupName === newGroupName.trim());
+            if (created) {
+                await jellyfinService.joinSyncPlayGroup(created.GroupId);
+                persistJoin(created.GroupId);
+                window.dispatchEvent(new CustomEvent('syncPlayJoined', { detail: { groupId: created.GroupId } }));
+                setGroups(updatedGroups || []);
+            }
         } catch (err) {
             console.error("Failed to create SyncPlay group", err);
         }
@@ -39,8 +92,11 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
     const handleJoin = async (groupId) => {
         try {
             await jellyfinService.joinSyncPlayGroup(groupId);
-            setJoinedGroup(groupId);
-            onClose();
+            persistJoin(groupId);
+            // Tell mounted player hooks to activate SyncPlay synchronization
+            window.dispatchEvent(new CustomEvent('syncPlayJoined', { detail: { groupId } }));
+            // Refresh group list so the member count updates before the modal closes
+            await fetchGroups();
         } catch (err) {
             console.error("Failed to join group", err);
         }
@@ -49,7 +105,10 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
     const handleLeave = async () => {
         try {
             await jellyfinService.leaveSyncPlayGroup();
-            setJoinedGroup(null);
+            persistJoin(null);
+            // Tell mounted player hooks to deactivate SyncPlay synchronization
+            window.dispatchEvent(new CustomEvent('syncPlayLeft', { detail: null }));
+            await fetchGroups();
             onClose();
         } catch (err) {
             console.error("Failed to leave group", err);
@@ -75,6 +134,7 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
                             placeholder="New group name..."
                             value={newGroupName}
                             onChange={e => setNewGroupName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleCreate()}
                         />
                         <button 
                             className="lf-syncplay-btn-create" 
@@ -94,6 +154,8 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
                         <div className="lf-syncplay-device-list">
                             {groups.map(g => {
                                 const isJoined = joinedGroup === g.GroupId;
+                                // Bug A fix: Jellyfin uses "Participants" not "Members"
+                                const memberCount = g.Participants?.length ?? g.Members?.length ?? 0;
                                 return (
                                     <button
                                         key={g.GroupId}
@@ -103,7 +165,12 @@ const SyncPlayModal = ({ isOpen, onClose }) => {
                                         <span className="material-icons lf-syncplay-device-icon">group</span>
                                         <div className="lf-syncplay-device-info">
                                             <span className="lf-syncplay-device-name">{g.GroupName}</span>
-                                            <span className="lf-syncplay-device-client">{g.Members?.length || 0} members active</span>
+                                            <span className="lf-syncplay-device-client">
+                                                {memberCount === 1
+                                                    ? '1 member active'
+                                                    : `${memberCount} members active`}
+                                                {isJoined ? ' · Joined' : ''}
+                                            </span>
                                         </div>
                                     </button>
                                 );
