@@ -96,3 +96,41 @@
 .media-card-wrapper.is-selected .media-card {
     box-shadow: 0 0 0 2px var(--clr-accent, #ff7e00) !important;
 }
+
+/* -- Poster Overlay Badges -- */
+.media-card-badge-container {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.media-card-badge {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #eee;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.media-card-badge.quality {
+    border-color: rgba(var(--clr-accent-rgb, 255, 126, 0), 0.4);
+    color: var(--clr-accent, #ff7e00);
+}
+
+.media-card-badge.rating {
+    border-color: rgba(255, 215, 0, 0.4);
+    color: #ffd700;
+}

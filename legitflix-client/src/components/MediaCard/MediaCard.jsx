@@ -1,9 +1,11 @@
 import React from 'react';
 import { jellyfinService } from '../../services/jellyfin';
+import { useTheme } from '../../context/ThemeContext';
 import HoverCard from '../HoverCard/HoverCard';
 import './MediaCard.css';
 
 const MediaCard = ({ item, onClick, onContextMenu, isSelected, isSelectionMode }) => {
+    const { config } = useTheme();
     const imageUrl = `${jellyfinService.api.basePath}/Items/${item.Id}/Images/Primary?fillHeight=300&fillWidth=200&quality=90`;
 
     const handleContextMenu = (e) => {
@@ -22,6 +24,8 @@ const MediaCard = ({ item, onClick, onContextMenu, isSelected, isSelectionMode }
         return parts.join(" · ") || "";
     };
 
+
+
     return (
         <div
             className={`media-card-wrapper ${isSelected ? 'is-selected' : ''}`}
@@ -37,7 +41,7 @@ const MediaCard = ({ item, onClick, onContextMenu, isSelected, isSelectionMode }
                       />
                       {isSelectionMode && (
                           <div className={`backdrop-selection-overlay ${isSelected ? 'is-selected' : ''}`}>
-                              {isSelected && <span className="material-icons" style={{ fontSize: '16px', color: '#fff', fontWeight: 'bold' }}>check</span>}
+                               {isSelected && <span className="material-icons" style={{ fontSize: '16px', color: '#fff', fontWeight: 'bold' }}>check</span>}
                           </div>
                       )}
                 </div>
