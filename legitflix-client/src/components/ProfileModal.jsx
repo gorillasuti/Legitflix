@@ -69,6 +69,29 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
         }
     };
 
+    const handleDeleteBanner = async () => {
+        setUploading(true);
+        setStatus('');
+        try {
+            const prefsId = "usersettings";
+            let prefs = await jellyfinService.getDisplayPreferences(prefsId);
+            if (prefs && prefs.CustomPrefs) {
+                delete prefs.CustomPrefs["LegitFlix_Backdrop_ItemId"];
+                delete prefs.CustomPrefs["LegitFlix_Backdrop_ImageTag"];
+                delete prefs.CustomPrefs["LegitFlix_Backdrop_ServerUrl"];
+                await jellyfinService.updateDisplayPreferences(prefsId, prefs);
+            }
+            setManualBannerUrl(null);
+            setStatus('Banner image removed.');
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
+            setStatus('Failed to remove banner.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     return (
         <>
             <div className="pm-overlay" onClick={onClose}>
@@ -131,22 +154,42 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
 
                     {/* Actions */}
                     <div className="pm-actions">
-                        <button
-                            className="pm-action-row"
-                            onClick={() => setShowAvatarPicker(true)}
-                            disabled={uploading}
-                        >
-                            <span className="material-icons">face</span>
-                            <span>Change Avatar</span>
-                        </button>
-                        <button
-                            className="pm-action-row danger"
-                            onClick={handleDeleteAvatar}
-                            disabled={uploading}
-                        >
-                            <span className="material-icons">delete</span>
-                            <span>Remove Avatar</span>
-                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <button
+                                className="pm-action-row"
+                                onClick={() => setShowAvatarPicker(true)}
+                                disabled={uploading}
+                            >
+                                <span className="material-icons">face</span>
+                                <span>Change Avatar</span>
+                            </button>
+                            <button
+                                className="pm-action-row danger"
+                                onClick={handleDeleteAvatar}
+                                disabled={uploading}
+                            >
+                                <span className="material-icons">delete</span>
+                                <span>Remove Avatar</span>
+                            </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <button
+                                className="pm-action-row"
+                                onClick={() => setShowBannerPicker(true)}
+                                disabled={uploading}
+                            >
+                                <span className="material-icons">wallpaper</span>
+                                <span>Change Cover</span>
+                            </button>
+                            <button
+                                className="pm-action-row danger"
+                                onClick={handleDeleteBanner}
+                                disabled={uploading || !manualBannerUrl}
+                            >
+                                <span className="material-icons">delete</span>
+                                <span>Remove Cover</span>
+                            </button>
+                        </div>
                     </div>
 
                     {status && <div className="pm-status">{status}</div>}

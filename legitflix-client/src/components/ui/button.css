@@ -43,6 +43,19 @@
     filter: brightness(1.1);
 }
 
+/* Secondary: Subtle translucent/glass look */
+.lf-btn--secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e5e5;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.lf-btn--secondary:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
 /* Ring Hover: Accent bg + ring outline on hover */
 .lf-btn--ring-hover {
     background: var(--clr-accent, #ff7e00);

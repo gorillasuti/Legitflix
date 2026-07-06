@@ -468,66 +468,98 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             )
         },
         {
-            id: 'avatar',
+            id: 'profileAssets',
             tab: 'appearance',
-            label: 'Profile Avatar',
-            keywords: ['avatar', 'profile', 'image', 'picture', 'user'],
+            label: 'Avatar & Background',
+            keywords: ['avatar', 'profile', 'image', 'picture', 'background', 'wallpaper', 'banner', 'appearance', 'user'],
             render: () => (
-                <div className="setting-section" key="avatar">
-                    <h3>Profile Avatar</h3>
-                    <p className="setting-desc">Change your user profile picture.</p>
-                    <div className="setting-row">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <img
-                                src={config.userAvatar || `${jellyfinService.api.basePath}/Users/${userId}/Images/Primary?quality=90&t=${Date.now()}`}
-                                alt="Current Avatar"
-                                style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }}
-                                onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                            <button className="lf-btn lf-btn--secondary" onClick={() => setShowAvatarPicker(true)}>
-                                <span className="material-icons" style={{ fontSize: '18px', marginRight: '8px' }}>face</span>
-                                Change Avatar
-                            </button>
+                <div className="setting-section" key="profileAssets">
+                    <h3>Profile Personalization</h3>
+                    <p className="setting-desc">Customize your profile avatar and client background image.</p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                        {/* Avatar Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', gap: '15px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}>
+                                <img
+                                    src={config.userAvatar || `${jellyfinService.api.basePath}/Users/${userId}/Images/Primary?quality=90&t=${Date.now()}`}
+                                    alt="Current Avatar"
+                                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.2)', flexShrink: 0 }}
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                                <div style={{ overflow: 'hidden' }}>
+                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#fff', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Profile Avatar</h4>
+                                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Your personal profile picture</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                <button className="lf-btn lf-btn--secondary lf-btn--sm" onClick={() => setShowAvatarPicker(true)}>
+                                    Change
+                                </button>
+                                {config.userAvatar && (
+                                    <button
+                                        className="lf-btn lf-btn--secondary lf-btn--sm"
+                                        style={{ color: 'var(--clr-error)', borderColor: 'var(--clr-error)' }}
+                                        onClick={async () => {
+                                            try {
+                                                const prefsId = "usersettings";
+                                                let prefs = await jellyfinService.getDisplayPreferences(prefsId);
+                                                if (prefs && prefs.CustomPrefs) {
+                                                    delete prefs.CustomPrefs["LegitFlix_CustomAvatarUrl"];
+                                                    await jellyfinService.updateDisplayPreferences(prefsId, prefs);
+                                                }
+                                                updateConfig({ userAvatar: null });
+                                                window.location.reload();
+                                            } catch (err) {
+                                                console.error("Failed to delete avatar", err);
+                                            }
+                                        }}
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )
-        },
-        {
-            id: 'appBackground',
-            tab: 'appearance',
-            label: 'App Background Image',
-            keywords: ['background', 'image', 'wallpaper', 'banner', 'appearance'],
-            render: () => (
-                <div className="setting-section" key="appBackground">
-                    <h3>App Background Image</h3>
-                    <p className="setting-desc">Select a backdrop from your library to use as the app background.</p>
-                    <div className="setting-row" style={{ alignItems: 'center', gap: '15px' }}>
-                        {config.appBackground ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', width: '100%' }}>
+
+                        {/* Background Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', gap: '15px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}>
                                 <div style={{
-                                    width: '120px',
-                                    height: '68px',
-                                    borderRadius: '6px',
+                                    width: '56px',
+                                    height: '35px',
+                                    borderRadius: '4px',
                                     backgroundColor: '#2a2a2a',
-                                    backgroundImage: `url('${config.appBackground}')`,
+                                    backgroundImage: config.appBackground ? `url('${config.appBackground}')` : 'none',
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    flexShrink: 0
-                                }} />
-                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {!config.appBackground && (
+                                        <span className="material-icons" style={{ fontSize: '18px', opacity: 0.2 }}>image</span>
+                                    )}
+                                </div>
+                                <div style={{ overflow: 'hidden' }}>
+                                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#fff', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>App Background</h4>
+                                    <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Custom theme backdrop image</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                <button
+                                    className="lf-btn lf-btn--secondary lf-btn--sm"
+                                    onClick={() => {
+                                        setPickerMode('app');
+                                        setShowBannerPicker(true);
+                                    }}
+                                >
+                                    {config.appBackground ? 'Change' : 'Select'}
+                                </button>
+                                {config.appBackground && (
                                     <button
-                                        className="lf-btn lf-btn--secondary"
-                                        onClick={() => {
-                                            setPickerMode('app');
-                                            setShowBannerPicker(true);
-                                        }}
-                                    >
-                                        Change Image
-                                    </button>
-                                    <button
-                                        className="lf-btn lf-btn--secondary"
+                                        className="lf-btn lf-btn--secondary lf-btn--sm"
                                         style={{ color: 'var(--clr-error)', borderColor: 'var(--clr-error)' }}
                                         onClick={async () => {
                                             try {
@@ -542,26 +574,15 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                                 updateConfig({ appBackground: null });
                                                 window.location.reload();
                                             } catch (err) {
-                                                console.error("Failed to remove backdrop preference", err);
+                                                console.error("Failed to remove backdrop", err);
                                             }
                                         }}
                                     >
                                         Remove
                                     </button>
-                                </div>
+                                )}
                             </div>
-                        ) : (
-                            <button
-                                className="lf-btn lf-btn--secondary"
-                                onClick={() => {
-                                    setPickerMode('app');
-                                    setShowBannerPicker(true);
-                                }}
-                            >
-                                <span className="material-icons" style={{ fontSize: '18px', marginRight: '8px' }}>image</span>
-                                Select Background
-                            </button>
-                        )}
+                        </div>
                     </div>
                 </div>
             )
