@@ -533,7 +533,6 @@ const Library = () => {
                         {/* Sort Dropdown */}
                         <CustomDropdown
                             icon="sort"
-                            label="Sort By"
                             value={sortBy}
                             onChange={setSortBy}
                             options={[
@@ -549,7 +548,6 @@ const Library = () => {
                         {/* Filter Dropdown */}
                         <CustomDropdown
                             icon="filter_list"
-                            label="Filter By"
                             value={filter}
                             onChange={setFilter}
                             options={[

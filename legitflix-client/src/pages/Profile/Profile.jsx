@@ -681,13 +681,10 @@ const Profile = () => {
                                 <span>Screensaver Time (seconds)</span>
                                 <span className="setting-hint">The amount of time in seconds of inactivity required to start the screensaver.</span>
                             </div>
-                            <input
-                                type="number"
-                                min="10"
-                                max="3600"
-                                className="settings-input"
+                            <select
+                                className="settings-select"
                                 value={screensaverTime}
-                                onChange={(e) => setScreensaverTime(Math.max(10, parseInt(e.target.value, 10) || 180))}
+                                onChange={(e) => setScreensaverTime(parseInt(e.target.value, 10))}
                                 style={{
                                     width: '100%',
                                     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -695,9 +692,21 @@ const Profile = () => {
                                     borderRadius: '4px',
                                     color: '#ffffff',
                                     padding: '10px',
-                                    fontSize: '0.9rem'
+                                    fontSize: '0.9rem',
+                                    outline: 'none'
                                 }}
-                            />
+                            >
+                                <option value="10" style={{ background: '#1c1c1c' }}>10 Seconds</option>
+                                <option value="30" style={{ background: '#1c1c1c' }}>30 Seconds</option>
+                                <option value="60" style={{ background: '#1c1c1c' }}>1 Minute</option>
+                                <option value="120" style={{ background: '#1c1c1c' }}>2 Minutes</option>
+                                <option value="180" style={{ background: '#1c1c1c' }}>3 Minutes (Default)</option>
+                                <option value="300" style={{ background: '#1c1c1c' }}>5 Minutes</option>
+                                <option value="600" style={{ background: '#1c1c1c' }}>10 Minutes</option>
+                                <option value="900" style={{ background: '#1c1c1c' }}>15 Minutes</option>
+                                <option value="1800" style={{ background: '#1c1c1c' }}>30 Minutes</option>
+                                <option value="3600" style={{ background: '#1c1c1c' }}>1 Hour</option>
+                            </select>
                         </div>
 
                         {(screensaverType === 'backdrop' || screensaverType === 'logo') && (

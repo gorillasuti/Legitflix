@@ -292,8 +292,8 @@ To test and develop the plugin locally:
    ```bash
    npm run dev
    ```
-5. Open `http://localhost:8096` in your browser. All API requests will proxy to
-   your Jellyfin instance.
+5. Open `http://localhost:5173/LegitFlix/Client/` in your browser. All API
+   requests will proxy to your Jellyfin instance.
 
 ### 2. Setup the Full Integrated Plugin (React + C# Backend)
 

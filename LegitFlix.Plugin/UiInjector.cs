@@ -114,66 +114,94 @@ namespace LegitFlix.Plugin
     (function() {
         // 1. Native HTML5 Dialog (Modern PWA Alert)
         function openDialog() {
-            if (!document.getElementById('lf-pwa-dialog')) {
-                var style = document.createElement('style');
-                style.id = 'lf-pwa-dialog-styles';
-                style.innerHTML = `
-                    #lf-pwa-dialog {
-                        padding: 0; border: none; border-radius: 12px; background: var(--theme-background, #1c1c1e);
-                        color: var(--theme-text-color, #fff); width: 90%; max-width: 320px;
-                        box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: inherit;
-                        text-align: center; outline: none; overflow: hidden;
-                    }
-                    #lf-pwa-dialog::backdrop {
-                        background: rgba(0, 0, 0, 0.5);
-                        backdrop-filter: blur(4px);
-                        -webkit-backdrop-filter: blur(4px);
-                    }
-                    .lf-dialog-header { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-                    .lf-dialog-title { font-size: 18px; font-weight: 600; margin: 0 0 8px 0; }
-                    .lf-dialog-desc { font-size: 14px; margin: 0; opacity: 0.8; line-height: 1.4; }
-                    .lf-dialog-btn {
-                        display: block; width: 100%; padding: 16px; border: none; background: transparent;
-                        color: #00a4dc; font-size: 16px; font-weight: 500;
-                        border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-family: inherit;
-                    }
-                    .lf-dialog-btn:last-child { border-bottom: none; color: #ff3b30; } 
-                    .lf-dialog-btn:hover { background: rgba(255,255,255,0.05); }
-                `;
-                document.head.appendChild(style);
+            var isClassic = (window.location.search.indexOf('classic=true') !== -1 || document.cookie.indexOf('lf-classic-view=true') !== -1);
+            
+            var existingDialog = document.getElementById('lf-pwa-dialog');
+            if (existingDialog) {
+                existingDialog.remove();
+            }
+            var existingStyle = document.getElementById('lf-pwa-dialog-styles');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
 
-                var dialog = document.createElement('dialog');
-                dialog.id = 'lf-pwa-dialog';
+            var style = document.createElement('style');
+            style.id = 'lf-pwa-dialog-styles';
+            style.innerHTML = `
+                #lf-pwa-dialog {
+                    padding: 0; border: none; border-radius: 12px; background: var(--theme-background, #1c1c1e);
+                    color: var(--theme-text-color, #fff); width: 90%; max-width: 320px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: inherit;
+                    text-align: center; outline: none; overflow: hidden;
+                }
+                #lf-pwa-dialog::backdrop {
+                    background: rgba(0, 0, 0, 0.5);
+                    backdrop-filter: blur(4px);
+                    -webkit-backdrop-filter: blur(4px);
+                }
+                .lf-dialog-header { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+                .lf-dialog-title { font-size: 18px; font-weight: 600; margin: 0 0 8px 0; }
+                .lf-dialog-desc { font-size: 14px; margin: 0; opacity: 0.8; line-height: 1.4; }
+                .lf-dialog-btn {
+                    display: block; width: 100%; padding: 16px; border: none; background: transparent;
+                    color: #00a4dc; font-size: 16px; font-weight: 500;
+                    border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-family: inherit;
+                    outline: none !important; box-shadow: none !important;
+                    -webkit-tap-highlight-color: transparent !important;
+                }
+                .lf-dialog-btn:focus, .lf-dialog-btn:active {
+                    outline: none !important; box-shadow: none !important;
+                }
+                .lf-dialog-btn:last-child { border-bottom: none; color: #ff3b30; } 
+                .lf-dialog-btn:hover { background: rgba(255,255,255,0.05); }
+            `;
+            document.head.appendChild(style);
+
+            var dialog = document.createElement('dialog');
+            dialog.id = 'lf-pwa-dialog';
+            
+            if (isClassic) {
                 dialog.innerHTML = `
-                    <div class=""lf-dialog-header"">
-                        <h3 class=""lf-dialog-title"">Choose View</h3>
-                        <p class=""lf-dialog-desc"">Return to Legitflix or stay in Classic Jellyfin?</p>
+                    <div class='lf-dialog-header'>
+                        <h3 class='lf-dialog-title'>Switch View</h3>
+                        <p class='lf-dialog-desc'>Would you like to return to the Legitflix interface?</p>
                     </div>
-                    <button id=""lf-btn-plugin"" class=""lf-dialog-btn"">Plugin Look</button>
-                    <button id=""lf-btn-classic"" class=""lf-dialog-btn"">Old Look</button>
-                    <button id=""lf-btn-cancel"" class=""lf-dialog-btn"">Cancel</button>
+                    <button id='lf-btn-action' class='lf-dialog-btn'>Return to Legitflix</button>
+                    <button id='lf-btn-cancel' class='lf-dialog-btn'>Stay in Classic Jellyfin</button>
                 `;
-                document.body.appendChild(dialog);
+            } else {
+                dialog.innerHTML = `
+                    <div class='lf-dialog-header'>
+                        <h3 class='lf-dialog-title'>Switch View</h3>
+                        <p class='lf-dialog-desc'>Would you like to switch to the Classic Jellyfin interface?</p>
+                    </div>
+                    <button id='lf-btn-action' class='lf-dialog-btn'>Switch to Classic Jellyfin</button>
+                    <button id='lf-btn-cancel' class='lf-dialog-btn'>Stay in Legitflix</button>
+                `;
+            }
+            document.body.appendChild(dialog);
 
-                document.getElementById('lf-btn-plugin').onclick = function() {
-                    dialog.close();
+            document.getElementById('lf-btn-action').onclick = function() {
+                dialog.close();
+                if (isClassic) {
                     document.cookie = 'lf-classic-view=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
                     window.location.href = window.location.origin + window.location.pathname;
-                };
-                
-                document.getElementById('lf-btn-classic').onclick = function() {
-                    dialog.close();
+                } else {
                     var date = new Date();
                     date.setTime(date.getTime() + (365*24*60*60*1000));
                     document.cookie = 'lf-classic-view=true; Path=/; Expires=' + date.toUTCString() + ';';
                     window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
-                };
-                
-                document.getElementById('lf-btn-cancel').onclick = function() {
-                    dialog.close();
-                };
-            }
-            document.getElementById('lf-pwa-dialog').showModal();
+                }
+            };
+            
+            document.getElementById('lf-btn-cancel').onclick = function() {
+                dialog.close();
+                if (isClassic) {
+                    window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
+                }
+            };
+
+            dialog.showModal();
         }
 
         // Global access for your React button
@@ -182,15 +210,31 @@ namespace LegitFlix.Plugin
         // 2. Traversal Logic
         function isLogoElement(el) {
             if (!el) return false;
-            if (el.tagName === 'A' || el.tagName === 'DIV') {
-                var classes = el.className || '';
-                if (typeof classes === 'string' && classes.indexOf('MuiListItemButton-root') !== -1) {
+            var classes = el.className || '';
+            if (typeof classes !== 'string') classes = '';
+            
+            // Explicitly ignore Legitflix Custom UI navbar logo
+            if (classes.indexOf('nav-logo') !== -1) {
+                return false;
+            }
+            
+            if (el.tagName === 'A' || el.tagName === 'DIV' || el.tagName === 'BUTTON' || el.tagName === 'IMG') {
+                var classList = classes.split(/\s+/);
+                if (classes.indexOf('headerLogo') !== -1 || 
+                    classes.indexOf('logoLink') !== -1 || 
+                    classes.indexOf('lnkHome') !== -1 || 
+                    classList.indexOf('logo') !== -1 ||
+                    el.id === 'logo') {
+                    return true;
+                }
+                if (classes.indexOf('MuiListItemButton-root') !== -1) {
                     var text = el.textContent || el.innerText || '';
                     if (text.indexOf('Legitflix') !== -1) return true;
                 }
             }
             return false;
         }
+
 
         // 3. Click Interceptor
         document.addEventListener('click', function(e) {
