@@ -14,7 +14,7 @@ import SyncPlayModal from './SyncPlayModal';
 import './Navbar.css';
 
 const Navbar = ({ alwaysFilled = false }) => {
-    const { config } = useTheme();
+    const { config, updateConfig } = useTheme();
     const fallbackAvatar = `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
     const [user, setUser] = useState(null);
     const [libraries, setLibraries] = useState([]);
@@ -133,22 +133,14 @@ const Navbar = ({ alwaysFilled = false }) => {
     const isAdmin = user?.Policy?.IsAdministrator;
     console.log('[Navbar] User:', user, 'isAdmin:', isAdmin);
 
-    const handleAvatarFile = async (file) => {
-        if (!file || !user?.Id) return;
-        setUploading(true);
+    const handleAvatarFile = async (url) => {
+        if (!url) return;
         try {
-            await jellyfinService.uploadUserImage(user.Id, 'Primary', file);
-
+            updateConfig({ userAvatar: url });
             setShowAvatarPicker(false);
-            // Dispatch event to update avatar everywhere
-            window.dispatchEvent(new CustomEvent('userUpdated', { detail: user }));
-            // Force reload to ensure cache busting isn't the only reliance
-            window.location.reload();
+            window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...user } }));
         } catch (err) {
-            console.error("Avatar upload failed", err);
-            alert("Failed to upload avatar. Please try again.");
-        } finally {
-            setUploading(false);
+            console.error("Avatar update failed", err);
         }
     };
 

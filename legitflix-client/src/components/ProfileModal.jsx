@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import './ProfileModal.css';
 
 const ProfileModal = ({ isOpen, onClose, user }) => {
-    const { config } = useTheme();
+    const { config, updateConfig } = useTheme();
     const [uploading, setUploading] = useState(false);
     const [status, setStatus] = useState('');
     const [showBannerPicker, setShowBannerPicker] = useState(false);
@@ -45,8 +45,8 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
 
     const handleAvatarFile = async (url) => {
         if (!url) return;
+        updateConfig({ userAvatar: url });
         setShowAvatarPicker(false);
-        window.location.reload();
     };
 
     const handleDeleteAvatar = async () => {
@@ -59,8 +59,8 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
                 delete prefs.CustomPrefs["LegitFlix_CustomAvatarUrl"];
                 await jellyfinService.updateDisplayPreferences(prefsId, prefs);
             }
+            updateConfig({ userAvatar: null });
             setStatus('Profile image removed.');
-            window.location.reload();
         } catch (err) {
             console.error(err);
             setStatus('Failed to remove image.');
@@ -82,8 +82,8 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
                 await jellyfinService.updateDisplayPreferences(prefsId, prefs);
             }
             setManualBannerUrl(null);
+            updateConfig({ appBackground: null });
             setStatus('Banner image removed.');
-            window.location.reload();
         } catch (err) {
             console.error(err);
             setStatus('Failed to remove banner.');

@@ -101,7 +101,8 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
     const [playerLongPressSpeed, setPlayerLongPressSpeed] = useState(config.playerLongPressSpeed !== false);
 
     const [isAdmin, setIsAdmin] = useState(false);
-
+    const [user, setUser] = useState(null);
+    const [customBackgroundUrl, setCustomBackgroundUrl] = useState(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -109,6 +110,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 try {
                     const currentUser = await jellyfinService.getCurrentUser();
                     if (currentUser) {
+                        setUser(currentUser);
                         setIsAdmin(!!currentUser?.Policy?.IsAdministrator);
                         const views = await jellyfinService.getUserViews(currentUser.Id);
                         if (views && views.Items) {
@@ -124,6 +126,25 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 }
             };
             fetchUserRoleAndLibraries();
+
+            const fetchCustomBackground = async () => {
+                try {
+                    const prefsId = "usersettings";
+                    const prefs = await jellyfinService.getDisplayPreferences(prefsId);
+                    if (prefs?.CustomPrefs?.["LegitFlix_Backdrop_ItemId"]) {
+                        const itemId = prefs.CustomPrefs["LegitFlix_Backdrop_ItemId"];
+                        const tag = prefs.CustomPrefs["LegitFlix_Backdrop_ImageTag"];
+                        const token = jellyfinService.api?.accessToken;
+                        const url = `${jellyfinService.api.basePath}/Items/${itemId}/Images/Backdrop/0?tag=${tag}&quality=90&maxWidth=1920&api_key=${token}`;
+                        setCustomBackgroundUrl(url);
+                    } else {
+                        setCustomBackgroundUrl(null);
+                    }
+                } catch (e) {
+                    console.error("Failed to load user custom backdrop in settings modal", e);
+                }
+            };
+            fetchCustomBackground();
 
             if (!originalTitleRef.current) {
                 originalTitleRef.current = document.title;
@@ -149,6 +170,11 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             }
         };
     }, [isOpen, activeTab]);
+
+    const displayBackgroundUrl = customBackgroundUrl || (user ? (
+        user.ImageTags?.Banner ? `${jellyfinService.api.basePath}/Users/${user.Id}/Images/Banner?tag=${user.ImageTags.Banner}&quality=90` :
+            (user.BackdropImageTags?.[0] ? `${jellyfinService.api.basePath}/Users/${user.Id}/Images/Backdrop/0?tag=${user.BackdropImageTags[0]}&quality=90` : '')
+    ) : '');
 
     useEffect(() => {
         if (isOpen) {
@@ -529,7 +555,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                     height: '35px',
                                     borderRadius: '4px',
                                     backgroundColor: '#2a2a2a',
-                                    backgroundImage: config.appBackground ? `url('${config.appBackground}')` : 'none',
+                                    backgroundImage: displayBackgroundUrl ? `url('${displayBackgroundUrl}')` : 'none',
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     border: '1px solid rgba(255,255,255,0.1)',
@@ -538,7 +564,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                 }}>
-                                    {!config.appBackground && (
+                                    {!displayBackgroundUrl && (
                                         <span className="material-icons" style={{ fontSize: '18px', opacity: 0.2 }}>image</span>
                                     )}
                                 </div>
@@ -555,9 +581,9 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                         setShowBannerPicker(true);
                                     }}
                                 >
-                                    {config.appBackground ? 'Change' : 'Select'}
+                                    {displayBackgroundUrl ? 'Change' : 'Select'}
                                 </button>
-                                {config.appBackground && (
+                                {displayBackgroundUrl && (
                                     <button
                                         className="lf-btn lf-btn--secondary lf-btn--sm"
                                         style={{ color: 'var(--clr-error)', borderColor: 'var(--clr-error)' }}
@@ -571,8 +597,8 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                                     delete prefs.CustomPrefs["LegitFlix_Backdrop_ServerUrl"];
                                                     await jellyfinService.updateDisplayPreferences(prefsId, prefs);
                                                 }
+                                                setCustomBackgroundUrl(null);
                                                 updateConfig({ appBackground: null });
-                                                window.location.reload();
                                             } catch (err) {
                                                 console.error("Failed to remove backdrop", err);
                                             }
@@ -1537,6 +1563,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 onClose={() => setShowBannerPicker(false)}
                 onSave={(url) => {
                     if (pickerMode === 'app') {
+                        setCustomBackgroundUrl(url);
                         updateConfig({ appBackground: url });
                     } else if (pickerMode === 'jellyseerr') {
                         setJellyseerrBackground(url);
