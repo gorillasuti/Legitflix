@@ -581,15 +581,7 @@ class JellyfinService {
     getUserImageUrl(userId, options = {}) {
         if (!userId) return '';
 
-        // 1. Check cached custom avatars (Netflix or custom uploaded) in localStorage
-        try {
-            const cachedAvatars = JSON.parse(localStorage.getItem('legitflix_user_avatars') || '{}');
-            if (cachedAvatars[userId]) {
-                return cachedAvatars[userId];
-            }
-        } catch (e) {}
-
-        // 2. Build URL using tag if provided
+        // 1. Build URL using tag if provided
         const { quality = 90, tag = null } = options;
         const baseUrl = this.getBasePath();
         
@@ -597,8 +589,8 @@ class JellyfinService {
             return `${baseUrl}/Users/${userId}/Images/Primary?tag=${tag}&quality=${quality}`;
         }
 
-        // 3. Fall back to standard Jellyfin URL or default Netflix avatar
-        // Since we don't have a tag or cached avatar, the user likely doesn't have an image set in Jellyfin.
+        // 2. Fall back to standard Jellyfin URL or default Netflix avatar
+        // Since we don't have a tag, the user likely doesn't have an image set in Jellyfin.
         // Return the default Netflix style avatar path.
         return `https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png`;
     }

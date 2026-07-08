@@ -557,7 +557,7 @@ const Player = () => {
                         const directUrl = jellyfinService.getDirectStreamUrl(id, source.Id);
                         setStreamUrl(directUrl);
                         setUseHls(false);
-                        console.log("[DirectPlay] Negotiated Direct Play URL:", directUrl);
+                        console.log("[DirectPlay] Negotiated Direct Play stream");
                     } else {
                         // Play via Hls.js transcoding/direct streaming (1% - 80% CPU)
                         const transUrl = jellyfinService.getStreamUrl(
@@ -570,7 +570,7 @@ const Player = () => {
                         );
                         setStreamUrl(transUrl);
                         setUseHls(true);
-                        console.log("[PlaybackInfo] Negotiated HLS URL:", transUrl);
+                        console.log("[PlaybackInfo] Negotiated HLS stream");
                     }
                 }
             } catch (err) {

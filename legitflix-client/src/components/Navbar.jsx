@@ -63,7 +63,6 @@ const Navbar = ({ alwaysFilled = false }) => {
                     try {
                         const response = await jellyfinService.api.user.getUserById({ userId: u.Id });
                         finalUser = response.data;
-                        console.log("[Navbar] Fetched full user details with Policy:", finalUser);
                     } catch (err) {
                         console.warn("[Navbar] Failed to fetch full user details", err);
                     }
@@ -86,7 +85,6 @@ const Navbar = ({ alwaysFilled = false }) => {
     // Listen for global user updates
     useEffect(() => {
         const handleUserUpdate = (e) => {
-            console.log("[Navbar] Received userUpdated event", e.detail);
             if (e.detail) {
                 setUser(prev => ({ ...prev, ...e.detail }));
             } else {
@@ -131,7 +129,6 @@ const Navbar = ({ alwaysFilled = false }) => {
     }, []);
 
     const isAdmin = user?.Policy?.IsAdministrator;
-    console.log('[Navbar] User:', user, 'isAdmin:', isAdmin);
 
     const handleAvatarFile = async (url) => {
         if (!url) return;
