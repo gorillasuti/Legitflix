@@ -6,6 +6,6 @@
     "description": "Complete UI replacement for Jellyfin. Native functions updated look. Auto-playing trailers, skip intro/recap/credits, and custom HLS player.",
     "overview": "Transforms Jellyfin into a proper streaming service. Legitflix delivers a completely custom React frontend featuring a multi-user 'Who's Watching' profile switcher, a cinematic home screen with auto-playing Youtube trailers, a custom video player with native HLS support, Skip Intro/Recap/Credits buttons, and integrated subtitle search and downloading. It operates as a Zero-Flash UI replacement, loading instantly without showing the stock Jellyfin interface.",
     "supportUrl": "https://stream.legitflix.eu",
-    "version": "1.1.1.0",
+    "version": "1.2.0.0",
     "imageUrl": "https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/Image%20gallery/Legitflix-Plugin.jpg"
 }
