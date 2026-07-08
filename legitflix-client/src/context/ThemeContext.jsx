@@ -132,6 +132,44 @@ const deserializeFromCustomPrefs = (customPrefs) => {
     return config;
 };
 
+const enforceServerOverrides = (updated) => {
+    if (!window.LegitFlix_ServerConfig) return updated;
+    const sc = window.LegitFlix_ServerConfig;
+    const isLocked = (key) => {
+        if (sc.enableGlobalOverwrites) return true;
+        
+        const isJellyseerrKey = ['enableJellyseerr', 'jellyseerrUrl', 'jellyseerrText', 'showNavbarRequests', 'showHomeRequestsCard'].includes(key);
+        const isVisualKey = ['accentColor', 'themeMode', 'logoUrl', 'contentSortMode'].includes(key);
+        const isNavKey = ['showNavbarCategories', 'showLibraryTitles', 'showNavbarRandom', 'showNavbarNotifications'].includes(key);
+        const isPlayerKey = ['playerSeekTime', 'playerAutoSkip', 'playerAutoSkipRecap', 'playerAutoNextEp'].includes(key);
+        
+        return (isJellyseerrKey && sc.jellyseerrGlobalOverride) ||
+               (isVisualKey && sc.lockVisualSettings) ||
+               (isNavKey && sc.lockNavigationSettings) ||
+               (isPlayerKey && sc.lockPlayerSettings);
+    };
+
+    if (isLocked('accentColor') && sc.accentColor !== undefined) updated.accentColor = sanitizeHex(sc.accentColor) || '#ff7e00';
+    if (isLocked('themeMode') && sc.themeMode !== undefined) updated.themeMode = sc.themeMode;
+    if (isLocked('logoUrl') && sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrlStrict(sc.logoUrl);
+    if (isLocked('showNavbarCategories') && sc.showNavbarCategories !== undefined) updated.showNavbarCategories = sc.showNavbarCategories;
+    if (isLocked('enableJellyseerr') && sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
+    if (isLocked('jellyseerrUrl') && sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
+    if (isLocked('showLibraryTitles') && sc.showLibraryTitles !== undefined) updated.showLibraryTitles = sc.showLibraryTitles;
+    if (isLocked('showNavbarRequests') && sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
+    if (isLocked('showHomeRequestsCard') && sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
+    if (isLocked('showNavbarRandom') && sc.showNavbarRandom !== undefined) updated.showNavbarRandom = sc.showNavbarRandom;
+    if (isLocked('contentSortMode') && sc.contentSortMode !== undefined) updated.contentSortMode = sc.contentSortMode;
+    if (isLocked('jellyseerrText') && sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
+    if (isLocked('playerSeekTime') && sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
+    if (isLocked('playerAutoSkip') && sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
+    if (isLocked('playerAutoSkipRecap') && sc.playerAutoSkipRecap !== undefined) updated.playerAutoSkipRecap = sc.playerAutoSkipRecap;
+    if (isLocked('playerAutoNextEp') && sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
+    if (isLocked('showNavbarNotifications') && sc.showNavbarNotifications !== undefined) updated.showNavbarNotifications = sc.showNavbarNotifications;
+
+    return updated;
+};
+
 /**
  * Validates that a CSS color value is a safe literal before it is passed
  * into style.setProperty(). Accepts: #hex, rgb(...), rgba(...), hsl(...),
@@ -292,45 +330,10 @@ export const ThemeProvider = ({ children }) => {
 
             if (prefs && prefs.CustomPrefs) {
                 const serverConfig = sanitizeFullConfig(deserializeFromCustomPrefs(prefs.CustomPrefs));
-
                 setConfig(prev => {
                     let updated = { ...prev, ...serverConfig, _syncedToServer: true };
-
-                    // Re-enforce server configurations if global overrides are enabled!
-                    if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
-                        const sc = window.LegitFlix_ServerConfig;
-                        if (sc.accentColor !== undefined) updated.accentColor = sanitizeHex(sc.accentColor) || '#ff7e00';
-                        if (sc.themeMode !== undefined) updated.themeMode = sc.themeMode;
-                        if (sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrlStrict(sc.logoUrl);
-                        if (sc.showNavbarCategories !== undefined) updated.showNavbarCategories = sc.showNavbarCategories;
-                        if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
-                        if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
-                        if (sc.showLibraryTitles !== undefined) updated.showLibraryTitles = sc.showLibraryTitles;
-                        if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
-                        if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
-                        if (sc.showNavbarRandom !== undefined) updated.showNavbarRandom = sc.showNavbarRandom;
-                        if (sc.contentSortMode !== undefined) updated.contentSortMode = sc.contentSortMode;
-                        if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
-                        if (sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
-                        if (sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
-                        if (sc.playerAutoSkipRecap !== undefined) updated.playerAutoSkipRecap = sc.playerAutoSkipRecap;
-                        if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
-                    }
-
-                    // Check server Jellyseerr global overrides lock
-                    if (window.LegitFlix_ServerConfig) {
-                        const sc = window.LegitFlix_ServerConfig;
-                        if (sc.jellyseerrGlobalOverride) {
-                            if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
-                            if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
-                            if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
-                            if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
-                            if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
-                        }
-                    }
-
+                    updated = enforceServerOverrides(updated);
                     updated = sanitizeFullConfig(updated);
-
                     localStorage.setItem('LegitFlix_Config', JSON.stringify(updated));
 
                     if (updated.accentColor) applyAccentColor(updated.accentColor);
@@ -463,27 +466,38 @@ export const ThemeProvider = ({ children }) => {
             ? !!window.LegitFlix_ServerConfig.enableGlobalOverwrites
             : false;
 
+        const lockVisualSettings = window.LegitFlix_ServerConfig
+            ? !!window.LegitFlix_ServerConfig.lockVisualSettings
+            : false;
+
+        const lockNavigationSettings = window.LegitFlix_ServerConfig
+            ? !!window.LegitFlix_ServerConfig.lockNavigationSettings
+            : false;
+
+        const lockPlayerSettings = window.LegitFlix_ServerConfig
+            ? !!window.LegitFlix_ServerConfig.lockPlayerSettings
+            : false;
+
+        const jellyseerrGlobalOverride = window.LegitFlix_ServerConfig
+            ? !!window.LegitFlix_ServerConfig.jellyseerrGlobalOverride
+            : false;
+
         // 4. Merge server config if available
         if (window.LegitFlix_ServerConfig) {
             const sc = window.LegitFlix_ServerConfig;
-
-            // Helper to load setting: if global overrides are enabled, server wins.
-            // If disabled, user's local config wins.
-            // Also supports server-level JellyseerrGlobalOverride.
+            
+            // Helper to get raw server value or fallback (local override handled by enforceServerOverrides later)
             const getVal = (key, fallback) => {
-                if (sc[key] === undefined) return fallback;
-                const isJellyseerrKey = ['enableJellyseerr', 'jellyseerrUrl', 'jellyseerrText', 'showNavbarRequests', 'showHomeRequestsCard'].includes(key);
-                const isLocked = enableGlobalOverwrites || (isJellyseerrKey && !!sc.jellyseerrGlobalOverride);
-                if (isLocked) {
-                    return sc[key];
-                } else {
-                    return (localConfig && localConfig[key] !== undefined) ? localConfig[key] : sc[key];
-                }
+                return sc[key] !== undefined ? sc[key] : fallback;
             };
 
             initialConfig = {
                 ...initialConfig,
                 enableGlobalOverwrites,
+                lockVisualSettings,
+                lockNavigationSettings,
+                lockPlayerSettings,
+                jellyseerrGlobalOverride,
                 accentColor: sanitizeHex(getVal('accentColor', initialConfig.accentColor)) || initialConfig.accentColor,
                 themeMode: getVal('themeMode', initialConfig.themeMode),
                 logoUrl: getVal('logoUrl', initialConfig.logoUrl) !== undefined ? sanitizeUrlStrict(getVal('logoUrl', initialConfig.logoUrl)) : initialConfig.logoUrl,
@@ -507,22 +521,26 @@ export const ThemeProvider = ({ children }) => {
             };
         } else {
             initialConfig.enableGlobalOverwrites = false;
+            initialConfig.lockVisualSettings = false;
+            initialConfig.lockNavigationSettings = false;
+            initialConfig.lockPlayerSettings = false;
+            initialConfig.jellyseerrGlobalOverride = false;
         }
 
         // 5. Merge user-only local storage configurations (like userAvatar / appBackground)
         if (localConfig) {
-            const scKeys = window.LegitFlix_ServerConfig ? Object.keys(window.LegitFlix_ServerConfig) : [];
             for (const key in localConfig) {
                 // Prototype pollution guard: skip any key that could climb the prototype chain
                 if (DANGEROUS_KEYS.has(key)) continue;
                 // Only own properties — never inherited ones
                 if (!Object.prototype.hasOwnProperty.call(localConfig, key)) continue;
-                if (key === 'enableGlobalOverwrites') continue; // NEVER allow local storage to override server lock policy
-                if (!enableGlobalOverwrites || !scKeys.includes(key)) {
-                    initialConfig[key] = localConfig[key];
-                }
+                if (key === 'enableGlobalOverwrites' || key === 'lockVisualSettings' || key === 'lockNavigationSettings' || key === 'lockPlayerSettings' || key === 'jellyseerrGlobalOverride') continue; // NEVER allow local storage to override server lock policy
+                initialConfig[key] = localConfig[key];
             }
         }
+
+        // Enforce overrides
+        initialConfig = enforceServerOverrides(initialConfig);
 
         // Sanitize final values
         initialConfig = sanitizeFullConfig(initialConfig);
@@ -695,41 +713,8 @@ export const ThemeProvider = ({ children }) => {
         if (sanitizedConfig.userAvatar !== undefined) sanitizedConfig.userAvatar = sanitizeUrlStrict(sanitizedConfig.userAvatar);
 
         setConfig(prev => {
-            const updated = { ...prev, ...sanitizedConfig };
-
-            // Re-enforce server configurations if global overrides are enabled!
-            if (updated.enableGlobalOverwrites && window.LegitFlix_ServerConfig) {
-                const sc = window.LegitFlix_ServerConfig;
-                if (sc.accentColor !== undefined) updated.accentColor = sanitizeHex(sc.accentColor) || '#ff7e00';
-                if (sc.themeMode !== undefined) updated.themeMode = sc.themeMode;
-                if (sc.logoUrl !== undefined) updated.logoUrl = sanitizeUrlStrict(sc.logoUrl);
-                if (sc.showNavbarCategories !== undefined) updated.showNavbarCategories = sc.showNavbarCategories;
-                if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
-                if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
-                if (sc.showLibraryTitles !== undefined) updated.showLibraryTitles = sc.showLibraryTitles;
-                if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
-                if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
-                if (sc.showNavbarRandom !== undefined) updated.showNavbarRandom = sc.showNavbarRandom;
-                if (sc.contentSortMode !== undefined) updated.contentSortMode = sc.contentSortMode;
-                if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
-                if (sc.playerSeekTime !== undefined) updated.playerSeekTime = sc.playerSeekTime;
-                if (sc.playerAutoSkip !== undefined) updated.playerAutoSkip = sc.playerAutoSkip;
-                if (sc.playerAutoSkipRecap !== undefined) updated.playerAutoSkipRecap = sc.playerAutoSkipRecap;
-                if (sc.playerAutoNextEp !== undefined) updated.playerAutoNextEp = sc.playerAutoNextEp;
-            }
-
-            // Separately check server Jellyseerr global overrides lock
-            if (window.LegitFlix_ServerConfig) {
-                const sc = window.LegitFlix_ServerConfig;
-                if (sc.jellyseerrGlobalOverride) {
-                    if (sc.enableJellyseerr !== undefined) updated.enableJellyseerr = sc.enableJellyseerr;
-                    if (sc.jellyseerrUrl !== undefined) updated.jellyseerrUrl = sanitizeUrlStrict(sc.jellyseerrUrl);
-                    if (sc.jellyseerrText !== undefined) updated.jellyseerrText = sanitizeText(sc.jellyseerrText);
-                    if (sc.showNavbarRequests !== undefined) updated.showNavbarRequests = sc.showNavbarRequests;
-                    if (sc.showHomeRequestsCard !== undefined) updated.showHomeRequestsCard = sc.showHomeRequestsCard;
-                }
-            }
-
+            let updated = { ...prev, ...sanitizedConfig };
+            updated = enforceServerOverrides(updated);
             const cleanUpdated = sanitizeFullConfig(updated);
 
             localStorage.setItem('LegitFlix_Config', JSON.stringify(cleanUpdated));

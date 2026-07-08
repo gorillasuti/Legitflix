@@ -41,6 +41,11 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
     const { config, updateConfig } = useTheme();
     const originalTitleRef = useRef(null);
 
+    const isVisualLocked = !!(config.enableGlobalOverwrites || config.lockVisualSettings);
+    const isNavLocked = !!(config.enableGlobalOverwrites || config.lockNavigationSettings);
+    const isPlayerLocked = !!(config.enableGlobalOverwrites || config.lockPlayerSettings);
+    const isJellyseerrLocked = !!(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride);
+
     // Tab State
     const [activeTab, setActiveTab] = useState('appearance');
     const [showBannerPicker, setShowBannerPicker] = useState(false);
@@ -396,13 +401,13 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                             return (
                                 <div
                                     key={c.value}
-                                    className={`color-preset ${isSelected ? 'selected' : ''} ${config.enableGlobalOverwrites ? 'disabled' : ''}`}
+                                    className={`color-preset ${isSelected ? 'selected' : ''} ${isVisualLocked ? 'disabled' : ''}`}
                                     style={{
                                         backgroundColor: c.value,
-                                        opacity: config.enableGlobalOverwrites ? 0.5 : 1,
-                                        pointerEvents: config.enableGlobalOverwrites ? 'none' : 'auto'
+                                        opacity: isVisualLocked ? 0.5 : 1,
+                                        pointerEvents: isVisualLocked ? 'none' : 'auto'
                                     }}
-                                    onClick={() => !config.enableGlobalOverwrites && handleColorChange(c.value)}
+                                    onClick={() => !isVisualLocked && handleColorChange(c.value)}
                                     title={c.name}
                                 >
                                     {isSelected && <span className="material-icons">check</span>}
@@ -418,7 +423,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                             value={customHex}
                             onChange={handleCustomHexChange}
                             maxLength={7}
-                            disabled={config.enableGlobalOverwrites}
+                            disabled={isVisualLocked}
                         />
                         <div className="color-preview" style={{ backgroundColor: accentColor }}></div>
                     </div>
@@ -437,8 +442,8 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                     <div className="setting-row" style={{ justifyContent: 'flex-start', gap: '10px' }}>
                         <button
                             className={`lf-btn ${themeMode === 'dark' ? 'lf-btn--primary' : 'lf-btn--secondary'}`}
-                            onClick={() => !config.enableGlobalOverwrites && setThemeMode('dark')}
-                            disabled={config.enableGlobalOverwrites}
+                            onClick={() => !isVisualLocked && setThemeMode('dark')}
+                            disabled={isVisualLocked}
                             style={{ minWidth: '100px' }}
                         >
                             <span className="material-icons" style={{ marginRight: '8px' }}>dark_mode</span>
@@ -446,8 +451,8 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                         </button>
                         <button
                             className={`lf-btn ${themeMode === 'light' ? 'lf-btn--primary' : 'lf-btn--secondary'}`}
-                            onClick={() => !config.enableGlobalOverwrites && setThemeMode('light')}
-                            disabled={config.enableGlobalOverwrites}
+                            onClick={() => !isVisualLocked && setThemeMode('light')}
+                            disabled={isVisualLocked}
                             style={{ minWidth: '100px' }}
                         >
                             <span className="material-icons" style={{ marginRight: '8px' }}>light_mode</span>
@@ -472,7 +477,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                         placeholder="https://example.com/logo.png"
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
-                        disabled={config.enableGlobalOverwrites}
+                        disabled={isVisualLocked}
                     />
                 </div>
             )
@@ -634,7 +639,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                     type="checkbox"
                                     checked={enableJellyseerr}
                                     onChange={(e) => setEnableJellyseerr(e.target.checked)}
-                                    disabled={config.enableGlobalOverwrites}
+                                    disabled={isJellyseerrLocked}
                                 />
                                 <span className="slider"></span>
                             </label>
@@ -648,7 +653,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 placeholder="https://request.legitflix.eu"
                                 value={jellyseerrUrl}
                                 onChange={(e) => setJellyseerrUrl(e.target.value)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isJellyseerrLocked}
                             />
                         </div>
                     </div>
@@ -666,7 +671,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                     placeholder="Request"
                                     value={jellyseerrText}
                                     onChange={(e) => setJellyseerrText(e.target.value)}
-                                    disabled={config.enableGlobalOverwrites}
+                                    disabled={isJellyseerrLocked}
                                 />
                             </div>
                         </div>
@@ -742,7 +747,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={showLibraryTitles}
                                 onChange={(e) => setShowLibraryTitles(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isNavLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -803,19 +808,19 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                             {SORT_MODES.map(m => (
                                 <label
                                     key={m.key}
-                                    className={`content-type-chip ${sortMode === m.key ? 'active' : ''} ${config.enableGlobalOverwrites ? 'disabled' : ''}`}
+                                    className={`content-type-chip ${sortMode === m.key ? 'active' : ''} ${isVisualLocked ? 'disabled' : ''}`}
                                     title={m.desc}
                                     style={{
-                                        opacity: config.enableGlobalOverwrites ? 0.6 : 1,
-                                        pointerEvents: config.enableGlobalOverwrites ? 'none' : 'auto'
+                                        opacity: isVisualLocked ? 0.6 : 1,
+                                        pointerEvents: isVisualLocked ? 'none' : 'auto'
                                     }}
                                 >
                                     <input
                                         type="radio"
                                         name="sortMode"
                                         checked={sortMode === m.key}
-                                        onChange={() => !config.enableGlobalOverwrites && setSortMode(m.key)}
-                                        disabled={config.enableGlobalOverwrites}
+                                        onChange={() => !isVisualLocked && setSortMode(m.key)}
+                                        disabled={isVisualLocked}
                                     />
                                     <span className="material-icons">{m.icon}</span>
                                     <span>{m.label}</span>
@@ -833,11 +838,11 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             keywords: ['navigation', 'menu', 'navbar', 'categories', 'links'],
             render: () => (
                 <div className="setting-section" key="navbarCategories">
-                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={isNavLocked ? "Managed globally via plugin settings" : ""}>
                         <div>
                             <h3 className="setting-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Categories in Navbar
-                                {config.enableGlobalOverwrites && (
+                                {isNavLocked && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </h3>
@@ -848,7 +853,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={showCategories}
                                 onChange={(e) => setShowCategories(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isNavLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -863,11 +868,11 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             keywords: ['navigation', 'navbar', 'requests', 'jellyseerr'],
             render: () => (
                 <div className="setting-section" key="navbarRequests">
-                    <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={isJellyseerrLocked ? "Managed globally via plugin settings" : ""}>
                         <div>
                             <h3 className="setting-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Requests in Navbar
-                                {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
+                                {isJellyseerrLocked && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </h3>
@@ -879,7 +884,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={showNavbarRequests}
                                 onChange={(e) => setShowNavbarRequests(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isJellyseerrLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -919,11 +924,11 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             keywords: ['navigation', 'navbar', 'notifications', 'bell', 'recent'],
             render: () => (
                 <div className="setting-section" key="navbarNotifications">
-                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={isNavLocked ? "Managed globally via plugin settings" : ""}>
                         <div>
                             <h3 className="setting-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Notification Bell
-                                {config.enableGlobalOverwrites && (
+                                {isNavLocked && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </h3>
@@ -934,7 +939,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={showNavbarNotifications}
                                 onChange={(e) => setShowNavbarNotifications(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isNavLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -973,22 +978,22 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
             keywords: ['navigation', 'navbar', 'random', 'lucky', 'casino'],
             render: () => (
                 <div className="setting-section" key="navbarRandom">
-                    <div className="setting-row" style={{ marginBottom: '10px' }} title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" style={{ marginBottom: '10px' }} title={isNavLocked ? "Managed globally via plugin settings" : ""}>
                         <div>
                             <h3 className="setting-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Random Button
-                                {config.enableGlobalOverwrites && (
+                                {isNavLocked && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </h3>
-                            <p className="setting-desc">Display the "I'm Feeling Lucky" button in the navbar</p>
+                            <p className="setting-desc">Display the "I\'m Feeling Lucky" button in the navbar</p>
                         </div>
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
                                 checked={showNavbarRandom}
                                 onChange={(e) => setShowNavbarRandom(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isNavLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1061,7 +1066,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                         className="legit-select"
                         value={playerSeekTime}
                         onChange={(e) => setPlayerSeekTime(parseInt(e.target.value, 10))}
-                        disabled={config.enableGlobalOverwrites}
+                        disabled={isPlayerLocked}
                         style={{
                             width: '100%',
                             backgroundColor: 'rgba(255,255,255,0.05)',
@@ -1071,8 +1076,8 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                             padding: '10px',
                             fontSize: '0.9rem',
                             marginTop: '8px',
-                            opacity: config.enableGlobalOverwrites ? 0.6 : 1,
-                            pointerEvents: config.enableGlobalOverwrites ? 'none' : 'auto'
+                            opacity: isPlayerLocked ? 0.6 : 1,
+                            pointerEvents: isPlayerLocked ? 'none' : 'auto'
                         }}
                     >
                         <option value="5" style={{ background: '#1c1c1c' }}>5 Seconds</option>
@@ -1101,7 +1106,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={playerAutoSkip}
                                 onChange={(e) => setPlayerAutoSkip(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isPlayerLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1119,14 +1124,14 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                     <div className="setting-row">
                         <div>
                             <h3 className="setting-title">Auto Skip Recaps</h3>
-                            <p className="setting-desc">Automatically skip "previously on" recap segments when detected</p>
+                            <p className="setting-desc">Automatically skip "previously on" recap sequences when detected</p>
                         </div>
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
                                 checked={playerAutoSkipRecap}
                                 onChange={(e) => setPlayerAutoSkipRecap(e.target.checked)}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={isPlayerLocked}
                             />
                             <span className="slider"></span>
                         </label>
@@ -1575,7 +1580,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                         </div>
 
                         <div className="content-body">
-                            {config.enableGlobalOverwrites && (
+                            {(config.enableGlobalOverwrites || config.lockVisualSettings || config.lockNavigationSettings || config.lockPlayerSettings || config.jellyseerrGlobalOverride) && (
                                 <div className="server-override-banner">
                                     <span className="material-icons">lock</span>
                                     <span>Some preferences are locked to server-defined settings.</span>

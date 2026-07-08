@@ -1,287 +1,521 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>LegitFlix Configuration</title>
+    <title>Legitflix Configuration</title>
 </head>
+
 <body>
-<div data-role="page" id="legitFlixConfigPage" class="page type-interior pluginConfigurationPage fullWidthContent">
-    <div class="content-primary">
-        <div class="verticalSection">
-            <div class="sectionTitleContainer">
-                <h2 class="sectionTitle">LegitFlix Configuration</h2>
-                <a href="/LegitFlix/Client/index.html" class="raised button-submit block emby-button" style="margin-left: 2em; display: inline-block;">
-                    Open LegitFlix UI
-                </a>
+    <div data-role="page" id="legitFlixConfigPage" class="page type-interior pluginConfigurationPage fullWidthContent"
+        data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div class="content-primary">
+            <div class="verticalSection" style="max-width: 54em;">
+                <div class="sectionTitleContainer">
+                    <h2 class="sectionTitle">Legitflix Configuration</h2>
+                </div>
+                <p class="fieldDescription">Configure server-level defaults and global override policies for the
+                    LegitFlix UI replacement.</p>
+                <div style="margin: 1.5em 0 0.5em 0;">
+                    <button id="btnOpenLegitFlixUI" type="button" onclick="window.LegitFlix_OpenConfigModal()" class="raised button-submit block emby-button">
+                        <span>Open Legitflix UI</span>
+                    </button>
+                </div>
             </div>
-            <p class="fieldDescription">Configure the server-level settings and client layout overrides for the LegitFlix UI replacement.</p>
+
+            <form class="legitFlixConfigurationForm">
+
+                <!-- Master Override -->
+                <fieldset class="verticalSection-extrabottompadding">
+                    <legend>Master Override</legend>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkEnableGlobalOverwrites"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Force Master Override</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Lock <b>ALL</b> settings globally. When enabled, clients cannot
+                            customize any LegitFlix settings — individual group overrides below are ignored.</div>
+                    </div>
+                </fieldset>
+
+                <!-- Visual Customization -->
+                <fieldset class="verticalSection-extrabottompadding">
+                    <legend>Visual Settings</legend>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 20px;">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkLockVisualSettings"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Global Override</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Force these visual settings for all users, preventing local
+                            customization.</div>
+                    </div>
+
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="selectAccentColor">Accent Color</label>
+                        <select is="emby-select" id="selectAccentColor" class="emby-select-withcolor emby-select">
+                            <option value="#ff7e00">Orange</option>
+                            <option value="#00aaff">Blue</option>
+                            <option value="#ff00aa">Pink</option>
+                            <option value="#00ff7e">Green</option>
+                            <option value="#ff3333">Red</option>
+                            <option value="#aa00ff">Purple</option>
+                        </select>
+                        <div class="fieldDescription">Highlight accent color for selected elements, progress bars, and
+                            hover highlights.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="txtLogoUrl">Custom Logo URL</label>
+                        <input type="text" id="txtLogoUrl" is="emby-input" class="emby-input" />
+                        <div class="fieldDescription">Optional URL to a custom logo image for the login screen and
+                            navbar. Leave blank for default logo.</div>
+                    </div>
+                </fieldset>
+
+                <!-- Navigation Settings -->
+                <fieldset class="verticalSection-extrabottompadding">
+                    <legend>Navigation Settings</legend>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 20px;">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkLockNavigationSettings"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Global Override</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Force these navigation settings for all users, preventing local
+                            customization.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowNavbarCategories"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Navbar Categories</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Display view categories (Movies, TV Shows, etc.) in the top
+                            navigation bar.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowLibraryTitles" data-embycheckbox="true"
+                                class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Library Titles</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Display explicit titles on library card items.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowNavbarRandom" data-embycheckbox="true"
+                                class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Random Play Button</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Show a random selector button in the navigation bar.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowNavbarNotifications"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Notification Bell</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Show a notification bell icon for recently added media in the
+                            navigation bar.</div>
+                    </div>
+                </fieldset>
+
+                <!-- Requests Integration (Jellyseerr) -->
+                <fieldset class="verticalSection-extrabottompadding">
+                    <legend>Requests Integration (Jellyseerr)</legend>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 20px;">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkJellyseerrGlobalOverride"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Global Override</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Force these request settings for all users, preventing local
+                            customization.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkEnableJellyseerr" data-embycheckbox="true"
+                                class="emby-checkbox" />
+                            <span class="checkboxLabel">Enable Request System</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Enables a requests integration card and link in the navbar.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="txtJellyseerrUrl">Jellyseerr / Overseerr Instance URL</label>
+                        <input type="text" id="txtJellyseerrUrl" is="emby-input" class="emby-input" />
+                        <div class="fieldDescription">External URL of your requests management server.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="txtJellyseerrText">Request Button Text</label>
+                        <input type="text" id="txtJellyseerrText" is="emby-input" class="emby-input" />
+                        <div class="fieldDescription">Label to display on request action buttons.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowNavbarRequests"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Requests in Navbar</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Display requests tab in the top navigation bar.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkShowHomeRequestsCard"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Show Requests Card on Home Screen</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Display requests integration card on the main library home row.
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Video Player Settings -->
+                <fieldset class="verticalSection-extrabottompadding" style="margin-bottom: 40px;">
+                    <legend>Video Player Settings</legend>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 20px;">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkLockPlayerSettings"
+                                data-embycheckbox="true" class="emby-checkbox" />
+                            <span class="checkboxLabel">Global Override</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Force these player settings for all users, preventing local
+                            customization.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="txtPlayerSeekTime">Seek Time (Seconds)</label>
+                        <input type="number" id="txtPlayerSeekTime" is="emby-input" class="emby-input" min="1"
+                            max="60" />
+                        <div class="fieldDescription">Interval in seconds when seeking forward or backward in the media
+                            player.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkPlayerAutoSkip" data-embycheckbox="true"
+                                class="emby-checkbox" />
+                            <span class="checkboxLabel">Auto-Skip Intro &amp; Credits</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Automatically triggers skip button clicks when intro or credits
+                            marker is detected.</div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" is="emby-checkbox" id="chkPlayerAutoNextEp" data-embycheckbox="true"
+                                class="emby-checkbox" />
+                            <span class="checkboxLabel">Auto-Play Next Episode</span>
+                            <span class="checkboxOutline">
+                                <span class="material-icons checkboxIcon checkboxIcon-checked check"
+                                    aria-hidden="true"></span>
+                                <span class="material-icons checkboxIcon checkboxIcon-unchecked"
+                                    aria-hidden="true"></span>
+                            </span>
+                        </label>
+                        <div class="fieldDescription">Automatically start playing the next episode when current video
+                            reaches the end.</div>
+                    </div>
+                </fieldset>
+
+                <div>
+                    <button id="saveConfig" is="emby-button" type="submit"
+                        class="raised button-submit block emby-button">
+                        <span>Save Settings</span>
+                    </button>
+                </div>
+            </form>
         </div>
-        <hr class="solid">
 
-        <form class="legitFlixConfigurationForm" style="max-width: 95%">
-            <!-- Visual Customization -->
-            <div class="verticalSection">
-                <h2>Visual Customization</h2>
-                
-                <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 20px;">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkEnableGlobalOverwrites" />
-                        <span>Enable Global Settings Overwrite</span>
-                    </label>
-                    <div class="fieldDescription">If enabled, client settings (accent color, navigation, requests, player options) are locked to these server-defined plugin configurations. If disabled (default), clients can override settings locally.</div>
-                </div>
-                
-                <div class="selectContainer">
-                    <label class="selectLabel" for="selectAccentColor">Accent Color</label>
-                    <select is="emby-select" id="selectAccentColor" class="emby-select-withcolor emby-select">
-                        <option value="#ff7e00">Orange</option>
-                        <option value="#00aaff">Blue</option>
-                        <option value="#ff00aa">Pink</option>
-                        <option value="#00ff7e">Green</option>
-                        <option value="#ff3333">Red</option>
-                        <option value="#aa00ff">Purple</option>
-                    </select>
-                    <div class="fieldDescription">Highlight accent color for selected elements, progress bars, and hover highlights.</div>
-                </div>
+        <script type="text/javascript">
+            // Global function for the Open LegitFlix UI button - defined outside require() so it's always available
+            window.LegitFlix_OpenConfigModal = function () {
+                if (typeof window.LegitFlix_OpenSwitchModal === 'function') {
+                    window.LegitFlix_OpenSwitchModal();
+                    return;
+                }
+                // Fallback self-contained Switch View Dialog
+                var isClassic = (window.location.search.indexOf('classic=true') !== -1 || document.cookie.indexOf('lf-classic-view=true') !== -1);
+                var existingDialog = document.getElementById('lf-pwa-dialog');
+                if (existingDialog) existingDialog.remove();
+                var existingStyle = document.getElementById('lf-pwa-dialog-styles');
+                if (existingStyle) existingStyle.remove();
 
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtLogoUrl">Custom Logo URL</label>
-                    <input type="text" id="txtLogoUrl" is="emby-input" class="emby-input" />
-                    <div class="fieldDescription">Optional URL to a custom logo image for the login screen and navbar. Leave blank for default logo.</div>
-                </div>
-            </div>
+                var style = document.createElement('style');
+                style.id = 'lf-pwa-dialog-styles';
+                style.textContent =
+                    '#lf-pwa-dialog { padding:0; border:none; border-radius:12px; background:var(--theme-background,#1c1c1e); color:var(--theme-text-color,#fff); width:90%; max-width:320px; box-shadow:0 10px 30px rgba(0,0,0,.5); font-family:inherit; text-align:center; outline:none; overflow:hidden; z-index:999999; }' +
+                    '#lf-pwa-dialog::backdrop { background:rgba(0,0,0,.5); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }' +
+                    '.lf-dialog-header { padding:20px 16px 16px; border-bottom:1px solid rgba(255,255,255,.1); }' +
+                    '.lf-dialog-title { font-size:18px; font-weight:600; margin:0 0 8px 0; }' +
+                    '.lf-dialog-desc { font-size:14px; margin:0; opacity:.8; line-height:1.4; }' +
+                    '.lf-dialog-btn { display:block; width:100%; padding:16px; border:none; background:transparent; color:#00a4dc; font-size:16px; font-weight:500; border-bottom:1px solid rgba(255,255,255,.1); cursor:pointer; font-family:inherit; outline:none!important; box-shadow:none!important; -webkit-tap-highlight-color:transparent!important; text-align:center; }' +
+                    '.lf-dialog-btn:focus,.lf-dialog-btn:active { outline:none!important; box-shadow:none!important; }' +
+                    '.lf-dialog-btn:last-child { border-bottom:none; color:#ff3b30; }' +
+                    '.lf-dialog-btn:hover { background:rgba(255,255,255,.05); }';
+                document.head.appendChild(style);
 
-            <!-- Navigation Controls -->
-            <div class="verticalSection">
-                <h2>Navigation Settings</h2>
-                
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowNavbarCategories" />
-                        <span>Show Navbar Categories</span>
-                    </label>
-                    <div class="fieldDescription">Display view categories (Movies, TV Shows, etc.) in the top navigation bar.</div>
-                </div>
+                var dialog = document.createElement('dialog');
+                dialog.id = 'lf-pwa-dialog';
+                if (isClassic) {
+                    dialog.innerHTML =
+                        '<div class="lf-dialog-header"><h3 class="lf-dialog-title">Switch View</h3><p class="lf-dialog-desc">Would you like to return to the Legitflix interface?</p></div>' +
+                        '<button id="lf-btn-action" class="lf-dialog-btn">Return to Legitflix</button>' +
+                        '<button id="lf-btn-cancel" class="lf-dialog-btn">Stay in Classic Jellyfin</button>';
+                } else {
+                    dialog.innerHTML =
+                        '<div class="lf-dialog-header"><h3 class="lf-dialog-title">Switch View</h3><p class="lf-dialog-desc">Would you like to switch to the Classic Jellyfin interface?</p></div>' +
+                        '<button id="lf-btn-action" class="lf-dialog-btn">Switch to Classic Jellyfin</button>' +
+                        '<button id="lf-btn-cancel" class="lf-dialog-btn">Stay in Legitflix</button>';
+                }
+                document.body.appendChild(dialog);
+                document.getElementById('lf-btn-action').onclick = function() {
+                    dialog.close(); dialog.remove();
+                    if (isClassic) {
+                        document.cookie = 'lf-classic-view=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+                        window.location.href = window.location.origin + window.location.pathname;
+                    } else {
+                        var d = new Date(); d.setTime(d.getTime() + 365*24*60*60*1000);
+                        document.cookie = 'lf-classic-view=true; Path=/; Expires=' + d.toUTCString() + ';';
+                        window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
+                    }
+                };
+                document.getElementById('lf-btn-cancel').onclick = function() {
+                    dialog.close(); dialog.remove();
+                    if (isClassic) {
+                        window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
+                    }
+                };
+                dialog.showModal();
+            };
+        </script>
+        <script type="text/javascript">
+            require(['emby-checkbox', 'emby-button', 'emby-input', 'emby-select'], function () {
+                if (typeof LegitFlixConfigPage == 'undefined') {
+                    const LegitFlixConfigPage = {
+                        pluginId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowLibraryTitles" />
-                        <span>Show Library Titles</span>
-                    </label>
-                    <div class="fieldDescription">Display explicit titles on library card items.</div>
-                </div>
+                        loadConfig: function () {
+                            Dashboard.showLoadingMsg();
+                            window.ApiClient.getPluginConfiguration(LegitFlixConfigPage.pluginId)
+                                .then(function (config) {
+                                    try {
+                                        document.querySelector('#chkEnableGlobalOverwrites').checked = !!config.EnableGlobalOverwrites;
+                                        document.querySelector('#selectAccentColor').value = config.AccentColor || '#ff7e00';
+                                        document.querySelector('#txtLogoUrl').value = config.LogoUrl || '';
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowNavbarRandom" />
-                        <span>Show Random Play Button</span>
-                    </label>
-                    <div class="fieldDescription">Show a random selector button in the navigation bar.</div>
-                </div>
+                                        document.querySelector('#chkShowNavbarCategories').checked = config.ShowNavbarCategories !== false;
+                                        document.querySelector('#chkShowLibraryTitles').checked = config.ShowLibraryTitles !== false;
+                                        document.querySelector('#chkShowNavbarRandom').checked = config.ShowNavbarRandom !== false;
+                                        document.querySelector('#chkShowNavbarNotifications').checked = config.ShowNavbarNotifications !== false;
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowNavbarNotifications" />
-                        <span>Show Notification Bell</span>
-                    </label>
-                    <div class="fieldDescription">Show a notification bell icon for recently added media in the navigation bar.</div>
-                </div>
-            </div>
+                                        document.querySelector('#chkEnableJellyseerr').checked = config.EnableJellyseerr !== false;
+                                        document.querySelector('#txtJellyseerrUrl').value = config.JellyseerrUrl || 'https://request.legitflix.eu';
+                                        document.querySelector('#txtJellyseerrText').value = config.JellyseerrText || 'Request';
+                                        document.querySelector('#chkShowNavbarRequests').checked = config.ShowNavbarRequests !== false;
+                                        document.querySelector('#chkShowHomeRequestsCard').checked = config.ShowHomeRequestsCard !== false;
+                                        document.querySelector('#chkJellyseerrGlobalOverride').checked = !!config.JellyseerrGlobalOverride;
 
-            <!-- Jellyseerr / Requests Integration -->
-            <div class="verticalSection">
-                <h2>Requests Integration (Jellyseerr)</h2>
+                                        document.querySelector('#txtPlayerSeekTime').value = config.PlayerSeekTime || 10;
+                                        document.querySelector('#chkPlayerAutoSkip').checked = !!config.PlayerAutoSkip;
+                                        document.querySelector('#chkPlayerAutoNextEp').checked = config.PlayerAutoNextEp !== false;
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkEnableJellyseerr" />
-                        <span>Enable Request System</span>
-                    </label>
-                    <div class="fieldDescription">Enables a requests integration card and link in the navbar.</div>
-                </div>
+                                        // Group locks
+                                        document.querySelector('#chkLockVisualSettings').checked = !!config.LockVisualSettings;
+                                        document.querySelector('#chkLockNavigationSettings').checked = !!config.LockNavigationSettings;
+                                        document.querySelector('#chkLockPlayerSettings').checked = !!config.LockPlayerSettings;
 
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtJellyseerrUrl">Jellyseerr / Overseerr Instance URL</label>
-                    <input type="text" id="txtJellyseerrUrl" is="emby-input" class="emby-input" />
-                    <div class="fieldDescription">External URL of your requests management server.</div>
-                </div>
+                                    } catch (err) {
+                                        console.error('LegitFlix: Error populating config values:', err);
+                                    }
+                                })
+                                .catch(function (error) {
+                                    console.error('LegitFlix: Failed to fetch configuration:', error);
+                                })
+                                .finally(function () {
+                                    Dashboard.hideLoadingMsg();
+                                });
+                        },
 
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtJellyseerrText">Request Button Text</label>
-                    <input type="text" id="txtJellyseerrText" is="emby-input" class="emby-input" />
-                    <div class="fieldDescription">Label to display on request action buttons.</div>
-                </div>
+                        saveConfig: function (e) {
+                            if (e) e.preventDefault();
+                            Dashboard.showLoadingMsg();
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowNavbarRequests" />
-                        <span>Show Requests in Navbar</span>
-                    </label>
-                    <div class="fieldDescription">Display requests tab in the top navigation bar.</div>
-                </div>
+                            const config = {
+                                // Fixed backend settings
+                                EnableCustomUI: true,
+                                PrimaryColor: '#00a4dc',
+                                ThemeMode: 'dark',
+                                ContentSortMode: 'latest',
 
-                <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top: 10px;">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkShowHomeRequestsCard" />
-                        <span>Show Requests Card on Home Screen</span>
-                    </label>
-                    <div class="fieldDescription">Display requests integration card on the main library home row.</div>
-                </div>
+                                // User configurable settings
+                                EnableGlobalOverwrites: document.querySelector('#chkEnableGlobalOverwrites').checked,
+                                AccentColor: document.querySelector('#selectAccentColor').value,
+                                LogoUrl: document.querySelector('#txtLogoUrl').value,
 
-                <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top: 15px;">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkJellyseerrGlobalOverride" />
-                        <span>Force Lock Requests Configuration Globally</span>
-                    </label>
-                    <div class="fieldDescription">If enabled, locks Jellyseerr URLs/text globally for everyone, independent of the general theme settings lock policy.</div>
-                </div>
-            </div>
+                                ShowNavbarCategories: document.querySelector('#chkShowNavbarCategories').checked,
+                                ShowLibraryTitles: document.querySelector('#chkShowLibraryTitles').checked,
+                                ShowNavbarRandom: document.querySelector('#chkShowNavbarRandom').checked,
+                                ShowNavbarNotifications: document.querySelector('#chkShowNavbarNotifications').checked,
 
-            <!-- Video Player customization -->
-            <div class="verticalSection" style="margin-bottom: 40px;">
-                <h2>Video Player Settings</h2>
+                                EnableJellyseerr: document.querySelector('#chkEnableJellyseerr').checked,
+                                JellyseerrUrl: document.querySelector('#txtJellyseerrUrl').value,
+                                JellyseerrText: document.querySelector('#txtJellyseerrText').value,
+                                ShowNavbarRequests: document.querySelector('#chkShowNavbarRequests').checked,
+                                ShowHomeRequestsCard: document.querySelector('#chkShowHomeRequestsCard').checked,
+                                JellyseerrGlobalOverride: document.querySelector('#chkJellyseerrGlobalOverride').checked,
 
-                <div class="inputContainer">
-                    <label class="inputLabel" for="txtPlayerSeekTime">Seek Time (Seconds)</label>
-                    <input type="number" id="txtPlayerSeekTime" is="emby-input" class="emby-input" min="1" max="60" />
-                    <div class="fieldDescription">Interval in seconds when seeking forward or backward in the media player.</div>
-                </div>
+                                PlayerSeekTime: parseInt(document.querySelector('#txtPlayerSeekTime').value) || 10,
+                                PlayerAutoSkip: document.querySelector('#chkPlayerAutoSkip').checked,
+                                PlayerAutoNextEp: document.querySelector('#chkPlayerAutoNextEp').checked,
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkPlayerAutoSkip" />
-                        <span>Auto-Skip Intro & Credits</span>
-                    </label>
-                    <div class="fieldDescription">Automatically triggers skip button clicks when intro or credits marker is detected.</div>
-                </div>
+                                // Group locks
+                                LockVisualSettings: document.querySelector('#chkLockVisualSettings').checked,
+                                LockNavigationSettings: document.querySelector('#chkLockNavigationSettings').checked,
+                                LockPlayerSettings: document.querySelector('#chkLockPlayerSettings').checked
+                            };
 
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input type="checkbox" is="emby-checkbox" id="chkPlayerAutoNextEp" />
-                        <span>Auto-Play Next Episode</span>
-                    </label>
-                    <div class="fieldDescription">Automatically start playing the next episode when current video reaches the end.</div>
-                </div>
-            </div>
+                            window.ApiClient.updatePluginConfiguration(LegitFlixConfigPage.pluginId, config)
+                                .then(Dashboard.processPluginConfigurationUpdateResult)
+                                .catch(function (error) {
+                                    console.error('LegitFlix: Failed to save configuration:', error);
+                                })
+                                .finally(function () {
+                                    Dashboard.hideLoadingMsg();
+                                });
+                        },
 
-            <button id="saveConfig" is="emby-button" type="submit" class="raised button-submit block">
-                <span>Save Settings</span>
-            </button>
-        </form>
-    </div>
+                        init: function () {
+                            // --- UI BLOCKER FIX ---
+                            setTimeout(function () {
+                                var allDivs = document.body.querySelectorAll('div');
+                                allDivs.forEach(function (el) {
+                                    var z = window.getComputedStyle(el).zIndex;
+                                    if (z && parseInt(z) > 2000000000) {
+                                        console.warn('LegitFlix: Hiding blocking element with z-index ' + z, el);
+                                        el.style.display = 'none';
+                                        el.style.pointerEvents = 'none';
+                                        el.style.zIndex = '1';
+                                    }
+                                });
+                            }, 500);
 
-    <script type="text/javascript">
-        if (typeof LegitFlixConfigPage == 'undefined') {
-            const LegitFlixConfigPage = {
-                pluginId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-
-                loadConfig: function () {
-                    Dashboard.showLoadingMsg();
-                    window.ApiClient.getPluginConfiguration(LegitFlixConfigPage.pluginId)
-                        .then(function (config) {
-                            try {
-                                document.querySelector('#chkEnableGlobalOverwrites').checked = !!config.EnableGlobalOverwrites;
-                                document.querySelector('#selectAccentColor').value = config.AccentColor || '#ff7e00';
-                                document.querySelector('#txtLogoUrl').value = config.LogoUrl || '';
-                                
-                                document.querySelector('#chkShowNavbarCategories').checked = config.ShowNavbarCategories !== false;
-                                document.querySelector('#chkShowLibraryTitles').checked = config.ShowLibraryTitles !== false;
-                                document.querySelector('#chkShowNavbarRandom').checked = config.ShowNavbarRandom !== false;
-                                document.querySelector('#chkShowNavbarNotifications').checked = config.ShowNavbarNotifications !== false;
-                                
-                                document.querySelector('#chkEnableJellyseerr').checked = config.EnableJellyseerr !== false;
-                                document.querySelector('#txtJellyseerrUrl').value = config.JellyseerrUrl || 'https://request.legitflix.eu';
-                                document.querySelector('#txtJellyseerrText').value = config.JellyseerrText || 'Request';
-                                document.querySelector('#chkShowNavbarRequests').checked = config.ShowNavbarRequests !== false;
-                                document.querySelector('#chkShowHomeRequestsCard').checked = config.ShowHomeRequestsCard !== false;
-                                document.querySelector('#chkJellyseerrGlobalOverride').checked = !!config.JellyseerrGlobalOverride;
-                                
-                                document.querySelector('#txtPlayerSeekTime').value = config.PlayerSeekTime || 10;
-                                document.querySelector('#chkPlayerAutoSkip').checked = !!config.PlayerAutoSkip;
-                                document.querySelector('#chkPlayerAutoNextEp').checked = config.PlayerAutoNextEp !== false;
-                            } catch (err) {
-                                console.error('LegitFlix: Error populating config values:', err);
-                            }
-                        })
-                        .catch(function (error) {
-                            console.error('LegitFlix: Failed to fetch configuration:', error);
-                        })
-                        .finally(function () {
-                            Dashboard.hideLoadingMsg();
-                        });
-                },
-
-                saveConfig: function (e) {
-                    if (e) e.preventDefault();
-                    Dashboard.showLoadingMsg();
-
-                    const config = {
-                        // Fixed backend settings
-                        EnableCustomUI: true,
-                        PrimaryColor: '#00a4dc',
-                        ThemeMode: 'dark',
-                        ContentSortMode: 'latest',
-
-                        // User configurable settings
-                        EnableGlobalOverwrites: document.querySelector('#chkEnableGlobalOverwrites').checked,
-                        AccentColor: document.querySelector('#selectAccentColor').value,
-                        LogoUrl: document.querySelector('#txtLogoUrl').value,
-                        
-                        ShowNavbarCategories: document.querySelector('#chkShowNavbarCategories').checked,
-                        ShowLibraryTitles: document.querySelector('#chkShowLibraryTitles').checked,
-                        ShowNavbarRandom: document.querySelector('#chkShowNavbarRandom').checked,
-                        ShowNavbarNotifications: document.querySelector('#chkShowNavbarNotifications').checked,
-                        
-                        EnableJellyseerr: document.querySelector('#chkEnableJellyseerr').checked,
-                        JellyseerrUrl: document.querySelector('#txtJellyseerrUrl').value,
-                        JellyseerrText: document.querySelector('#txtJellyseerrText').value,
-                        ShowNavbarRequests: document.querySelector('#chkShowNavbarRequests').checked,
-                        ShowHomeRequestsCard: document.querySelector('#chkShowHomeRequestsCard').checked,
-                        JellyseerrGlobalOverride: document.querySelector('#chkJellyseerrGlobalOverride').checked,
-                        
-                        PlayerSeekTime: parseInt(document.querySelector('#txtPlayerSeekTime').value) || 10,
-                        PlayerAutoSkip: document.querySelector('#chkPlayerAutoSkip').checked,
-                        PlayerAutoNextEp: document.querySelector('#chkPlayerAutoNextEp').checked
+                            // Load current settings
+                            LegitFlixConfigPage.loadConfig();
+                        }
                     };
 
-                    window.ApiClient.updatePluginConfiguration(LegitFlixConfigPage.pluginId, config)
-                        .then(Dashboard.processPluginConfigurationUpdateResult)
-                        .catch(function (error) {
-                            console.error('LegitFlix: Failed to save configuration:', error);
-                        })
-                        .finally(function () {
-                            Dashboard.hideLoadingMsg();
-                        });
-                },
+                    // Bind the submit handler to the form
+                    var form = document.querySelector('.legitFlixConfigurationForm');
+                    if (form) {
+                        form.addEventListener('submit', LegitFlixConfigPage.saveConfig);
+                    }
 
-                init: function () {
-                    // --- UI BLOCKER FIX ---
-                    setTimeout(function () {
-                        var allDivs = document.body.querySelectorAll('div');
-                        allDivs.forEach(function (el) {
-                            var z = window.getComputedStyle(el).zIndex;
-                            if (z && parseInt(z) > 2000000000) {
-                                console.warn('LegitFlix: Hiding blocking element with z-index ' + z, el);
-                                el.style.display = 'none';
-                                el.style.pointerEvents = 'none';
-                                el.style.zIndex = '1';
-                            }
-                        });
-                    }, 500);
+                    // Run init immediately on script load
+                    LegitFlixConfigPage.init();
 
-                    // Load current settings
-                    LegitFlixConfigPage.loadConfig();
+                    // Bind init to pageshow event as a fallback
+                    var configPageEl = document.querySelector('#legitFlixConfigPage');
+                    if (configPageEl) {
+                        configPageEl.addEventListener('pageshow', function () {
+                            LegitFlixConfigPage.init();
+                        });
+                    }
                 }
-            };
-
-            // Bind the submit handler to the form
-            document.querySelector('.legitFlixConfigurationForm').addEventListener('submit', LegitFlixConfigPage.saveConfig);
-
-            // Bind init to pageshow event
-            document.querySelector('#legitFlixConfigPage').addEventListener('pageshow', function () {
-                LegitFlixConfigPage.init();
             });
-        }
-    </script>
-</div>
+        </script>
+    </div>
 </body>
+
 </html>

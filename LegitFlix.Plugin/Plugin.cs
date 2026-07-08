@@ -55,7 +55,8 @@ namespace LegitFlix.Plugin
                 new PluginPageInfo
                 {
                     Name = "LegitFlix UI",
-                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html"
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html",
+                    EnableInMainMenu = true
                 }
             };
         }

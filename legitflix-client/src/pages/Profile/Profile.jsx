@@ -899,11 +899,11 @@ const Profile = () => {
                         </label>
                     </div>
 
-                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={config.enableGlobalOverwrites || config.lockNavigationSettings ? "Managed globally via plugin settings" : ""}>
                         <div className="setting-row-label">
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Navbar Categories
-                                {config.enableGlobalOverwrites && (
+                                {(config.enableGlobalOverwrites || config.lockNavigationSettings) && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </span>
@@ -913,18 +913,18 @@ const Profile = () => {
                             <input
                                 type="checkbox"
                                 checked={!!config.showNavbarCategories}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={config.enableGlobalOverwrites || config.lockNavigationSettings}
                                 onChange={e => updateConfig({ showNavbarCategories: e.target.checked })}
                             />
                             <span className="slider"></span>
                         </label>
                     </div>
 
-                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={config.enableGlobalOverwrites || config.lockNavigationSettings ? "Managed globally via plugin settings" : ""}>
                         <div className="setting-row-label">
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Random Play Button
-                                {config.enableGlobalOverwrites && (
+                                {(config.enableGlobalOverwrites || config.lockNavigationSettings) && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </span>
@@ -934,18 +934,18 @@ const Profile = () => {
                             <input
                                 type="checkbox"
                                 checked={!!config.showNavbarRandom}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={config.enableGlobalOverwrites || config.lockNavigationSettings}
                                 onChange={e => updateConfig({ showNavbarRandom: e.target.checked })}
                             />
                             <span className="slider"></span>
                         </label>
                     </div>
 
-                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                    <div className="setting-row" title={config.enableGlobalOverwrites || config.lockNavigationSettings ? "Managed globally via plugin settings" : ""}>
                         <div className="setting-row-label">
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                 Show Notification Bell
-                                {config.enableGlobalOverwrites && (
+                                {(config.enableGlobalOverwrites || config.lockNavigationSettings) && (
                                     <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
                                 )}
                             </span>
@@ -955,7 +955,7 @@ const Profile = () => {
                             <input
                                 type="checkbox"
                                 checked={config.showNavbarNotifications !== false}
-                                disabled={config.enableGlobalOverwrites}
+                                disabled={config.enableGlobalOverwrites || config.lockNavigationSettings}
                                 onChange={e => updateConfig({ showNavbarNotifications: e.target.checked })}
                             />
                             <span className="slider"></span>
@@ -1091,11 +1091,17 @@ const Profile = () => {
                     <option value="2000000">2 Mbps</option>
                 </select>
             </div>
-            <div className="form-group">
-                <label>Seek Time</label>
+            <div className="form-group" title={config.enableGlobalOverwrites || config.lockPlayerSettings ? "Managed globally via plugin settings" : ""}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    Seek Time
+                    {(config.enableGlobalOverwrites || config.lockPlayerSettings) && (
+                        <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                    )}
+                </label>
                 <select
                     className="settings-select"
                     value={config.playerSeekTime || 10}
+                    disabled={config.enableGlobalOverwrites || config.lockPlayerSettings}
                     onChange={e => updateConfig({ playerSeekTime: parseInt(e.target.value, 10) })}
                 >
                     <option value="5">5 Seconds</option>

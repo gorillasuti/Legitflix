@@ -101,6 +101,9 @@ namespace LegitFlix.Plugin
         playerAutoSkip: {Bool(config.PlayerAutoSkip)},
         playerAutoNextEp: {Bool(config.PlayerAutoNextEp)},
         jellyseerrGlobalOverride: {Bool(config.JellyseerrGlobalOverride)},
+        lockVisualSettings: {Bool(config.LockVisualSettings)},
+        lockNavigationSettings: {Bool(config.LockNavigationSettings)},
+        lockPlayerSettings: {Bool(config.LockPlayerSettings)},
         showNavbarNotifications: {Bool(config.ShowNavbarNotifications)},
         pluginVersion: {sVersion},
         latestRemoteVersion: {sRemoteVersion}
@@ -215,6 +218,15 @@ namespace LegitFlix.Plugin
         // 2. Traversal Logic
         function isLogoElement(el) {
             if (!el) return false;
+
+            // Explicitly ignore plugin configuration pages and dashboard pages
+            if (el.getAttribute) {
+                var href = el.getAttribute('href') || '';
+                if (href.indexOf('configurationpage') !== -1 || href.indexOf('dashboard') !== -1) {
+                    return false;
+                }
+            }
+
             var classes = el.className || '';
             if (typeof classes !== 'string') classes = '';
             

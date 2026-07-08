@@ -23,6 +23,9 @@ namespace LegitFlix.Plugin.Configuration
         public bool PlayerAutoNextEp { get; set; } = true;
         public bool EnableGlobalOverwrites { get; set; } = false;
         public bool JellyseerrGlobalOverride { get; set; } = false;
+        public bool LockVisualSettings { get; set; } = false;
+        public bool LockNavigationSettings { get; set; } = false;
+        public bool LockPlayerSettings { get; set; } = false;
         public bool ShowNavbarNotifications { get; set; } = true;
     }
 }
