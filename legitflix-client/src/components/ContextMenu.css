@@ -5,7 +5,6 @@
     border: 1px solid #333;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    padding: 6px 0;
     min-width: 220px;
     color: #eee;
     font-family: 'Inter', sans-serif;
@@ -27,11 +26,20 @@
 
 .lf-context-menu__item {
     display: flex;
+    width: 100%;
     align-items: center;
     padding: 8px 16px;
     cursor: pointer;
     transition: background-color 0.15s ease;
     gap: 12px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    width: 100%;
+    text-align: left;
 }
 
 .lf-context-menu__item:hover {

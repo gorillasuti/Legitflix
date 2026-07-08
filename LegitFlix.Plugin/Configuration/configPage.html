@@ -16,7 +16,8 @@
                 <p class="fieldDescription">Configure server-level defaults and global override policies for the
                     LegitFlix UI replacement.</p>
                 <div style="margin: 1.5em 0 0.5em 0;">
-                    <button id="btnOpenLegitFlixUI" type="button" onclick="window.LegitFlix_OpenConfigModal()" class="raised button-submit block emby-button">
+                    <button id="btnOpenLegitFlixUI" type="button" onclick="window.LegitFlix_OpenConfigModal()"
+                        class="raised button-submit block emby-button">
                         <span>Open Legitflix UI</span>
                     </button>
                 </div>
@@ -360,23 +361,34 @@
                         '<button id="lf-btn-cancel" class="lf-dialog-btn">Stay in Legitflix</button>';
                 }
                 document.body.appendChild(dialog);
-                document.getElementById('lf-btn-action').onclick = function() {
+                document.getElementById('lf-btn-action').onclick = function () {
                     dialog.close(); dialog.remove();
                     if (isClassic) {
                         document.cookie = 'lf-classic-view=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
                         window.location.href = window.location.origin + window.location.pathname;
                     } else {
-                        var d = new Date(); d.setTime(d.getTime() + 365*24*60*60*1000);
+                        var d = new Date(); d.setTime(d.getTime() + 365 * 24 * 60 * 60 * 1000);
                         document.cookie = 'lf-classic-view=true; Path=/; Expires=' + d.toUTCString() + ';';
                         window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
                     }
                 };
-                document.getElementById('lf-btn-cancel').onclick = function() {
+                document.getElementById('lf-btn-cancel').onclick = function () {
                     dialog.close(); dialog.remove();
                     if (isClassic) {
                         window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
                     }
                 };
+                dialog.addEventListener('click', function (event) {
+                    var rect = dialog.getBoundingClientRect();
+                    var isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height &&
+                        rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
+                    if (!isInDialog) {
+                        dialog.close(); dialog.remove();
+                        if (isClassic) {
+                            window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
+                        }
+                    }
+                });
                 dialog.showModal();
             };
         </script>

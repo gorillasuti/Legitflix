@@ -36,7 +36,7 @@
     display: flex;
     align-items: flex-end;
     padding: 40px var(--content-padding);
-    overflow: hidden;
+    z-index: 15;
 }
 
 .lf-movie-hero__backdrop {
@@ -648,18 +648,19 @@
 
 .lf-movie-actions-popover {
     position: absolute;
-    bottom: calc(100% + 8px);
-    /* Open above the button */
+    top: calc(100% + 8px);
+    /* Open below the button */
     right: 0;
     z-index: 1000;
-    animation: lf-menu-fade-in-up 0.1s ease-out;
+    animation: lf-menu-fade-in-down 0.1s ease-out;
 }
 
-@keyframes lf-menu-fade-in-up {
+@keyframes lf-menu-fade-in-down {
     from {
         opacity: 0;
-        transform: scale(0.98) translateY(4px);
+        transform: scale(0.98) translateY(-4px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
