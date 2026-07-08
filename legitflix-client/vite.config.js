@@ -38,6 +38,8 @@ export default defineConfig(({ mode }) => {
         '/Users': { target: jellyfinUrl, changeOrigin: true },
         '/Items': { target: jellyfinUrl, changeOrigin: true },
         '/Branding': { target: jellyfinUrl, changeOrigin: true },
+        '/UserImage': { target: jellyfinUrl, changeOrigin: true },
+        '/DisplayPreferences': { target: jellyfinUrl, changeOrigin: true },
         // Add more routes as needed
       },
       configureServer(server) {

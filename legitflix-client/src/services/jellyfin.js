@@ -1114,7 +1114,7 @@ class JellyfinService {
                 throw new Error(`Unsupported image type '${type}' for user upload`);
             }
 
-            // Convert file/blob to raw base64 string (Jellyfin UserImage endpoint expects base64)
+            // Convert file/blob to raw base64 string (Jellyfin /Users/{userId}/Images/Primary expects base64 body)
             const base64Data = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => {
@@ -1136,22 +1136,31 @@ class JellyfinService {
 
             const authHeader = `MediaBrowser Client="${this.jellyfin.clientInfo.name}", Device="${this.jellyfin.deviceInfo.name}", DeviceId="${this.jellyfin.deviceInfo.id}", Version="${this.jellyfin.clientInfo.version}", Token="${token}"`;
 
-            const url = `${baseUrl}/UserImage?userId=${userId}&api_key=${token}`;
+            // Use relative path if running in a web browser to prevent CORS, port, and IP mismatches.
+            const isWeb = window.location.protocol.startsWith('http');
+            const requestBase = isWeb ? '' : baseUrl;
+            const url = `${requestBase}/Users/${userId}/Images/Primary?api_key=${token}`;
+
+            console.log(`[uploadUserImage] Uploading base64 string for userId: ${userId}`);
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    'Authorization': authHeader,
                     'X-Emby-Authorization': authHeader,
                     'X-Emby-Token': token,
                     'X-MediaBrowser-Token': token,
-                    'Content-Type': 'image/*'
+                    'Content-Type': 'image/png' // Strictly set to image/png or image/jpeg as expected by Jellyfin
                 },
                 body: base64Data
             });
 
             if (!response.ok) {
                 const text = await response.text();
+                console.error("[uploadUserImage] Upload failed:", response.status, text);
                 throw new Error(`Upload failed with status ${response.status}: ${text}`);
             }
+            console.log("[uploadUserImage] Upload succeeded!");
             return true;
         } catch (error) {
             console.error("uploadUserImage failed", error);
@@ -1176,10 +1185,14 @@ class JellyfinService {
 
             const authHeader = `MediaBrowser Client="${this.jellyfin.clientInfo.name}", Device="${this.jellyfin.deviceInfo.name}", DeviceId="${this.jellyfin.deviceInfo.id}", Version="${this.jellyfin.clientInfo.version}", Token="${token}"`;
 
-            const url = `${baseUrl}/UserImage?userId=${userId}&api_key=${token}`;
+            // Use relative path if running in a web browser to prevent CORS, port, and IP mismatches.
+            const isWeb = window.location.protocol.startsWith('http');
+            const requestBase = isWeb ? '' : baseUrl;
+            const url = `${requestBase}/Users/${userId}/Images/Primary?api_key=${token}`;
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
+                    'Authorization': authHeader,
                     'X-Emby-Authorization': authHeader,
                     'X-Emby-Token': token,
                     'X-MediaBrowser-Token': token

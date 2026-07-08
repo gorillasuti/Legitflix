@@ -129,10 +129,12 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
                     <div className="pm-profile-header">
                         <div className="pm-avatar-container">
                             <img
-                                src={config.userAvatar || `${jellyfinService.api.basePath}/Users/${user.Id}/Images/Primary?quality=90&t=${Date.now()}`}
+                                src={config.userAvatar || jellyfinService.getUserImageUrl(user.Id, { tag: user.PrimaryImageTag || (user.ImageTags && user.ImageTags.Primary) })}
                                 alt={user.Name}
                                 className="pm-avatar-img"
-                                onError={(e) => { e.target.style.display = 'none'; }}
+                                onError={(e) => {
+                                    e.target.src = 'https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/avatars/Netflix/010c7b9061ece2fbf7bbb8d9bb6d2bee16f4a68c.png';
+                                }}
                             />
                             <div className="pm-avatar-edit-overlay" onClick={() => setShowAvatarPicker(true)}>
                                 <span className="material-icons">photo_camera</span>

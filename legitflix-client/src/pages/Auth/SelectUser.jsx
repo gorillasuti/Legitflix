@@ -9,19 +9,7 @@ const UserAvatar = ({ userId, userName, tag }) => {
     const [imgError, setImgError] = useState(false);
     const [imgLoading, setImgLoading] = useState(true);
 
-    let imageUrl = null;
-    if (!tag) {
-        try {
-            const cachedAvatars = JSON.parse(localStorage.getItem('legitflix_user_avatars') || '{}');
-            if (cachedAvatars[userId]) {
-                imageUrl = cachedAvatars[userId];
-            }
-        } catch (e) { }
-    }
-
-    if (!imageUrl) {
-        imageUrl = jellyfinService.getUserImageUrl(userId, { tag });
-    }
+    const imageUrl = jellyfinService.getUserImageUrl(userId, { tag });
 
     if (imgError || !imageUrl) {
         return (
@@ -65,7 +53,9 @@ const SelectUser = () => {
         const loadUsers = async () => {
             try {
                 const publicUsers = await jellyfinService.getPublicUsers();
-                if (publicUsers) setUsers(publicUsers);
+                if (publicUsers) {
+                    setUsers(publicUsers);
+                }
             } catch (e) {
                 console.error("Failed to load users", e);
             } finally {
