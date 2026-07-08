@@ -651,80 +651,19 @@
     bottom: calc(100% + 8px);
     /* Open above the button */
     right: 0;
-    width: 250px;
-    background: var(--clr-bg-surface, #1f1f1f);
-    /* Theme aware */
-    border: 1.5px solid rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    /* Square with small rounding */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    overflow: hidden;
-    animation: lf-fade-in-slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: lf-menu-fade-in-up 0.1s ease-out;
 }
 
-@keyframes lf-fade-in-slide-up {
+@keyframes lf-menu-fade-in-up {
     from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: scale(0.98) translateY(4px);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1) translateY(0);
     }
-}
-
-.lf-movie-actions-popover .actionSheetContent {
-    width: 100%;
-}
-
-.lf-movie-actions-popover .actionSheetScroller {
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    max-height: 320px;
-    overflow-y: auto;
-}
-
-.lf-movie-actions-popover .actionSheetMenuItem {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 0.88rem;
-    font-weight: 500;
-    text-align: left;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lf-movie-actions-popover .actionSheetMenuItem:hover {
-    background: color-mix(in srgb, var(--clr-accent) 15%, transparent) !important;
-    color: var(--clr-accent, #ff6a00) !important;
-}
-
-.lf-movie-actions-popover .actionSheetMenuItem .actionsheetMenuItemIcon {
-    font-size: 20px;
-    color: rgba(255, 255, 255, 0.6);
-    transition: color 0.2s;
-}
-
-.lf-movie-actions-popover .actionSheetMenuItem:hover .actionsheetMenuItemIcon {
-    color: var(--clr-accent, #ff6a00) !important;
-}
-
-.lf-movie-actions-popover .actionsheetDivider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 6px 0;
 }
 
 

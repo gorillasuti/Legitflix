@@ -281,6 +281,9 @@ const MovieDetail = () => {
             case 'editimages':
                 setEditImagesOpen(true);
                 break;
+            case 'editsubtitles':
+                setIsSubtitleModalOpen(true);
+                break;
             case 'identify':
                 setIdentifyOpen(true);
                 break;
@@ -771,84 +774,56 @@ const MovieDetail = () => {
                                 </button>
 
                                 {isActionMenuOpen && (
-                                    <div className="lf-movie-actions-popover">
-                                        <div className="actionSheetContent">
-                                            <div className="actionSheetScroller scrollY">
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('addtocollection')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons playlist_add" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Add to collection</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('addtoplaylist')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons playlist_add" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Add to playlist</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('download')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons file_download" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Download</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('copy-stream')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons content_copy" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Copy Stream URL</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('delete')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons delete" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Delete media</div>
-                                                    </div>
-                                                </button>
-                                                <div className="actionsheetDivider"></div>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('edit')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons edit" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Edit metadata</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('editimages')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons image" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Edit images</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('editsubtitles')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons closed_caption" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Edit subtitles</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('identify')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons search" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Identify</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('moremediainfo')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons info" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Media Info</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('refresh')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons refresh" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Refresh metadata</div>
-                                                    </div>
-                                                </button>
-                                                <button type="button" className="listItem listItem-button actionSheetMenuItem emby-button" onClick={() => handleActionClick('share')}>
-                                                    <span className="actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons share" aria-hidden="true"></span>
-                                                    <div className="listItemBody actionsheetListItemBody">
-                                                        <div className="listItemBodyText actionSheetItemText">Share</div>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </div>
+                                    <div className="lf-movie-actions-popover lf-context-menu">
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('addtocollection')}>
+                                            <span className="material-icons lf-context-menu__icon">playlist_add</span>
+                                            <span className="lf-context-menu__label">Add to collection</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('addtoplaylist')}>
+                                            <span className="material-icons lf-context-menu__icon">playlist_add</span>
+                                            <span className="lf-context-menu__label">Add to playlist</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('download')}>
+                                            <span className="material-icons lf-context-menu__icon">file_download</span>
+                                            <span className="lf-context-menu__label">Download</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('copy-stream')}>
+                                            <span className="material-icons lf-context-menu__icon">content_copy</span>
+                                            <span className="lf-context-menu__label">Copy Stream URL</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item is-danger" onClick={() => handleActionClick('delete')}>
+                                            <span className="material-icons lf-context-menu__icon">delete</span>
+                                            <span className="lf-context-menu__label">Delete media</span>
+                                        </button>
+                                        <div className="lf-context-menu__separator"></div>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('edit')}>
+                                            <span className="material-icons lf-context-menu__icon">edit</span>
+                                            <span className="lf-context-menu__label">Edit metadata</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('editimages')}>
+                                            <span className="material-icons lf-context-menu__icon">image</span>
+                                            <span className="lf-context-menu__label">Edit images</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('editsubtitles')}>
+                                            <span className="material-icons lf-context-menu__icon">closed_caption</span>
+                                            <span className="lf-context-menu__label">Edit subtitles</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('identify')}>
+                                            <span className="material-icons lf-context-menu__icon">search</span>
+                                            <span className="lf-context-menu__label">Identify</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('moremediainfo')}>
+                                            <span className="material-icons lf-context-menu__icon">info</span>
+                                            <span className="lf-context-menu__label">Media Info</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('refresh')}>
+                                            <span className="material-icons lf-context-menu__icon">refresh</span>
+                                            <span className="lf-context-menu__label">Refresh metadata</span>
+                                        </button>
+                                        <button type="button" className="lf-context-menu__item" onClick={() => handleActionClick('share')}>
+                                            <span className="material-icons lf-context-menu__icon">share</span>
+                                            <span className="lf-context-menu__label">Share</span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
