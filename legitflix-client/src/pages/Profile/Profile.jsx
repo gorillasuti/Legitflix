@@ -941,6 +941,47 @@ const Profile = () => {
                         </label>
                     </div>
 
+                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                        <div className="setting-row-label">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Notification Bell
+                                {config.enableGlobalOverwrites && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </span>
+                            <span className="setting-hint">Display the notification bell for recently added media in navigation bar</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={config.showNavbarNotifications !== false}
+                                disabled={config.enableGlobalOverwrites}
+                                onChange={e => updateConfig({ showNavbarNotifications: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                    <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
+                        <div className="setting-row-label">
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Requests in Navbar
+                                {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </span>
+                            <span className="setting-hint">Display the requests integration button in navigation bar</span>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={!!config.showNavbarRequests}
+                                disabled={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride}
+                                onChange={e => updateConfig({ showNavbarRequests: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+
                     {!!config.showNavbarRandom && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingLeft: '12px', borderLeft: '2px solid rgba(255,255,255,0.05)', marginBottom: '15px', marginTop: '-5px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -996,27 +1037,6 @@ const Profile = () => {
                             </div>
                         </div>
                     )}
-
-                    <div className="setting-row" title={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride ? "Managed globally via plugin settings" : ""}>
-                        <div className="setting-row-label">
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                Show Requests in Navbar
-                                {(config.enableGlobalOverwrites || config.jellyseerrGlobalOverride) && (
-                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
-                                )}
-                            </span>
-                            <span className="setting-hint">Display the requests integration button in navigation bar</span>
-                        </div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={!!config.showNavbarRequests}
-                                disabled={config.enableGlobalOverwrites || config.jellyseerrGlobalOverride}
-                                onChange={e => updateConfig({ showNavbarRequests: e.target.checked })}
-                            />
-                            <span className="slider"></span>
-                        </label>
-                    </div>
                 </div>
 
                 {homeMsg && (

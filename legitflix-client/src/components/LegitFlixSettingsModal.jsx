@@ -62,6 +62,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
 
     // Random Button State
     const [showNavbarRandom, setShowNavbarRandom] = useState(config.showNavbarRandom !== false);
+    const [showNavbarNotifications, setShowNavbarNotifications] = useState(config.showNavbarNotifications !== false);
     const [randomFilters, setRandomFilters] = useState(config.randomContentFilters || { Movie: true, Series: true, Episode: true });
     const [randomLibraries, setRandomLibraries] = useState(config.randomLibraries || []);
     const [availableLibraries, setAvailableLibraries] = useState([]);
@@ -191,6 +192,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
 
             // Random Config Reset
             setShowNavbarRandom(config.showNavbarRandom !== false);
+            setShowNavbarNotifications(config.showNavbarNotifications !== false);
             setRandomFilters(config.randomContentFilters || { Movie: true, Series: true, Episode: true });
             setRandomLibraries(config.randomLibraries || []);
 
@@ -279,6 +281,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
 
             // Random Config Save
             showNavbarRandom,
+            showNavbarNotifications,
             randomContentFilters: randomFilters,
             randomLibraries: randomLibraries,
 
@@ -502,7 +505,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                 <div className="setting-section" key="profileAssets">
                     <h3>Profile Personalization</h3>
                     <p className="setting-desc">Customize your profile avatar and client background image.</p>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
                         {/* Avatar Row */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', gap: '15px' }}>
@@ -902,6 +905,36 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                 type="checkbox"
                                 checked={config.showNavbarSearch !== false}
                                 onChange={(e) => updateConfig({ showNavbarSearch: e.target.checked })}
+                            />
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: 'navbarNotifications',
+            tab: 'navigation',
+            label: 'Show Notification Bell',
+            keywords: ['navigation', 'navbar', 'notifications', 'bell', 'recent'],
+            render: () => (
+                <div className="setting-section" key="navbarNotifications">
+                    <div className="setting-row" title={config.enableGlobalOverwrites ? "Managed globally via plugin settings" : ""}>
+                        <div>
+                            <h3 className="setting-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                Show Notification Bell
+                                {config.enableGlobalOverwrites && (
+                                    <span className="material-icons" style={{ fontSize: '14px', color: '#ff7e00', cursor: 'help' }}>lock</span>
+                                )}
+                            </h3>
+                            <p className="setting-desc">Display the notification bell for recently added media in the navbar</p>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={showNavbarNotifications}
+                                onChange={(e) => setShowNavbarNotifications(e.target.checked)}
+                                disabled={config.enableGlobalOverwrites}
                             />
                             <span className="slider"></span>
                         </label>

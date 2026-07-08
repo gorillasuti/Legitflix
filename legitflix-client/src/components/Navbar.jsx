@@ -32,6 +32,10 @@ const Navbar = ({ alwaysFilled = false }) => {
 
     // Cast & SyncPlay states
     const [showCastModal, setShowCastModal] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const notifDropdownRef = useRef(null);
     const [showSyncPlayModal, setShowSyncPlayModal] = useState(false);
     const [castTarget, setCastTarget] = useState(() => {
         const saved = localStorage.getItem('legitflix_cast_target');
@@ -111,6 +115,9 @@ const Navbar = ({ alwaysFilled = false }) => {
             if (!e.target.closest('.nav-avatar-container')) {
                 setShowMenu(false);
             }
+            if (!e.target.closest('.nav-notifications-container')) {
+                setShowNotifications(false);
+            }
         };
         document.addEventListener('click', closeMenu);
         return () => document.removeEventListener('click', closeMenu);
@@ -127,6 +134,257 @@ const Navbar = ({ alwaysFilled = false }) => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+    // Notifications Fetcher & Cache Manager
+    useEffect(() => {
+        if (!user || config.showNavbarNotifications === false) return;
+
+        // Load from localStorage cache first for zero-latency loading
+        try {
+            const cached = localStorage.getItem(`legitflix_notifs_${user.Id}`);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setNotifications(parsed);
+                // Calculate unread count based on non-dismissed
+                let dismissed = [];
+                try {
+                    const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user.Id}`);
+                    dismissed = saved ? JSON.parse(saved) : [];
+                } catch (e) { }
+                const visible = parsed.filter(item => !dismissed.includes(item.Id));
+                const lastCheck = localStorage.getItem(`legitflix_notifs_last_check_${user.Id}`) || '';
+                const unread = visible.filter(item => {
+                    const dateVal = item.DateCreated || item.DateLastAdded;
+                    return !lastCheck || (dateVal && dateVal > lastCheck);
+                }).length;
+                setUnreadCount(unread);
+            }
+        } catch (e) {
+            console.warn("Failed to load cached notifications", e);
+        }
+
+        const fetchLatestAdded = async () => {
+            try {
+                const fields = 'PrimaryImageAspectRatio,Overview,ImageTags,ProductionYear,RunTimeTicks,CommunityRating,OfficialRating,UserData,DateCreated,DateLastAdded,MediaStreams,Width,Height';
+                const endpoint = `/Users/${user.Id}/Items/Latest?limit=20&fields=${fields}`;
+                const data = await jellyfinService.makeRequest(endpoint);
+
+                if (Array.isArray(data)) {
+                    let finalData = [...data];
+
+                    // Admin-only: check for plugin updates (version is fetched server-side)
+                    const isAdmin = user?.Policy?.IsAdministrator;
+                    if (isAdmin) {
+                        const serverCfg = window.LegitFlix_ServerConfig || {};
+                        const localVersion = serverCfg.pluginVersion || '1.1.1.0';
+                        const remoteVersion = serverCfg.latestRemoteVersion;
+                        if (remoteVersion && isVersionNewer(localVersion, remoteVersion)) {
+                            // Only show if not already dismissed for this version
+                            const updateId = `legitflix-plugin-update-${remoteVersion}`;
+                            let dismissed = [];
+                            try {
+                                const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user.Id}`);
+                                dismissed = saved ? JSON.parse(saved) : [];
+                            } catch (e) { }
+                            if (!dismissed.includes(updateId)) {
+                                const updateItem = {
+                                    Id: updateId,
+                                    Name: `LegitFlix Update Available`,
+                                    Type: 'SystemUpdate',
+                                    DateCreated: new Date().toISOString(),
+                                    IsSystemUpdate: true,
+                                    RemoteVersion: remoteVersion,
+                                    LocalVersion: localVersion
+                                };
+                                finalData = [updateItem, ...finalData];
+                            }
+                        }
+                    }
+
+                    setNotifications(finalData);
+                    localStorage.setItem(`legitflix_notifs_${user.Id}`, JSON.stringify(finalData));
+
+                    // Filter out dismissed
+                    let dismissed = [];
+                    try {
+                        const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user.Id}`);
+                        dismissed = saved ? JSON.parse(saved) : [];
+                    } catch (e) { }
+
+                    const visible = finalData.filter(item => !dismissed.includes(item.Id));
+                    const lastCheck = localStorage.getItem(`legitflix_notifs_last_check_${user.Id}`) || '';
+                    const unread = visible.filter(item => {
+                        const dateVal = item.DateCreated || item.DateLastAdded;
+                        return !lastCheck || (dateVal && dateVal > lastCheck);
+                    }).length;
+                    setUnreadCount(unread);
+                }
+            } catch (err) {
+                console.error("Failed to fetch latest added media notifications", err);
+            }
+        };
+
+        fetchLatestAdded();
+
+        // Fetch every 5 minutes in background
+        const interval = setInterval(fetchLatestAdded, 5 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [user, config.showNavbarNotifications]);
+
+    const handleBellClick = () => {
+        setShowNotifications(!showNotifications);
+    };
+
+    const handleMarkAllRead = () => {
+        const newestNotif = notifications.find(item => {
+            try {
+                const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user?.Id}`);
+                const dismissed = saved ? JSON.parse(saved) : [];
+                return !dismissed.includes(item.Id);
+            } catch (e) {
+                return true;
+            }
+        });
+        const timestamp = newestNotif ? (newestNotif.DateCreated || newestNotif.DateLastAdded) : new Date().toISOString();
+        localStorage.setItem(`legitflix_notifs_last_check_${user?.Id}`, timestamp);
+        setUnreadCount(0);
+        setShowNotifications(false);
+    };
+
+    const handleDismissAll = () => {
+        const itemIds = notifications.map(item => item.Id);
+        try {
+            const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user?.Id}`);
+            let dismissed = saved ? JSON.parse(saved) : [];
+            const newDismissed = Array.from(new Set([...dismissed, ...itemIds]));
+            localStorage.setItem(`legitflix_notifs_dismissed_${user?.Id}`, JSON.stringify(newDismissed));
+
+            // Also mark as read
+            const newestNotif = notifications[0];
+            const timestamp = newestNotif ? (newestNotif.DateCreated || newestNotif.DateLastAdded) : new Date().toISOString();
+            localStorage.setItem(`legitflix_notifs_last_check_${user?.Id}`, timestamp);
+            setUnreadCount(0);
+        } catch (e) {
+            console.error("Failed to dismiss notifications", e);
+        }
+        setShowNotifications(false);
+    };
+
+    const getVisibleNotifications = (itemsList) => {
+        if (!itemsList) return [];
+        try {
+            const saved = localStorage.getItem(`legitflix_notifs_dismissed_${user?.Id}`);
+            const dismissed = saved ? JSON.parse(saved) : [];
+            return itemsList.filter(item => !dismissed.includes(item.Id));
+        } catch (e) {
+            return itemsList;
+        }
+    };
+
+    const getItemQuality = (item) => {
+        const videoStream = item.MediaStreams?.find(s => s.Type === 'Video');
+        const width = item.Width || videoStream?.Width || 0;
+        const height = item.Height || videoStream?.Height || 0;
+
+        if (width >= 3840 || height >= 2160) {
+            return '4K';
+        } else if (width >= 1920 || height >= 1080) {
+            return '1080p';
+        } else if (width >= 1280 || height >= 720) {
+            return '720p';
+        }
+        return null;
+    };
+
+    const getItemLanguage = (item) => {
+        const audioStream = item.MediaStreams?.find(s => s.Type === 'Audio');
+        const lang = audioStream?.Language || item.Language;
+        if (!lang) return null;
+
+        const flags = {
+            'eng': '🇺🇸', 'en': '🇺🇸',
+            'spa': '🇪🇸', 'es': '🇪🇸',
+            'hun': '🇭🇺', 'hu': '🇭🇺',
+            'ger': '🇩🇪', 'de': '🇩🇪',
+            'fre': '🇫🇷', 'fr': '🇫🇷',
+            'jpn': '🇯🇵', 'ja': '🇯🇵',
+            'ita': '🇮🇹', 'it': '🇮🇹',
+            'por': '🇵🇹', 'pt': '🇵🇹',
+            'rus': '🇷🇺', 'ru': '🇷🇺',
+            'zho': '🇨🇳', 'zh': '🇨🇳',
+            'kor': '🇰🇷', 'ko': '🇰🇷'
+        };
+        const flag = flags[lang.toLowerCase()] || '';
+        return flag ? `${flag} ${lang.toUpperCase()}` : lang.toUpperCase();
+    };
+
+    const isVersionNewer = (local, remote) => {
+        if (!local || !remote) return false;
+        const localParts = local.split('.').map(Number);
+        const remoteParts = remote.split('.').map(Number);
+        for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
+            const localVal = localParts[i] || 0;
+            const remoteVal = remoteParts[i] || 0;
+            if (remoteVal > localVal) return true;
+            if (localVal > remoteVal) return false;
+        }
+        return false;
+    };
+
+    const groupNotificationsByDate = (items) => {
+        const groups = {
+            today: [],
+            thisWeek: [],
+            earlier: []
+        };
+
+        const now = new Date();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        const oneWeekMs = 7 * oneDayMs;
+
+        items.forEach(item => {
+            const dateVal = item.DateCreated || item.DateLastAdded || item.PremiereDate;
+            if (!dateVal) {
+                groups.earlier.push(item);
+                return;
+            }
+            const createdDate = new Date(dateVal);
+            if (isNaN(createdDate.getTime())) {
+                groups.earlier.push(item);
+                return;
+            }
+            const diffMs = now - createdDate;
+
+            if (diffMs < oneDayMs) {
+                groups.today.push(item);
+            } else if (diffMs < oneWeekMs) {
+                groups.thisWeek.push(item);
+            } else {
+                groups.earlier.push(item);
+            }
+        });
+
+        return groups;
+    };
+
+    const formatNotifDate = (dateStr) => {
+        if (!dateStr) return 'Recently added';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return 'Recently added';
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMins / 60);
+
+        if (diffMins < 60) {
+            return `${diffMins <= 0 ? 1 : diffMins}m ago`;
+        }
+        if (diffHrs < 24) {
+            return `${diffHrs}h ago`;
+        }
+
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
 
     const isAdmin = user?.Policy?.IsAdministrator;
 
@@ -276,6 +534,149 @@ const Navbar = ({ alwaysFilled = false }) => {
                                     >
                                         <span className="material-icons">casino</span>
                                     </button>
+                                )}
+
+                                {/* Notification Bell Icon & Dropdown - Toggleable */}
+                                {config.showNavbarNotifications !== false && (
+                                    <div className="nav-notifications-container" ref={notifDropdownRef}>
+                                        <button
+                                            className={`nav-icon-btn ${showNotifications ? 'active' : ''}`}
+                                            onClick={handleBellClick}
+                                            title="Recently Added"
+                                        >
+                                            <span className="material-icons">notifications</span>
+                                            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+                                        </button>
+                                        {showNotifications && (
+                                            (() => {
+                                                const visibleNotifs = getVisibleNotifications(notifications);
+                                                return (
+                                                    <div className="notifications-dropdown">
+                                                        <div className="notifications-header">
+                                                            <h3>Recently Added</h3>
+                                                            {visibleNotifs.length > 0 && (
+                                                                <div className="notifications-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                                    {unreadCount > 0 && (
+                                                                        <button className="notifications-clear-btn" onClick={handleMarkAllRead}>
+                                                                            Mark Read
+                                                                        </button>
+                                                                    )}
+                                                                    {unreadCount > 0 && <span style={{ opacity: 0.3, fontSize: '0.8rem', color: '#dadada' }}>|</span>}
+                                                                    <button className="notifications-clear-btn" onClick={handleDismissAll}>
+                                                                        Clear All
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="notifications-list">
+                                                            {visibleNotifs.length === 0 ? (
+                                                                <div className="notifications-empty">
+                                                                    <span className="material-icons">notifications_off</span>
+                                                                    <span>No new media added recently</span>
+                                                                </div>
+                                                            ) : (
+                                                                (() => {
+                                                                    const grouped = groupNotificationsByDate(visibleNotifs);
+                                                                    const hasToday = grouped.today.length > 0;
+                                                                    const hasThisWeek = grouped.thisWeek.length > 0;
+                                                                    const hasEarlier = grouped.earlier.length > 0;
+                                                                    const lastCheck = localStorage.getItem(`legitflix_notifs_last_check_${user?.Id}`) || '';
+
+                                                                    const renderItem = (item) => {
+                                                                        // System Update notification (admin only)
+                                                                        if (item.IsSystemUpdate) {
+                                                                            return (
+                                                                                <div
+                                                                                    key={item.Id}
+                                                                                    className="notification-item notification-system-update"
+                                                                                    onClick={() => {
+                                                                                        setShowNotifications(false);
+                                                                                        window.location.href = '/web/index.html?classic=true#/dashboard/plugins';
+                                                                                    }}
+                                                                                >
+                                                                                    <div className="notification-update-icon">
+                                                                                        <img src="/LegitFlix/Client/Legitflix-icon.svg" alt="LegitFlix" />
+                                                                                    </div>
+                                                                                    <div className="notification-info">
+                                                                                        <span className="notification-title">{item.Name}</span>
+                                                                                        <div className="notification-meta">
+                                                                                            <span className="notification-badge-update">UPDATE</span>
+                                                                                            <span>v{item.LocalVersion} → v{item.RemoteVersion}</span>
+                                                                                        </div>
+                                                                                        <span className="notification-update-hint">Click to go to Plugins Dashboard</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+
+                                                                        const posterUrl = `${jellyfinService.api.basePath}/Items/${item.Id}/Images/Primary?fillHeight=120&fillWidth=80&quality=80`;
+                                                                        const dateVal = item.DateCreated || item.DateLastAdded;
+                                                                        const isUnread = !lastCheck || (dateVal && dateVal > lastCheck);
+                                                                        const isSeries = item.Type === 'Series';
+                                                                        const quality = getItemQuality(item);
+                                                                        const language = getItemLanguage(item);
+
+                                                                        return (
+                                                                            <div
+                                                                                key={item.Id}
+                                                                                className={`notification-item ${isUnread ? 'unread' : ''}`}
+                                                                                onClick={() => {
+                                                                                    setShowNotifications(false);
+                                                                                    if (isSeries) navigate(`/series/${item.Id}`);
+                                                                                    else navigate(`/movie/${item.Id}`);
+                                                                                }}
+                                                                            >
+                                                                                <img
+                                                                                    src={posterUrl}
+                                                                                    alt={item.Name}
+                                                                                    className="notification-poster"
+                                                                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/50x75?text=?'; }}
+                                                                                />
+                                                                                <div className="notification-info">
+                                                                                    <span className="notification-title">{item.Name}</span>
+                                                                                    <div className="notification-meta">
+                                                                                        <span className="notification-badge-type">{item.Type}</span>
+                                                                                        {quality && <span className="notification-badge-quality">{quality}</span>}
+                                                                                        {language && <span className="notification-badge-lang">{language}</span>}
+                                                                                        {item.ProductionYear && <span>{item.ProductionYear}</span>}
+                                                                                        {isUnread && <span className="notification-badge-new">NEW</span>}
+                                                                                    </div>
+                                                                                    <span className="notification-date">{formatNotifDate(dateVal)}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    };
+
+                                                                    return (
+                                                                        <>
+                                                                            {hasToday && (
+                                                                                <>
+                                                                                    <div className="notification-recency-header">Today</div>
+                                                                                    {grouped.today.map(renderItem)}
+                                                                                </>
+                                                                            )}
+                                                                            {hasThisWeek && (
+                                                                                <>
+                                                                                    <div className="notification-recency-header">This Week</div>
+                                                                                    {grouped.thisWeek.map(renderItem)}
+                                                                                </>
+                                                                            )}
+                                                                            {hasEarlier && (
+                                                                                <>
+                                                                                    <div className="notification-recency-header">Earlier</div>
+                                                                                    {grouped.earlier.map(renderItem)}
+                                                                                </>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()
+                                        )}
+                                    </div>
                                 )}
                             </div>
 

@@ -77,6 +77,14 @@
                     </label>
                     <div class="fieldDescription">Show a random selector button in the navigation bar.</div>
                 </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input type="checkbox" is="emby-checkbox" id="chkShowNavbarNotifications" />
+                        <span>Show Notification Bell</span>
+                    </label>
+                    <div class="fieldDescription">Show a notification bell icon for recently added media in the navigation bar.</div>
+                </div>
             </div>
 
             <!-- Jellyseerr / Requests Integration -->
@@ -178,6 +186,7 @@
                                 document.querySelector('#chkShowNavbarCategories').checked = config.ShowNavbarCategories !== false;
                                 document.querySelector('#chkShowLibraryTitles').checked = config.ShowLibraryTitles !== false;
                                 document.querySelector('#chkShowNavbarRandom').checked = config.ShowNavbarRandom !== false;
+                                document.querySelector('#chkShowNavbarNotifications').checked = config.ShowNavbarNotifications !== false;
                                 
                                 document.querySelector('#chkEnableJellyseerr').checked = config.EnableJellyseerr !== false;
                                 document.querySelector('#txtJellyseerrUrl').value = config.JellyseerrUrl || 'https://request.legitflix.eu';
@@ -220,6 +229,7 @@
                         ShowNavbarCategories: document.querySelector('#chkShowNavbarCategories').checked,
                         ShowLibraryTitles: document.querySelector('#chkShowLibraryTitles').checked,
                         ShowNavbarRandom: document.querySelector('#chkShowNavbarRandom').checked,
+                        ShowNavbarNotifications: document.querySelector('#chkShowNavbarNotifications').checked,
                         
                         EnableJellyseerr: document.querySelector('#chkEnableJellyseerr').checked,
                         JellyseerrUrl: document.querySelector('#txtJellyseerrUrl').value,

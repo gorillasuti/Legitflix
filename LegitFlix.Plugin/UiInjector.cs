@@ -77,6 +77,8 @@ namespace LegitFlix.Plugin
             string sJellyUrl = JsonSerializer.Serialize(config.JellyseerrUrl ?? "https://request.legitflix.eu");
             string sSort = JsonSerializer.Serialize(config.ContentSortMode ?? "latest");
             string sJellyTxt = JsonSerializer.Serialize(config.JellyseerrText ?? "Request");
+            string sVersion = JsonSerializer.Serialize(Plugin.Instance?.Version?.ToString() ?? "1.1.1.0");
+            string sRemoteVersion = JsonSerializer.Serialize(Plugin.LatestRemoteVersion ?? "");
 
             return $@"<script id=""legitflix-server-config"">
     window.LegitFlix_ServerConfig = {{
@@ -98,7 +100,10 @@ namespace LegitFlix.Plugin
         playerSeekTime: {config.PlayerSeekTime},
         playerAutoSkip: {Bool(config.PlayerAutoSkip)},
         playerAutoNextEp: {Bool(config.PlayerAutoNextEp)},
-        jellyseerrGlobalOverride: {Bool(config.JellyseerrGlobalOverride)}
+        jellyseerrGlobalOverride: {Bool(config.JellyseerrGlobalOverride)},
+        showNavbarNotifications: {Bool(config.ShowNavbarNotifications)},
+        pluginVersion: {sVersion},
+        latestRemoteVersion: {sRemoteVersion}
     }};
 </script>";
         }
