@@ -305,6 +305,26 @@ const PlayerSkeleton = () => (
     </div>
 );
 
+// 7. Auth/Login Page Skeleton Loader
+const AuthSkeleton = () => (
+    <div className="auth-page" style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
+        <div className="auth-page-backdrop"></div>
+        <div className="auth-container-flat select-user-container">
+            <h1 className="netflix-profile-heading">Who's watching?</h1>
+            <div className="netflix-user-grid">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="netflix-user-card" style={{ cursor: 'default' }}>
+                        <div className="netflix-avatar-container" style={{ background: 'transparent' }}>
+                            <div className="skeleton" style={{ width: '120px', height: '120px', borderRadius: '4px' }} />
+                        </div>
+                        <div className="skeleton" style={{ width: '60px', height: '16px', marginTop: '12px', borderRadius: '4px' }} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
 const ProtectedRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
     const location = useLocation();
@@ -331,6 +351,20 @@ const ProtectedRoute = () => {
 
     if (isAuthenticated === null) {
         const path = location.pathname;
+
+        // Check if there is an active/saved session or if we are waiting for window.ApiClient in wrapper mode
+        const storedToken = sessionStorage.getItem('jellyfin_access_token') || 
+                            (window.ApiClient && typeof window.ApiClient.accessToken === 'function' ? window.ApiClient.accessToken() : null);
+        const hasSession = !!storedToken;
+        const isWrapper = window.location.protocol === 'file:' || 
+                          window.location.protocol.startsWith('app') || 
+                          window.location.protocol.startsWith('capacitor') ||
+                          window.location.pathname.includes('/LegitFlix/Client/') ||
+                          (window.location.hostname === 'localhost' && window.ApiClient);
+
+        if (!hasSession && !isWrapper) {
+            return <AuthSkeleton />;
+        }
 
         if (path.startsWith('/series/')) {
             return <SeriesSkeleton />;
@@ -359,4 +393,5 @@ const ProtectedRoute = () => {
 };
 
 export default ProtectedRoute;
+
 
