@@ -218,9 +218,6 @@ namespace LegitFlix.Plugin
                 if (!isInDialog) {
                     dialog.close();
                     dialog.remove();
-                    if (isClassic) {
-                        window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
-                    }
                 }
             });
 

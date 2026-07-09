@@ -777,8 +777,27 @@ const Navbar = ({ alwaysFilled = false }) => {
                                         {/* Account */}
                                         <div className="dropdown-divider"></div>
                                         <div className="menu-section-label">Account</div>
-                                        <button onClick={() => { setShowMenu(false); setShowAvatarPicker(true); }}>
-                                            <span className="material-icons">person</span> Change Avatar
+                                        <button onClick={() => {
+                                            setShowMenu(false);
+                                            const date = new Date();
+                                            date.setTime(date.getTime() + (365*24*60*60*1000));
+                                            document.cookie = "lf-classic-view=true; path=/; expires=" + date.toUTCString();
+                                            
+                                            const redirect = () => {
+                                                window.location.href = window.location.origin + window.location.pathname + '?classic=true#/home';
+                                            };
+
+                                            if ('serviceWorker' in navigator) {
+                                                navigator.serviceWorker.getRegistrations().then((registrations) => {
+                                                    for (let reg of registrations) {
+                                                        reg.unregister();
+                                                    }
+                                                }).catch(() => {}).finally(redirect);
+                                            } else {
+                                                redirect();
+                                            }
+                                        }}>
+                                            <span className="material-icons">visibility_off</span> Disable Plugin Look
                                         </button>
                                         <button onClick={() => { setShowMenu(false); setShowQuickConnect(true); }}>
                                             <span className="material-icons">qr_code</span> Quick Connect
