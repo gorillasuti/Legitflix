@@ -652,7 +652,90 @@
     /* Open below the button */
     right: 0;
     z-index: 1000;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    min-width: 220px;
+    padding: 0;
+    box-sizing: border-box;
     animation: lf-menu-fade-in-down 0.1s ease-out;
+}
+
+.lf-lang-popover {
+    top: calc(100% + 8px);
+    bottom: auto;
+}
+
+.lf-lang-popover .actionSheetContent {
+    background: transparent !important;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.lf-lang-popover .actionSheetScroller {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+.lf-lang-popover .actionSheetMenuItem {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 8px 16px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #eee !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+}
+
+.lf-lang-popover .actionSheetMenuItem:hover {
+    background-color: #2a2a2a !important;
+    color: #fff !important;
+}
+
+.lf-lang-popover .actionSheetMenuItem:hover .material-icons {
+    color: #fff;
+}
+
+.lf-lang-popover .actionSheetMenuItem .material-icons {
+    font-size: 18px !important;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.lf-lang-popover .actionsheetDivider {
+    height: 1px !important;
+    background-color: #333 !important;
+    margin: 6px 0 !important;
+    border: none !important;
+    display: block !important;
+}
+
+.lf-lang-popover .lf-dropdown-section-title {
+    padding: 8px 16px 4px 16px !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    color: #777 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
 }
 
 @keyframes lf-menu-fade-in-down {

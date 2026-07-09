@@ -80,6 +80,7 @@ const SeriesDetail = () => {
     const langDropdownRef = useRef(null);
     const filterDropdownRef = useRef(null);
     const sortDropdownRef = useRef(null);
+    const actionMenuRef = useRef(null);
     const trailerHelpTimeout = useRef(null);
     const cleanViewTimeout = useRef(null);
     const longPressTimer = useRef(null);
@@ -201,9 +202,27 @@ const SeriesDetail = () => {
             if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
                 setIsSortDropdownOpen(false);
             }
+            if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+                setIsActionMenuOpen(false);
+            }
         };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsSeasonDropdownOpen(false);
+                setIsLangDropdownOpen(false);
+                setIsFilterDropdownOpen(false);
+                setIsSortDropdownOpen(false);
+                setIsActionMenuOpen(false);
+            }
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, []);
 
     // Selection Logic
@@ -858,11 +877,17 @@ const SeriesDetail = () => {
             {/* Episodes Section */}
             <div className="lf-content-section">
                 <div className="lf-series-header">
-                    {/* Season Selector */}
                     <div className={`lf-season-selector ${isSeasonDropdownOpen ? 'is-open' : ''}`} ref={dropdownRef}>
                         <div
                             className="lf-season-selector__button"
-                            onClick={() => setIsSeasonDropdownOpen(!isSeasonDropdownOpen)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsSeasonDropdownOpen(!isSeasonDropdownOpen);
+                                setIsLangDropdownOpen(false);
+                                setIsFilterDropdownOpen(false);
+                                setIsSortDropdownOpen(false);
+                                setIsActionMenuOpen(false);
+                            }}
                         >
                             <span>{selectedSeason ? selectedSeason.Name : 'Select Season'}</span>
                             <span className="material-icons">expand_more</span>
@@ -889,7 +914,14 @@ const SeriesDetail = () => {
                         <div className={`lf-filter-dropdown ${isLangDropdownOpen ? 'is-open' : ''}`} ref={langDropdownRef}>
                             <button
                                 className="lf-filter-btn"
-                                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsLangDropdownOpen(!isLangDropdownOpen);
+                                    setIsSeasonDropdownOpen(false);
+                                    setIsFilterDropdownOpen(false);
+                                    setIsSortDropdownOpen(false);
+                                    setIsActionMenuOpen(false);
+                                }}
                                 title="Audio & Subtitles"
                             >
                                 <span className="material-icons">subtitles</span>
@@ -971,7 +1003,14 @@ const SeriesDetail = () => {
                                 <div className={`lf-filter-dropdown ${isFilterDropdownOpen ? 'is-open' : ''}`} ref={filterDropdownRef}>
                                     <button
                                         className={`lf-filter-btn ${episodeFilter !== 'all' ? 'is-active' : ''}`}
-                                        onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsFilterDropdownOpen(!isFilterDropdownOpen);
+                                            setIsSeasonDropdownOpen(false);
+                                            setIsLangDropdownOpen(false);
+                                            setIsSortDropdownOpen(false);
+                                            setIsActionMenuOpen(false);
+                                        }}
                                         title="Filter episodes"
                                     >
                                         <span className="material-icons">filter_list</span>
@@ -996,7 +1035,14 @@ const SeriesDetail = () => {
                                 <div className={`lf-filter-dropdown ${isSortDropdownOpen ? 'is-open' : ''}`} ref={sortDropdownRef}>
                                     <button
                                         className={`lf-filter-btn ${episodeSort !== 'default' ? 'is-active' : ''}`}
-                                        onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsSortDropdownOpen(!isSortDropdownOpen);
+                                            setIsSeasonDropdownOpen(false);
+                                            setIsLangDropdownOpen(false);
+                                            setIsFilterDropdownOpen(false);
+                                            setIsActionMenuOpen(false);
+                                        }}
                                         title="Sort episodes"
                                     >
                                         <span className="material-icons">sort</span>
@@ -1024,10 +1070,17 @@ const SeriesDetail = () => {
                                 </button>
 
                                 {/* Action Menu Cogwheel */}
-                                <div className="lf-series-actions-dropdown-wrapper" style={{ position: 'relative' }}>
+                                <div className="lf-series-actions-dropdown-wrapper" ref={actionMenuRef} style={{ position: 'relative' }}>
                                     <button
                                         className={`lf-filter-btn lf-cogwheel-btn ${isActionMenuOpen ? 'is-active' : ''}`}
-                                        onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsActionMenuOpen(!isActionMenuOpen);
+                                            setIsSeasonDropdownOpen(false);
+                                            setIsLangDropdownOpen(false);
+                                            setIsFilterDropdownOpen(false);
+                                            setIsSortDropdownOpen(false);
+                                        }}
                                         title="Settings"
                                     >
                                         <span className="material-icons">settings</span>

@@ -16,6 +16,7 @@ import SkeletonLoader from '../../components/SkeletonLoader';
 import jellyfinService from '../../services/jellyfin';
 import Footer from '../../components/Footer';
 import MoviePlayer from './MoviePlayer';
+import CircleCheckIcon from '../../components/CircleCheckIcon';
 
 const DraggableRow = ({ children, className }) => {
     const rowRef = useRef(null);
@@ -76,6 +77,7 @@ const MovieDetail = () => {
     const [mediaInfoModalItemId, setMediaInfoModalItemId] = useState(null);
 
     const langDropdownRef = useRef(null);
+    const actionMenuRef = useRef(null);
     const trailerHelpTimeout = useRef(null);
     const cleanViewTimeout = useRef(null);
     const trailerIframeRef = useRef(null);
@@ -144,16 +146,7 @@ const MovieDetail = () => {
     }, [location.state, loading, movie]);
 
 
-    // Click outside handler for dropdowns
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
-                setIsLangDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+
 
     const handlePrefChange = (type, value) => {
         if (type === 'audio') {
@@ -214,10 +207,10 @@ const MovieDetail = () => {
     // Close dropdown on outside click or press ESC
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (isActionMenuOpen && !e.target.closest('.lf-movie-actions-dropdown-wrapper')) {
+            if (isActionMenuOpen && actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
                 setIsActionMenuOpen(false);
             }
-            if (isLangDropdownOpen && !e.target.closest('.lf-movie-actions-dropdown-wrapper')) {
+            if (isLangDropdownOpen && langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
                 setIsLangDropdownOpen(false);
             }
         };
@@ -694,18 +687,21 @@ const MovieDetail = () => {
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                 </svg>
                             </button>
-
                             {/* Audio & Subs Dropdown */}
                             <div className={`lf-movie-actions-dropdown-wrapper ${isLangDropdownOpen ? 'is-open' : ''}`} ref={langDropdownRef} style={{ position: 'relative' }}>
                                 <button
                                     className={`lf-btn lf-btn--glass lf-btn--icon-only ${isLangDropdownOpen ? 'is-active' : ''}`}
-                                    onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsLangDropdownOpen(!isLangDropdownOpen);
+                                        setIsActionMenuOpen(false);
+                                    }}
                                     title="Audio & Subtitles"
                                 >
                                     <span className="material-icons">subtitles</span>
                                 </button>
                                 {isLangDropdownOpen && (
-                                    <div className="lf-movie-actions-popover lf-lang-popover" style={{ bottom: 'calc(100% + 8px)', right: 0, width: '220px' }}>
+                                    <div className="lf-movie-actions-popover lf-lang-popover" style={{ right: 0, width: '220px' }}>
                                         <div className="actionSheetContent">
                                             <div className="actionSheetScroller scrollY">
                                                 <div className="lf-dropdown-section-title" style={{ padding: '6px 12px 2px 12px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>Audio</div>
@@ -760,14 +756,18 @@ const MovieDetail = () => {
                                 title={isPlayed ? "Mark Unwatched" : "Mark Watched"}
                                 style={isPlayed ? { color: '#00e676', borderColor: '#00e676', background: 'rgba(0, 230, 118, 0.1)' } : {}}
                             >
-                                <span className="material-icons">{isPlayed ? 'check_circle' : 'check_circle_outline'}</span>
+                                <CircleCheckIcon size={22} color="currentColor" />
                             </button>
 
                             {/* Action Menu Cogwheel */}
-                            <div className="lf-movie-actions-dropdown-wrapper" style={{ position: 'relative' }}>
+                            <div className="lf-movie-actions-dropdown-wrapper" ref={actionMenuRef} style={{ position: 'relative' }}>
                                 <button
                                     className={`lf-btn lf-btn--glass lf-btn--icon-only lf-cogwheel-btn ${isActionMenuOpen ? 'is-active' : ''}`}
-                                    onClick={() => setIsActionMenuOpen(!isActionMenuOpen)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsActionMenuOpen(!isActionMenuOpen);
+                                        setIsLangDropdownOpen(false);
+                                    }}
                                     title="Settings"
                                 >
                                     <span className="material-icons">settings</span>

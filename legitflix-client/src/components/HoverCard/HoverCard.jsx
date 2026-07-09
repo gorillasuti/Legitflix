@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { jellyfinService } from '../../services/jellyfin';
 import { useTheme } from '../../context/ThemeContext';
 import './HoverCard.css';
+import CircleCheckIcon from '../CircleCheckIcon';
 
 const HoverCard = ({ item, onPlay, onDetails, onContextMenu }) => {
     const details = item;
@@ -340,7 +341,7 @@ const HoverCard = ({ item, onPlay, onDetails, onContextMenu }) => {
                         onClick={togglePlayed}
                         style={isPlayed ? { color: 'var(--clr-success, #4caf50)' } : {}}
                     >
-                        <span className="material-icons">{isPlayed ? 'check_circle' : 'check_circle_outline'}</span>
+                        <CircleCheckIcon size={22} color="currentColor" />
                     </button>
                 </div>
             </div>
