@@ -435,6 +435,40 @@ export const ThemeProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
+        const targetUrl = config.faviconUrl || '/LegitFlix/Client/favicon.png';
+        const enforceFavicon = () => {
+            let hasFavicon = false;
+            const icons = document.querySelectorAll("link[rel~='icon']");
+            icons.forEach(icon => {
+                hasFavicon = true;
+                if (icon.getAttribute('href') !== targetUrl) {
+                    icon.setAttribute('href', targetUrl);
+                }
+            });
+            if (!hasFavicon) {
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.href = targetUrl;
+                document.head.appendChild(link);
+            }
+        };
+
+        enforceFavicon();
+
+        const observer = new MutationObserver(() => {
+            enforceFavicon();
+        });
+        observer.observe(document.head, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['href', 'rel']
+        });
+
+        return () => observer.disconnect();
+    }, [config.faviconUrl]);
+
+    useEffect(() => {
         syncFromServer();
 
         const handleAuthSuccess = () => {
@@ -641,7 +675,7 @@ export const ThemeProvider = ({ children }) => {
             link.rel = 'icon';
             document.head.appendChild(link);
         }
-        link.href = url || '/favicon.png';
+        link.href = url || '/LegitFlix/Client/favicon.png';
     };
 
     const applyThemeMode = (mode) => {
