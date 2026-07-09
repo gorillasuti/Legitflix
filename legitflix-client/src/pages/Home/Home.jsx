@@ -141,12 +141,11 @@ const Home = () => {
 
     const selectionPanelRef = useRef(null);
     const selectionMenuRef = useRef(null);
-
     useEffect(() => {
         if (selectionMode && selectionPanelRef.current) {
             gsap.fromTo(selectionPanelRef.current,
-                { y: 150, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }
+                { y: 150, xPercent: -50, opacity: 0 },
+                { y: 0, xPercent: -50, opacity: 1, duration: 0.25, ease: "power2.out" }
             );
         }
     }, [selectionMode]);
@@ -801,6 +800,7 @@ const Home = () => {
         if (selectionPanelRef.current) {
             gsap.to(selectionPanelRef.current, {
                 y: 150,
+                xPercent: -50,
                 opacity: 0,
                 duration: 0.25,
                 ease: "power2.in",
@@ -1369,7 +1369,11 @@ const Home = () => {
             </div>
 
             {selectionMode && (
-                <div ref={selectionPanelRef} className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#1e1e1e] border border-neutral-800 rounded-xl shadow-2xl p-4 z-50 flex items-center gap-4 legit-selection-panel">
+                <div 
+                    ref={selectionPanelRef} 
+                    className="fixed bottom-6 left-1/2 bg-[#1e1e1e] border border-neutral-800 rounded-xl shadow-2xl p-4 z-50 flex items-center gap-4 legit-selection-panel"
+                    style={{ opacity: 0, transform: 'translate(-50%, 150px)' }}
+                >
                     <span className="text-lg ml-2 text-popover-foreground">{selectedItems.size} Selected</span>
                     <div className="h-6 w-px bg-neutral-800 mx-2"></div>
 
@@ -1426,28 +1430,28 @@ const Home = () => {
                             {selectionMenuOpen && (
                                 <div ref={selectionMenuRef} className="absolute bottom-full mb-2 right-0 bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-xl py-1 w-48 z-[2000]">
                                     <button
-                                        className="w-full text-left px-4 py-2 hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 bg-transparent border-none outline-none hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
                                         onClick={() => { setSelectionMenuOpen(false); handleBatchAction('playlist'); }}
                                     >
                                         <span className="material-icons text-sm text-neutral-400">playlist_add</span>
                                         Add to playlist
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-2 hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 bg-transparent border-none outline-none hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
                                         onClick={() => { setSelectionMenuOpen(false); handleBatchAction('collection'); }}
                                     >
                                         <span className="material-icons text-sm text-neutral-400">add</span>
                                         Add to collection
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-2 hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 bg-transparent border-none outline-none hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
                                         onClick={() => { setSelectionMenuOpen(false); handleBatchAction('refresh'); }}
                                     >
                                         <span className="material-icons text-sm text-neutral-400">refresh</span>
                                         Refresh metadata
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-2 hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 bg-transparent border-none outline-none hover:bg-neutral-800 text-sm text-neutral-200 flex items-center gap-2"
                                         onClick={() => { setSelectionMenuOpen(false); handleBatchAction('group'); }}
                                     >
                                         <span className="material-icons text-sm text-neutral-400">call_merge</span>
@@ -1455,7 +1459,7 @@ const Home = () => {
                                     </button>
                                     <div className="h-px bg-neutral-800 my-1"></div>
                                     <button
-                                        className="w-full text-left px-4 py-2 hover:bg-red-500/10 text-sm text-red-400 hover:text-red-300 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 bg-transparent border-none outline-none hover:bg-red-500/10 text-sm text-red-400 hover:text-red-300 flex items-center gap-2"
                                         onClick={() => { setSelectionMenuOpen(false); handleBatchAction('delete'); }}
                                     >
                                         <span className="material-icons text-sm text-red-400">delete</span>
