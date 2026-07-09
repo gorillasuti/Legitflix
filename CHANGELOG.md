@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+
+## [v1.2.1.0]
+
+### Added
+- **Featured Promo Trailer Playback**: Added a new "Play Trailer" button to the home page's promo section. Clicking it starts the trailer in place, dims the rest of the interface, and gives you easy-to-use controls to stop or mute the video.
+- **Improved "Mark as Watched" Checkmark**: Replaced the default checkmark icon on movies and card hovers with a cleaner, more modern look.
+
+### Changed
+- **Featured Promo Buttons Alignment**: Redesigned the buttons in the promo section to match the style of the main hero buttons. This includes converting the "Favorite" and "More Info" buttons into sleek circular icons and updating the "More Info" icon to a much lighter, cleaner design.
+- **"Disable Plugin Look" Button**: Added a new button in the account settings menu that lets you instantly switch back to the default Jellyfin interface.
+- **Cleaner Dropdowns & Popovers**: Overhauled the movie action and language options menus to use flat dark backgrounds and rounded corners to match the rest of the interface.
+- **Seerr Requests Style Integration**: Refined the layout and hover effects of Seerr request cards on the home page so they match the look and feel of your libraries.
+- **Seerr Rebranding**: Standardized names and labels across the settings pages to refer to "Seerr" instead of "Jellyseerr" for a consistent experience.
+
+### Fixed
+- **Easier Modal Dismissal**: You can now click outside any pop-up window or modal (like the view switcher) to close it instantly.
+- **Dropdown menu closing behavior**: Fixed menus and dropdown panels (such as audio, subtitles, filters, and sort options) so that they automatically close when you click outside or open a different menu, or when you press the Escape key.
+- **Downward menus on Movie details**: Positioned the audio and subtitle options to open downwards, aligning them with the rest of the dropdown panels.
+- **YouTube Trailer Playback Issues**: Fixed an issue where YouTube trailers would fail to load due to browser security settings.
+- **Smoother Subtitles**: Fixed performance lag and temporary video freezes caused by subtitle loading, ensuring smooth playback.
+- **Favicon Preservation**: Fixed an issue where the custom website icon (favicon) would get replaced or reset by the default Jellyfin icon while browsing.
+- **Selection Panel Animations**: Smoothed out the transition and slide-in effects of the selection bar on the home page.
+- **PWA Buttons Appearance**: Fixed a visual issue in PWA mode where buttons inside the "More Actions" popover would render with a white background instead of matching the dark theme.
+
 ### Removed
 
 
@@ -38,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Native Select Dark Theme**: Added global `color-scheme: dark` overrides and explicit native `<option>` tag styles in `theme.css` to force native select option lists to render with dark backgrounds and white text across all platforms and PWAs, eliminating white flashes and contrast issues.
 - **Profile Background Sync Bug**: Fixed a bug where the profile background in the Settings Modal's "Profile Personalization" section did not load or update properly if edited elsewhere. Added `usersettings` backdrop preferences queries and native banner fallbacks to align loading/saving logic with the profile page.
 - **Real-Time Avatar Sync**: Removed full page reloads (`window.location.reload()`) from avatar updates across the navigation bar, profile modal, and account profile page. Replaced them with instant React state bindings via the shared `ThemeContext` context to update user profile pictures immediately.
-- **Classic View Switcher Redirection**: Refactored the dialog cancellation logic in `UiInjector.cs` to redirect the user to the classic home screen (`?classic=true#/home`) when they choose to stay in classic view after clicking a home logo, preventing them from getting stuck inside configuration dashboards or sub-menus. Also updated the logo interceptor to ignore `nav-logo` classes to avoid blocking custom PWA navigation clicks, added explicit exclusions for dashboard and plugin configuration page URLs (`configurationpage` and `dashboard`) to prevent intercept loops, and enabled backdrop clicks (outside dialog boundaries) to close the switch modal cleanly and remove elements from the DOM.
+- **Classic View Switcher Redirection**: Refactored the dialog cancellation logic in `UiInjector.cs` to redirect the user to the classic home screen (`?classic=true#/home`) when they choose to stay in classic view after clicking a home logo, preventing them from getting stuck inside configuration dashboards or sub-menus. Also updated the logo interceptor to ignore `nav-logo` classes to avoid blocking custom PWA navigation clicks, and added explicit exclusions for dashboard and plugin configuration page URLs (`configurationpage` and `dashboard`) to prevent intercept loops.
 - **Auth Page Skeleton Loader**: Added an `AuthSkeleton` mimicking the profile selection screen ("Who's watching?") to show during initial boot when no active session exists, preventing the homepage content layout skeleton from flashing before routing unauthenticated users to the login screens.
 - **Avatar Picker Persistence & CSP Bypass**: Implemented native Jellyfin avatar persistence by routing uploads to `/Users/{userId}/Images/Primary` with the correct Base64 payload. Bypassed browser CSP data URL blocks by writing an in-memory canvas-to-blob rendering helper. Added strict security failsafes (validating selected URLs against the official avatar manifest, checking image MIME types, and downscaling images exceeding 512px via canvas context) to guarantee safe transit weight and prevent malicious file execution. Deleted obsolete localStorage cache checks across the app to stream avatars directly from the server.
 - **Console Log Sanitization**: Sanitized browser debug statements across the app (in `jellyfin.js`, `Navbar.jsx`, and `Player.jsx`) to remove user profile policy data dumps, activity metrics, and direct stream URLs that leaked sensitive auth `api_key` tokens to the console.
@@ -59,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings Modal Divider Polishes**: Removed overlapping inline border-top styles in Settings Modal configuration blocks and added scoped CSS resets.
 - **Hover Card Metadata Resolution**: Added lazy-loading metadata queries (supporting structured parent series lookups for episodic items, direct series details fetches, and individual defensive try-catch safety wrappers) to HoverCard elements to support resolution, HDR, language, and genre badges for simplified item lists on the Home page (and prioritized genre classification over general "Animation").
 - **Vite Dev Server Path Typo**: Corrected the platform default Vite connection URL in `run-dev.example.ps1` to match the client router config.
-- **Settings Modal Reset Button**: Hooked 16 missing settings into the Reset button — all 9 subtitle styling options, 3 poster tag toggles, 3 playback behavior toggles (auto-pause, auto-resume, auto-PiP), long-press speed, random libraries, Jellyseerr button text, and Jellyseerr background.
+- **Settings Modal Reset Button**: Hooked 16 missing settings into the Reset button — all 9 subtitle styling options, 3 poster tag toggles, 3 playback behavior toggles (auto-pause, auto-resume, auto-PiP), long-press speed, random libraries, Seerr button text, and Seerr background.
 - **Recap Skip False Positives**: Removed `'prologue'` from the recap chapter detection keywords — prologues are actual story content and must not be auto-skipped as recaps.
 - **Separate Intro & Recap Skip Toggles**: Split the combined "Auto Skip Intros & Recaps" toggle into two independent settings: "Auto Skip Intros" (`playerAutoSkip`) and "Auto Skip Recaps" (`playerAutoSkipRecap`), each with its own toggle, config key, save/reset/sync handling, and ThemeContext wiring.
 

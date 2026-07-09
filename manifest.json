@@ -3,6 +3,14 @@
         "owner": "Legitflix",
         "versions": [
             {
+                "changelog": "v1.2.1.0: Added in-place YouTube trailer playback in the promo section with a new Play Trailer button. Redesigned buttons and icons for a cleaner, standardized appearance. Fixed PWA modal dismissals, and subtitle rendering performance.",
+                "version": "1.2.1.0",
+                "checksum": "782547440fe896023f12cf43e6909269",
+                "timestamp": "2026-07-09T12:23:29Z",
+                "targetAbi": "10.11.11.0",
+                "sourceUrl": "https://github.com/gorillasuti/Legitflix/releases/download/v1.2.1.0/LegitFlix.Plugin_1.2.1.0.zip"
+            },
+            {
                 "changelog": "v1.2.0.0: Redesigned details settings popovers and admin control panels. Added server-level settings locks, navbar notifications bell for recently added media and switched to device-native selector dropdowns. See the repository CHANGELOG for the full release details.",
                 "version": "1.2.0.0",
                 "checksum": "67dd488da3af44d12750e7408724ec7d",
