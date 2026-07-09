@@ -191,6 +191,7 @@ namespace LegitFlix.Plugin.Controllers
                 "img-src 'self' https: http: data: blob:; " +
                 "connect-src 'self' wss: ws:; " +
                 "media-src 'self' blob:; " +
+                "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
                 "object-src 'none'; " +
                 "base-uri 'self';";
         }
