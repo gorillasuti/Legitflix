@@ -978,7 +978,7 @@ const Home = () => {
                     </div>
                 ) : (
                     <>
-                        {/* 1. Jellyseerr & Library Navigation */}
+                        {/* 1. Seerr & Library Navigation */}
                         <section className="home-section" style={{ paddingLeft: '4%', paddingRight: '4%', marginBottom: '40px' }}>
                             <h2 className="section-title" style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '15px', color: '#cacaca' }}>Browse Libraries</h2>
                             <DraggableRow className="libraries-grid">

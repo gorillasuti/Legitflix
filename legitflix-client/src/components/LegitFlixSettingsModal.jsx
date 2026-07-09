@@ -74,7 +74,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
 
     const [sortMode, setSortMode] = useState(config.contentSortMode || 'latest');
 
-    // Jellyseerr/Request Customization
+    // Seerr/Request Customization
     const [jellyseerrText, setJellyseerrText] = useState(config.jellyseerrText || 'Request Feature');
     const [jellyseerrBackground, setJellyseerrBackground] = useState(config.jellyseerrBackground || '');
 
@@ -624,7 +624,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
         {
             id: 'requestFeature',
             tab: 'home',
-            label: 'Request Feature (Jellyseerr)',
+            label: 'Request Feature (Seerr)',
             keywords: ['request', 'jellyseerr', 'ombi', 'home', 'card'],
             render: () => (
                 <>
@@ -685,7 +685,7 @@ const LegitFlixSettingsModal = ({ isOpen, onClose, userId }) => {
                                         height: '68px',
                                         borderRadius: '6px',
                                         backgroundColor: '#2a2a2a',
-                                        backgroundImage: `url('${jellyseerrBackground || 'https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/public/jellyseerr.jpg'}')`,
+                                        backgroundImage: `url('${jellyseerrBackground || 'https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/public/seerr.jpg'}')`,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
                                         border: '1px solid rgba(255,255,255,0.1)',

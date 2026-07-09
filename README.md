@@ -144,7 +144,7 @@ global search.
 ### Settings & Customization
 
 Fine-tune accent colors, upload custom profile banners and avatars via
-specialized pickers, or link external services like Jellyseerr directly in the
+specialized pickers, or link external services like Seerr directly in the
 interface.
 
 <div align="center">

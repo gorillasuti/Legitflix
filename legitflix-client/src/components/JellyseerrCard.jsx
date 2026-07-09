@@ -14,25 +14,25 @@ const JellyseerrCard = () => {
         : '#';
 
     return (
-        <div className="library-card jellyseerr-card-wrapper">
-            <a
-                href={safeJellyseerrUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="jellyseerr-card"
-            >
-                <div
-                    className="jellyseerr-image"
-                    style={{ backgroundImage: `url('${config.jellyseerrBackground || "https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/public/jellyseerr.jpg"}')` }}
-                >
-                    <div className="jellyseerr-overlay"></div>
-                    <div className="jellyseerr-content">
-                        <span className="material-icons card-icon">add_circle_outline</span>
-                        <span className="card-label">{config.jellyseerrText || 'Request'}</span>
-                    </div>
+        <a
+            href={safeJellyseerrUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="library-card jellyseerr-card-wrapper"
+        >
+            <div
+                className="jellyseerr-image library-card-image"
+                style={{ backgroundImage: `url('${config.jellyseerrBackground || "https://raw.githubusercontent.com/gorillasuti/Legitflix/refs/heads/main/legitflix-client/public/seerr.jpg"}')` }}
+            />
+            {config.showLibraryTitles && (
+                <div className="library-card-overlay">
+                    <span className="library-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="material-icons" style={{ fontSize: '1.25rem' }}>add_circle_outline</span>
+                        <span>{config.jellyseerrText || 'Request'}</span>
+                    </span>
                 </div>
-            </a>
-        </div>
+            )}
+        </a>
     );
 };
 

@@ -10,7 +10,8 @@
     cursor: grab;
 }
 
-.cursor-grab:active, .active\:cursor-grabbing {
+.cursor-grab:active,
+.active\:cursor-grabbing {
     cursor: grabbing;
 }
 
@@ -525,7 +526,6 @@
     font-weight: 600;
     color: #fff;
     font-size: 1rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     text-align: center;
 }
 
@@ -803,7 +803,7 @@
     }
 
     .promo3-overlay-gradient {
-        background: 
+        background:
             linear-gradient(to bottom, #141414 0%, transparent 25%),
             linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.95) 45%, rgba(20, 20, 20, 0.8) 75%, rgba(20, 20, 20, 0.4) 100%) !important;
     }
@@ -906,23 +906,28 @@
         max-width: 480px !important;
         justify-content: space-between !important;
     }
+
     .legit-selection-panel span.text-lg {
         font-size: 0.85rem !important;
         margin-left: 2px !important;
         white-space: nowrap !important;
     }
+
     .legit-selection-panel .h-6.w-px {
         margin-left: 2px !important;
         margin-right: 2px !important;
     }
+
     .legit-selection-panel .flex.gap-2 {
         gap: 4px !important;
     }
+
     .legit-selection-panel button {
         padding: 4px 6px !important;
         height: 32px !important;
         font-size: 0.75rem !important;
     }
+
     .legit-selection-panel button span.material-icons {
         font-size: 1.1rem !important;
     }
