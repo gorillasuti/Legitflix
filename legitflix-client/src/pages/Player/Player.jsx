@@ -53,6 +53,7 @@ const Player = () => {
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
     const progressIntervalRef = useRef(null);
+    const processedCuesRef = useRef({});
     const resumeTimeRef = useRef(0);
     const lastSavedLocalTimeRef = useRef(0);
     const autoPausedRef = useRef(false);
@@ -585,6 +586,8 @@ const Player = () => {
     useEffect(() => {
         if (!streamUrl || !videoRef.current || castTarget) return;
 
+        processedCuesRef.current = {};
+
         const video = videoRef.current;
         setIsLoading(true);
 
@@ -911,26 +914,32 @@ const Player = () => {
             for (let i = 0; i < tracks.length; i++) {
                 const track = tracks[i];
                 if (track.mode === 'showing' && track.cues) {
-                    for (let j = 0; j < track.cues.length; j++) {
-                        const cue = track.cues[j];
-                        if (cue.originalStartTime === undefined) {
-                            cue.originalStartTime = cue.startTime;
-                            cue.originalEndTime = cue.endTime;
+                    const trackId = track.id || track.language || `index-${i}`;
+                    const cacheKey = `${trackId}_d${subtitleDelay}_v${config.subtitleVerticalPosition || 'Bottom'}`;
+                    
+                    if (processedCuesRef.current[cacheKey] !== track.cues.length) {
+                        for (let j = 0; j < track.cues.length; j++) {
+                            const cue = track.cues[j];
+                            if (cue.originalStartTime === undefined) {
+                                cue.originalStartTime = cue.startTime;
+                                cue.originalEndTime = cue.endTime;
+                            }
+                            const targetStart = cue.originalStartTime + subtitleDelay;
+                            const targetEnd = cue.originalEndTime + subtitleDelay;
+                            if (Math.abs(cue.startTime - targetStart) > 0.01) {
+                                cue.startTime = targetStart;
+                            }
+                            if (Math.abs(cue.endTime - targetEnd) > 0.01) {
+                                cue.endTime = targetEnd;
+                            }
+                            // Apply vertical position line offset dynamically
+                            if (config.subtitleVerticalPosition === 'Top') {
+                                if (cue.line !== 2) cue.line = 2;
+                            } else if (config.subtitleVerticalPosition === 'Bottom') {
+                                if (cue.line !== -2) cue.line = -2;
+                            }
                         }
-                        const targetStart = cue.originalStartTime + subtitleDelay;
-                        const targetEnd = cue.originalEndTime + subtitleDelay;
-                        if (Math.abs(cue.startTime - targetStart) > 0.01) {
-                            cue.startTime = targetStart;
-                        }
-                        if (Math.abs(cue.endTime - targetEnd) > 0.01) {
-                            cue.endTime = targetEnd;
-                        }
-                        // Apply vertical position line offset dynamically
-                        if (config.subtitleVerticalPosition === 'Top') {
-                            if (cue.line !== 2) cue.line = 2;
-                        } else if (config.subtitleVerticalPosition === 'Bottom') {
-                            if (cue.line !== -2) cue.line = -2;
-                        }
+                        processedCuesRef.current[cacheKey] = track.cues.length;
                     }
                 }
             }
