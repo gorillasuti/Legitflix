@@ -139,6 +139,21 @@ const Home = () => {
     const [activeRowItems, setActiveRowItems] = useState([]);
     const [homePrefs, setHomePrefs] = useState({});
 
+    // Promo Trailer State
+    const [isPromoTrailerPlaying, setIsPromoTrailerPlaying] = useState(false);
+    const [promoTrailerKey, setPromoTrailerKey] = useState(null);
+    const [isPromoCleanView, setIsPromoCleanView] = useState(false);
+    const [showPromoBlockedModal, setShowPromoBlockedModal] = useState(false);
+    const [showPromoTrailerHelp, setShowPromoTrailerHelp] = useState(false);
+    const [isPromoMuted, setIsPromoMuted] = useState(false);
+    const promoTrailerIframeRef = useRef(null);
+    const isPromoTrailerPlayingRef = useRef(false);
+    const promoCleanViewTimeout = useRef(null);
+    const promoTrailerHelpTimeout = useRef(null);
+    const promoContentRef = useRef(null);
+    const promoCarouselRef = useRef(null);
+    const promoGradientRef = useRef(null);
+
     const selectionPanelRef = useRef(null);
     const selectionMenuRef = useRef(null);
     useEffect(() => {
@@ -342,6 +357,135 @@ const Home = () => {
         }
     };
 
+    // Extract trailer key when active promo item changes
+    useEffect(() => {
+        if (promoItems.length === 0) return;
+        const activeItem = promoItems[activePromoIndex] || promoItems[0];
+        if (activeItem.RemoteTrailers && activeItem.RemoteTrailers.length > 0) {
+            const url = activeItem.RemoteTrailers[0].Url;
+            const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            if (ytMatch && ytMatch[1]) {
+                setPromoTrailerKey(ytMatch[1]);
+            } else {
+                setPromoTrailerKey(null);
+            }
+        } else {
+            setPromoTrailerKey(null);
+        }
+        // Stop any playing trailer when switching promo items
+        if (isPromoTrailerPlayingRef.current) {
+            stopPromoTrailer();
+        }
+    }, [activePromoIndex, promoItems]);
+
+    // Promo Trailer: Clean view timer
+    const startPromoCleanViewTimer = () => {
+        if (promoCleanViewTimeout.current) clearTimeout(promoCleanViewTimeout.current);
+        promoCleanViewTimeout.current = setTimeout(() => {
+            if (isPromoTrailerPlayingRef.current) {
+                setIsPromoCleanView(true);
+                // GSAP fade out the overlay UI (snappier transition)
+                gsap.to('.promo3-trailer-overlay', { opacity: 0, y: 15, duration: 0.2, ease: 'power2.inOut' });
+            }
+        }, 5000);
+    };
+
+    const resetPromoCleanViewTimer = () => {
+        setIsPromoCleanView(false);
+        // GSAP fade in the overlay UI (very snappy transition)
+        gsap.to('.promo3-trailer-overlay', { opacity: 1, y: 0, duration: 0.15, ease: 'power2.out' });
+        if (isPromoTrailerPlayingRef.current) {
+            startPromoCleanViewTimer();
+        }
+    };
+
+    // Promo Trailer: Mute toggle
+    const togglePromoMute = () => {
+        const newMute = !isPromoMuted;
+        setIsPromoMuted(newMute);
+        const action = newMute ? 'mute' : 'unMute';
+        promoTrailerIframeRef.current?.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: action, args: [] }),
+            '*'
+        );
+    };
+
+    // Promo Trailer: Play / Stop
+    const handlePromoTrailer = () => {
+        if (isPromoTrailerPlaying) {
+            stopPromoTrailer();
+            return;
+        }
+
+        isPromoTrailerPlayingRef.current = true;
+        setIsPromoTrailerPlaying(true);
+        setIsPromoCleanView(false);
+
+        // GSAP: Fade out promo content
+        const tl = gsap.timeline();
+        if (promoContentRef.current) {
+            tl.to(promoContentRef.current, { opacity: 0, y: 30, duration: 0.5, ease: 'power2.out' });
+        }
+        if (promoCarouselRef.current) {
+            tl.to(promoCarouselRef.current, { opacity: 0, y: 30, duration: 0.5, ease: 'power2.out' }, '-=0.4');
+        }
+        if (promoGradientRef.current) {
+            tl.to(promoGradientRef.current, { opacity: 0, duration: 0.8, ease: 'power2.out' }, '-=0.4');
+        }
+
+        startPromoCleanViewTimer();
+
+        // YouTube Blocking Detection
+        let receivedMessage = false;
+        const messageHandler = (event) => {
+            if (typeof event.data === 'string' && (event.data.includes('"event"') || event.data.includes('"id"'))) {
+                receivedMessage = true;
+                if (promoTrailerHelpTimeout.current) clearTimeout(promoTrailerHelpTimeout.current);
+            }
+        };
+        window.addEventListener('message', messageHandler);
+        window.lfPromoMessageHandler = messageHandler;
+
+        promoTrailerHelpTimeout.current = setTimeout(() => {
+            if (!receivedMessage && isPromoTrailerPlayingRef.current) {
+                setShowPromoTrailerHelp(true);
+            }
+        }, 4000);
+    };
+
+    const stopPromoTrailer = () => {
+        isPromoTrailerPlayingRef.current = false;
+        setIsPromoTrailerPlaying(false);
+        setIsPromoCleanView(false);
+        setShowPromoTrailerHelp(false);
+        setShowPromoBlockedModal(false);
+        setIsPromoMuted(false);
+
+        // GSAP: Fade content back in
+        if (promoContentRef.current) {
+            gsap.to(promoContentRef.current, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+        }
+        if (promoCarouselRef.current) {
+            gsap.to(promoCarouselRef.current, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.1 });
+        }
+        if (promoGradientRef.current) {
+            gsap.to(promoGradientRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+        }
+
+        if (promoCleanViewTimeout.current) {
+            clearTimeout(promoCleanViewTimeout.current);
+            promoCleanViewTimeout.current = null;
+        }
+        if (promoTrailerHelpTimeout.current) {
+            clearTimeout(promoTrailerHelpTimeout.current);
+            promoTrailerHelpTimeout.current = null;
+        }
+        if (window.lfPromoMessageHandler) {
+            window.removeEventListener('message', window.lfPromoMessageHandler);
+            delete window.lfPromoMessageHandler;
+        }
+    };
+
 
     const fetchData = async (showSkeleton = true) => {
         if (showSkeleton) setLoading(true);
@@ -370,7 +514,7 @@ const Home = () => {
                         limit: 40,
                         recursive: true,
                         includeItemTypes: typeof config.heroMediaTypes === 'string' ? config.heroMediaTypes.split(',') : (config.heroMediaTypes || ['Movie', 'Series']),
-                        fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'Genres', 'ImageTags', 'BackdropImageTags', 'RunTimeTicks', 'UserData', 'MediaStreams', 'Width', 'Height', 'ChildCount', 'RecursiveItemCount']
+                        fields: ['PrimaryImageAspectRatio', 'Overview', 'DateCreated', 'ProductionYear', 'CommunityRating', 'OfficialRating', 'Genres', 'ImageTags', 'BackdropImageTags', 'RunTimeTicks', 'UserData', 'MediaStreams', 'Width', 'Height', 'ChildCount', 'RecursiveItemCount', 'RemoteTrailers']
                     })),
                     safeFetch(jellyfinService.getDisplayPreferences("usersettings"), {})
                 ]);
@@ -960,9 +1104,11 @@ const Home = () => {
                                         <div className="skeleton" style={{ width: '60%', height: '16px', borderRadius: '4px' }} />
                                         <div className="skeleton" style={{ width: '100%', height: '14px', borderRadius: '4px' }} />
                                         <div className="skeleton" style={{ width: '90%', height: '14px', borderRadius: '4px', marginBottom: '16px' }} />
-                                        <div className="promo3-btn-row" style={{ display: 'flex', gap: '12px' }}>
-                                            <div className="skeleton" style={{ width: '130px', height: '42px', borderRadius: '6px' }} />
-                                            <div className="skeleton" style={{ width: '130px', height: '42px', borderRadius: '6px' }} />
+                                        <div className="promo3-btn-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <div className="skeleton" style={{ width: '140px', height: '42px', borderRadius: '6px' }} />
+                                            <div className="skeleton" style={{ width: '150px', height: '42px', borderRadius: '6px' }} />
+                                            <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                                            <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
                                         </div>
                                     </div>
                                     <div className="promo3-right-carousel">
@@ -1207,22 +1353,41 @@ const Home = () => {
                                     const loopingItems = Array(LOOP_COPIES).fill(promoItems).flat();
 
                                     return (
-                                        <div className="promo3-container">
+                                        <div className={`promo3-container ${isPromoTrailerPlaying ? 'is-trailer-playing' : ''}`}
+                                            onMouseMove={isPromoTrailerPlaying ? resetPromoCleanViewTimer : undefined}
+                                            onClick={isPromoTrailerPlaying ? resetPromoCleanViewTimer : undefined}
+                                        >
                                             {/* Static Alternating Backdrop A */}
                                             <div
-                                                className={`promo3-backdrop-image ${isAActive ? 'active' : 'inactive'}`}
+                                                className={`promo3-backdrop-image ${isAActive ? 'active' : 'inactive'} ${isPromoTrailerPlaying ? 'is-hidden' : ''}`}
                                                 style={{ backgroundImage: backdropA ? `url('${backdropA}')` : 'none' }}
                                             />
                                             {/* Static Alternating Backdrop B */}
                                             <div
-                                                className={`promo3-backdrop-image ${!isAActive ? 'active' : 'inactive'}`}
+                                                className={`promo3-backdrop-image ${!isAActive ? 'active' : 'inactive'} ${isPromoTrailerPlaying ? 'is-hidden' : ''}`}
                                                 style={{ backgroundImage: backdropB ? `url('${backdropB}')` : 'none' }}
                                             />
-                                            <div className="promo3-overlay-gradient" />
+
+                                            {/* Trailer Container */}
+                                            <div className={`promo3-trailer ${isPromoTrailerPlaying ? 'is-playing' : ''}`}>
+                                                {isPromoTrailerPlaying && promoTrailerKey && (
+                                                    <iframe
+                                                        ref={promoTrailerIframeRef}
+                                                        src={`https://www.youtube.com/embed/${promoTrailerKey}?autoplay=1&mute=0&loop=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&color=white&controls=0&disablekb=1&playlist=${promoTrailerKey}&enablejsapi=1&origin=${window.location.origin}&widget_referrer=${window.location.origin}`}
+                                                        frameBorder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        referrerPolicy="strict-origin-when-cross-origin"
+                                                        allowFullScreen
+                                                        title="Trailer"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div className="promo3-overlay-gradient" ref={promoGradientRef} />
 
                                             <div className="promo3-content-wrapper">
                                                 {/* Left Side: Info */}
-                                                <div className="promo3-left-info">
+                                                <div className="promo3-left-info" ref={promoContentRef}>
                                                     {hasLogo ? (
                                                         <div
                                                             className="promo3-logo-wrapper"
@@ -1274,27 +1439,74 @@ const Home = () => {
                                                         </Button>
 
                                                         <Button
-                                                            className={`promo3-btn-fav ${isFav ? 'active' : ''}`}
+                                                            variant="outline"
+                                                            onClick={handlePromoTrailer}
+                                                            style={!promoTrailerKey ? { opacity: 0.5, pointerEvents: 'none' } : {}}
+                                                        >
+                                                            <span className="material-icons">{isPromoTrailerPlaying ? 'stop_circle' : 'theaters'}</span>
+                                                            <span>{isPromoTrailerPlaying ? 'Stop Trailer' : 'Play Trailer'}</span>
+                                                        </Button>
+
+                                                        {isPromoTrailerPlaying && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className={`rounded-full w-12 h-12 border-2 border-white/20 bg-black/40 hover:bg-white/10 hover:border-white text-white ${isPromoMuted ? 'is-muted' : ''}`}
+                                                                onClick={togglePromoMute}
+                                                                title={isPromoMuted ? 'Unmute' : 'Mute'}
+                                                            >
+                                                                <span className="material-icons">{isPromoMuted ? 'volume_off' : 'volume_up'}</span>
+                                                            </Button>
+                                                        )}
+
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className={`rounded-full w-12 h-12 border-2 border-white/20 bg-black/40 hover:bg-white/10 hover:border-white text-white ${isFav ? 'active' : ''}`}
                                                             onClick={(e) => togglePromoFav(e, activeItem)}
                                                             title={isFav ? 'Favorited' : 'Add to Favorite'}
                                                         >
-                                                            <span className="material-icons">{isFav ? 'favorite' : 'favorite_border'}</span>
-                                                            <span>{isFav ? 'Favorited' : 'Favorite'}</span>
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24"
+                                                                fill={isFav ? 'red' : 'none'}
+                                                                stroke={isFav ? 'red' : 'currentColor'}
+                                                                strokeWidth="2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                style={{ width: '24px', height: '24px' }}
+                                                            >
+                                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                                            </svg>
                                                         </Button>
 
                                                         <Button
-                                                            className="promo3-btn-info"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="rounded-full w-12 h-12 border-2 border-white/20 bg-black/40 hover:bg-white/10 hover:border-white text-white"
                                                             onClick={() => openModal(activeItem.Id)}
                                                             title="More Info"
-                                                            style={{ minWidth: '42px', padding: '10px 12px' }}
                                                         >
-                                                            <span className="material-icons">info_outline</span>
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="1.75"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                style={{ width: '24px', height: '24px' }}
+                                                            >
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <path d="M12 16v-4"></path>
+                                                                <path d="M12 8h.01"></path>
+                                                            </svg>
                                                         </Button>
                                                     </div>
                                                 </div>
 
                                                 {/* Right Side: Scrollable Poster Grid */}
-                                                <div className="promo3-right-carousel">
+                                                <div className="promo3-right-carousel" ref={promoCarouselRef}>
                                                     <div
                                                         className="promo3-cards-scroll"
                                                         ref={promoScrollRef}
@@ -1329,7 +1541,7 @@ const Home = () => {
                                                 </div>
                                             </div>
 
-                                            {promoItems.length > 3 && (
+                                            {promoItems.length > 3 && !isPromoTrailerPlaying && (
                                                 <button
                                                     className="promo3-scroll-arrow"
                                                     onClick={scrollPromoRight}
@@ -1337,6 +1549,51 @@ const Home = () => {
                                                 >
                                                     <span className="material-icons">chevron_right</span>
                                                 </button>
+                                            )}
+
+                                            {/* Trailer Overlay UI — shows on hover during playback */}
+                                            {isPromoTrailerPlaying && (
+                                                <div className="promo3-trailer-overlay">
+                                                    <div className="promo3-trailer-overlay-left">
+                                                        {hasLogo ? (
+                                                            <img
+                                                                src={logoUrl}
+                                                                alt={activeItem.Name}
+                                                                className="promo3-trailer-overlay-logo"
+                                                            />
+                                                        ) : (
+                                                            <span className="promo3-trailer-overlay-title">{activeItem.Name}</span>
+                                                        )}
+                                                        <Button
+                                                            variant="outline"
+                                                            className="promo3-trailer-overlay-btn"
+                                                            onClick={handlePromoTrailer}
+                                                        >
+                                                            <span className="material-icons">stop_circle</span>
+                                                            <span>Stop Trailer</span>
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className={`promo3-trailer-overlay-btn promo3-trailer-overlay-btn--icon ${isPromoMuted ? 'is-muted' : ''}`}
+                                                            onClick={togglePromoMute}
+                                                            title={isPromoMuted ? 'Unmute' : 'Mute'}
+                                                        >
+                                                            <span className="material-icons">{isPromoMuted ? 'volume_off' : 'volume_up'}</span>
+                                                        </Button>
+                                                    </div>
+
+                                                    <Button
+                                                        variant="outline"
+                                                        className="promo3-trailer-overlay-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowPromoBlockedModal(true);
+                                                        }}
+                                                    >
+                                                        <span>Trouble playing?</span>
+                                                    </Button>
+                                                </div>
                                             )}
                                         </div>
                                     );
@@ -1369,8 +1626,8 @@ const Home = () => {
             </div>
 
             {selectionMode && (
-                <div 
-                    ref={selectionPanelRef} 
+                <div
+                    ref={selectionPanelRef}
                     className="fixed bottom-6 left-1/2 bg-[#1e1e1e] border border-neutral-800 rounded-xl shadow-2xl p-4 z-50 flex items-center gap-4 legit-selection-panel"
                     style={{ opacity: 0, transform: 'translate(-50%, 150px)' }}
                 >
@@ -1544,6 +1801,31 @@ const Home = () => {
                     options={getContextMenuOptions(contextMenu.item, contextMenu.section)}
                     onClose={closeContextMenu}
                 />
+            )}
+            {/* Promo Trailer Blocked Modal */}
+            {showPromoBlockedModal && (
+                <div className="lf-blocked-modal-overlay" onClick={() => { setShowPromoBlockedModal(false); stopPromoTrailer(); }}>
+                    <div className="lf-blocked-modal" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className="lf-blocked-modal__close"
+                            onClick={() => { setShowPromoBlockedModal(false); stopPromoTrailer(); }}
+                        >
+                            <span className="material-icons">close</span>
+                        </button>
+                        <span className="material-icons lf-blocked-icon">error_outline</span>
+                        <h3>Playback issue</h3>
+                        <p>The trailer can't play - your browser's tracking protection or ad blocker is likely blocking the YouTube embed.</p>
+                        <button
+                            className="lf-btn lf-btn--glass"
+                            onClick={() => {
+                                setShowPromoBlockedModal(false);
+                                stopPromoTrailer();
+                            }}
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -188,35 +188,11 @@
 
 .promo3-btn-row {
     display: flex;
-    gap: 16px;
+    align-items: center;
+    gap: 12px;
 }
 
-/* Info button next to favorite */
-.promo3-btn-info {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    border-radius: 6px !important;
-    padding: 0 !important;
-    width: 42px !important;
-    height: 42px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.promo3-btn-info:hover {
-    background: rgba(255, 255, 255, 0.22) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-}
-
-.promo3-btn-info .material-icons {
-    font-size: 18px;
-}
-
-/* Play Now button - uses ringHover variant via Button component */
+/* Play Now button - accent fill, uses ringHover variant */
 .promo3-btn-play {
     background: var(--clr-accent) !important;
     color: white !important;
@@ -233,16 +209,16 @@
 }
 
 .promo3-btn-play .material-icons {
-    font-size: 20px;
+    font-size: 22px;
 }
 
-/* Favorite button - plain ghost style, no ring hover */
-.promo3-btn-fav {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+/* Play Trailer button - glass style with label */
+.promo3-btn-trailer {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     color: white !important;
     border-radius: 6px !important;
-    padding: 10px 20px !important;
+    padding: 10px 22px !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
     height: 42px !important;
@@ -253,19 +229,212 @@
     transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.promo3-btn-fav:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
+.promo3-btn-trailer:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
-.promo3-btn-fav.active {
-    background: var(--clr-accent) !important;
-    border-color: var(--clr-accent) !important;
+.promo3-btn-trailer .material-icons {
+    font-size: 20px;
+}
+
+/* Icon-only circular buttons (Favorite, Info, Mute) - matches hero-actions style */
+.promo3-btn-icon {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
     color: white !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.promo3-btn-fav .material-icons {
-    font-size: 18px;
+.promo3-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: white !important;
+}
+
+.promo3-btn-icon.active {
+    color: #ef4444 !important;
+}
+
+.promo3-btn-icon .material-icons,
+.promo3-btn-icon .material-icons-outlined {
+    font-size: 24px;
+}
+
+/* Trailer embed container */
+.promo3-trailer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.promo3-trailer.is-playing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.promo3-trailer iframe {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+}
+
+/* Backdrop hide when trailer plays */
+.promo3-backdrop-image.is-hidden {
+    opacity: 0 !important;
+}
+
+/* Trailer overlay UI (stop, mute, help) */
+.promo3-trailer-overlay {
+    position: absolute;
+    bottom: 40px;
+    left: 5%;
+    right: 5%;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.promo3-trailer-overlay-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.promo3-trailer-overlay-logo {
+    max-height: 42px;
+    max-width: 140px;
+    object-fit: contain;
+    margin-right: 12px;
+}
+
+.promo3-trailer-overlay-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: white;
+    margin-right: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.promo3-trailer-overlay-btn {
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-radius: 6px !important;
+    padding: 10px 22px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.promo3-trailer-overlay-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: white !important;
+}
+
+.promo3-trailer-overlay-btn .material-icons {
+    font-size: 24px !important;
+}
+
+.promo3-trailer-overlay-btn--icon {
+    padding: 0 !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+}
+
+/* Blocked modal (shared styles from SeriesDetail) */
+.lf-blocked-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lf-blocked-modal {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    color: white;
+}
+
+.lf-blocked-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.lf-blocked-modal__close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lf-blocked-modal__close .material-icons {
+    font-size: 22px;
+}
+
+.lf-blocked-icon {
+    font-size: 48px;
+    color: #ef4444;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.lf-blocked-modal h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: white;
+}
+
+.lf-blocked-modal p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 20px 0;
+}
+
+.lf-blocked-modal .lf-btn {
+    width: 100%;
 }
 
 /* Right Carousel */
@@ -881,6 +1050,54 @@
 
     .promo3-scroll-arrow {
         display: none !important;
+    }
+
+    .promo3-btn-trailer span:last-child {
+        display: none;
+    }
+
+    .promo3-btn-trailer {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        justify-content: center !important;
+    }
+
+    .promo3-btn-play {
+        height: 42px !important;
+        padding: 8px 18px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .promo3-btn-icon {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .promo3-trailer-overlay {
+        bottom: 20px;
+        left: 4%;
+        right: 4%;
+    }
+
+    .promo3-trailer-overlay-logo,
+    .promo3-trailer-overlay-title {
+        display: none !important;
+    }
+
+    .promo3-trailer-overlay-btn {
+        height: 38px !important;
+        padding: 8px 16px !important;
+        font-size: 0.85rem !important;
+        border-radius: 6px !important;
+    }
+
+    .promo3-trailer-overlay-btn--icon {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
     }
 }
 
